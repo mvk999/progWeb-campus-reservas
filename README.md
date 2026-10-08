@@ -58,7 +58,6 @@ Atualmente, a raiz do repositório contém:
 
 ```text
 .
-├── AGENTS.md
 └── README.md
 ```
 
