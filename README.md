@@ -58,8 +58,17 @@ Atualmente, a raiz do repositório contém:
 
 ```text
 .
+├── .agents/skills/          # skills locais dos quatro papéis
+├── .codex/agents/           # perfis de agentes do Codex
+├── docs/agentes/            # protocolo, requisitos, fontes e avaliação
+├── scripts/
+│   └── verificar_equipe.py  # verificação estrutural da equipe
+├── .gitignore
+├── AGENTS.md
 └── README.md
 ```
+
+Esta estrutura contém documentação e configuração da equipe de agentes. Ainda não contém a aplicação Django ou Angular.
 
 ### Estrutura planejada para o Checkpoint 1
 
@@ -80,3 +89,18 @@ O backend Django será organizado com `config/` para a configuração do projeto
 ```
 
 O diretório `frontend/`, com a aplicação Angular, está reservado para o Checkpoint 2 e não faz parte da estrutura implementada nesta etapa.
+
+
+## Agentes e skills
+
+O projeto possui quatro papéis locais: backend, frontend, integração e validador. As responsabilidades, a forma de acionamento e o protocolo de entrega estão em [docs/agentes/protocolo.md](docs/agentes/protocolo.md). A matriz de requisitos e as referências utilizadas também estão nessa pasta.
+
+Abra este repositório como diretório de trabalho no Codex para descobrir os perfis em `.codex/agents/` e as skills em `.agents/skills/`. Os perfis herdam as preferências e permissões da sessão. A configuração dos agentes não executa a aplicação nem libera o Checkpoint 2.
+
+Para conferir a estrutura e os vínculos locais da equipe, com Python 3.11 ou superior:
+
+```bash
+python3 scripts/verificar_equipe.py
+```
+
+Esse comando não comprova carregamento nativo dos agentes nem valida a aplicação. O alcance das verificações realizadas na criação da equipe está em [docs/agentes/avaliacao.md](docs/agentes/avaliacao.md).
