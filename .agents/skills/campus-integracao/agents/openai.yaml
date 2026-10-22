@@ -1,4 +1,0 @@
-interface:
-  display_name: "Campus Reservas Integração"
-  short_description: "Contratos, configuração e integração das entregas"
-  default_prompt: "Use $campus-integracao para integrar a tarefa autorizada do Campus Reservas."

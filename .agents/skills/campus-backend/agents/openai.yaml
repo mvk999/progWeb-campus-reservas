@@ -1,4 +1,0 @@
-interface:
-  display_name: "Campus Reservas Backend"
-  short_description: "Modelagem, domínio e Django Admin funcional"
-  default_prompt: "Use $campus-backend para executar a etapa backend solicitada do Campus Reservas."

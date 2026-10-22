@@ -1,4 +1,0 @@
-interface:
-  display_name: "Campus Reservas Validador"
-  short_description: "Verificação independente com evidências reais"
-  default_prompt: "Use $campus-validador para verificar a entrega solicitada do Campus Reservas."
