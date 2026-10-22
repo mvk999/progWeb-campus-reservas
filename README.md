@@ -1,106 +1,116 @@
 # Campus Reservas
 
-## Integrantes do grupo
+## Integrantes
 
 - Marcos Vinícius Pereira
 - Arthur Soares Marques
 - Lana da Silva Miranda
 
-## Descrição do projeto
+## Descrição
 
-O Campus Reservas é um sistema web planejado para gerenciar reservas de ambientes e equipamentos universitários. Estudantes e professores poderão consultar ambientes, solicitar reservas e acompanhar suas solicitações. Responsáveis poderão analisar solicitações relacionadas aos ambientes sob sua responsabilidade, e administradores poderão gerenciar os recursos e usuários da plataforma.
+O Campus Reservas é um sistema web para gerenciar reservas de ambientes e equipamentos universitários. Solicitantes poderão pedir reservas; responsáveis poderão avaliar pedidos dos ambientes sob sua responsabilidade; administradores poderão gerenciar os recursos do sistema.
 
-O projeto está em desenvolvimento para o Checkpoint 1 da disciplina GAC116 — Programação Web. Neste momento, o repositório ainda não contém a aplicação implementada.
+O projeto está em desenvolvimento para o Checkpoint 1 da disciplina GAC116 — Programação Web. A etapa C1.02 preparou a estrutura inicial do backend Django. Modelos de domínio, autenticação customizada e migrations ainda serão implementados nas etapas seguintes.
 
-## Tecnologias utilizadas
-
-As tecnologias abaixo foram definidas para o projeto. A coluna de situação diferencia as escolhas planejadas da configuração já presente no repositório.
+## Tecnologias
 
 | Área | Tecnologia | Situação |
 | --- | --- | --- |
-| Backend | Python e Django | Planejados para o Checkpoint 1; ainda não configurados. |
-| Banco de dados | SQLite relacional | Escolhido para o Checkpoint 1; ainda não configurado. |
-| Frontend | Angular | Planejado para o Checkpoint 2. |
-| Estilização | Bootstrap 5 | Planejado para a interface do Checkpoint 2. |
-| Ambiente administrativo | Django Admin e Jazzmin | Planejados para o Checkpoint 1; ainda não configurados. |
-| Versionamento | Git e GitHub | Repositório Git inicializado e remoto GitHub configurado. |
+| Backend | Python 3.12 e Django 5.2.18 | Estrutura inicial configurada; modelos ainda não implementados. |
+| Banco de dados | SQLite relacional | Configurado para execução local. |
+| Administração | Django Admin | Rota inicial configurada; estará pronta para uso após a configuração de usuário e banco nas próximas etapas. |
+| Frontend | Angular | Reservado para o Checkpoint 2. |
+| Estilização | Bootstrap 5 | Reservado para o Checkpoint 2. |
 
-Quando implementado, o backend seguirá a arquitetura MVT do Django. A interface Angular está reservada para o Checkpoint 2.
+Django 5.2 foi escolhido por ser uma versão LTS compatível com Python 3.12. O projeto fixa a versão patch 5.2.18, publicada em 6 de outubro de 2026. Confira as [notas oficiais de Django 5.2.18](https://docs.djangoproject.com/en/5.2/releases/5.2.18/) e a [tabela oficial de compatibilidade com Python](https://docs.djangoproject.com/en/5.2/faq/install/).
 
-## Instruções para instalação
+## Requisitos
 
-A configuração inicial do Django ainda não foi realizada. O repositório não possui `manage.py`, arquivo de dependências ou configuração do banco de dados. As instruções de clonagem, criação do ambiente virtual, instalação das dependências e preparação do banco serão disponibilizadas após a configuração inicial do ambiente.
+- Python 3.12, compatível com Django 5.2.
+- `venv` e `pip` disponíveis.
 
-## Instruções para execução
+## Instalação
 
-A execução da aplicação está em desenvolvimento. Como os arquivos necessários para iniciar o projeto ainda não existem, não há comandos de execução disponíveis neste momento. Esta seção será atualizada quando a infraestrutura estiver configurada.
+Na raiz do repositório, crie e ative um ambiente virtual.
 
-## Principais funcionalidades previstas
-
-As funcionalidades abaixo pertencem ao escopo planejado e não estão implementadas no estado atual do repositório:
-
-- Cadastro e autenticação de usuários.
-- Gerenciamento de ambientes universitários e equipamentos.
-- Solicitação, consulta, aprovação, rejeição e cancelamento de reservas.
-- Consulta de disponibilidade e verificação de conflitos entre horários.
-- Bloqueio de ambientes indisponíveis e consulta ao histórico de reservas.
-- Controle de acesso por grupos e permissões, com os perfis previstos:
-  - **Administrador:** gerencia os recursos e usuários da plataforma.
-  - **Responsável:** gerencia solicitações dos ambientes pelos quais é responsável.
-  - **Solicitante:** consulta ambientes e solicita reservas.
-- Ambiente administrativo baseado no Django Admin e personalizado com Jazzmin.
-
-## Estrutura do projeto
-
-### Estrutura existente
-
-Atualmente, a raiz do repositório contém:
-
-```text
-.
-├── .agents/skills/          # skills locais dos quatro papéis
-├── .codex/agents/           # perfis de agentes do Codex
-├── docs/agentes/            # protocolo, requisitos, fontes e avaliação
-├── scripts/
-│   └── verificar_equipe.py  # verificação estrutural da equipe
-├── .gitignore
-├── AGENTS.md
-└── README.md
-```
-
-Esta estrutura contém documentação e configuração da equipe de agentes. Ainda não contém a aplicação Django ou Angular.
-
-### Estrutura planejada para o Checkpoint 1
-
-O backend Django será organizado com `config/` para a configuração do projeto e os apps `usuarios/`, `ambientes/` e `reservas/`. A estrutura prevista também inclui documentação em `docs/`:
-
-```text
-.
-├── config/
-├── usuarios/
-├── ambientes/
-├── reservas/
-├── docs/
-├── requirements.txt
-├── manage.py
-├── .gitignore
-├── README.md
-└── AGENTS.md
-```
-
-O diretório `frontend/`, com a aplicação Angular, está reservado para o Checkpoint 2 e não faz parte da estrutura implementada nesta etapa.
-
-
-## Agentes e skills
-
-O projeto possui quatro papéis locais: backend, frontend, integração e validador. As responsabilidades, a forma de acionamento e o protocolo de entrega estão em [docs/agentes/protocolo.md](docs/agentes/protocolo.md). A matriz de requisitos e as referências utilizadas também estão nessa pasta.
-
-Abra este repositório como diretório de trabalho no Codex para descobrir os perfis em `.codex/agents/` e as skills em `.agents/skills/`. Os perfis herdam as preferências e permissões da sessão. A configuração dos agentes não executa a aplicação nem libera o Checkpoint 2.
-
-Para conferir a estrutura e os vínculos locais da equipe, com Python 3.11 ou superior:
+Linux ou macOS:
 
 ```bash
-python3 scripts/verificar_equipe.py
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
-Esse comando não comprova carregamento nativo dos agentes nem valida a aplicação. O alcance das verificações realizadas na criação da equipe está em [docs/agentes/avaliacao.md](docs/agentes/avaliacao.md).
+Windows PowerShell:
+
+```powershell
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+```
+
+Instale as dependências:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+O arquivo `requirements.txt` fixa Django 5.2.18. Nenhuma outra biblioteca externa é necessária nesta etapa.
+
+## Configuração e execução
+
+As configurações locais podem ser fornecidas por variáveis de ambiente. A chave padrão do projeto é exclusiva para desenvolvimento local; defina uma chave própria fora do repositório para qualquer outro ambiente.
+
+Linux ou macOS:
+
+```bash
+export DJANGO_SECRET_KEY='substitua-por-uma-chave-local'
+export DJANGO_DEBUG=1
+python manage.py check
+python manage.py runserver
+```
+
+Windows PowerShell:
+
+```powershell
+$env:DJANGO_SECRET_KEY = 'substitua-por-uma-chave-local'
+$env:DJANGO_DEBUG = '1'
+python manage.py check
+python manage.py runserver
+```
+
+O servidor local ficará disponível em `http://127.0.0.1:8000/`. Nesta etapa, o caminho `/admin/` está configurado, mas o Admin ainda depende da configuração do usuário customizado e da aplicação das migrations em etapas posteriores.
+
+**Não execute `migrate` nesta etapa.** O modelo customizado `Usuario` deverá ser definido antes das primeiras migrations de autenticação na C1.03.
+
+## Funcionalidades
+
+### Implementado
+
+- Estrutura inicial do projeto Django e dos apps `usuarios`, `ambientes` e `reservas`.
+- Configuração do SQLite e do fuso `America/Sao_Paulo`, com `USE_TZ=True`.
+- Rota inicial do Django Admin.
+
+### Planejado
+
+- Usuários, grupos e permissões.
+- Cadastro de ambientes e equipamentos.
+- Solicitação, avaliação, cancelamento e consulta de reservas.
+- Controle de disponibilidade e bloqueios.
+- Django Admin personalizado com Jazzmin.
+- Interface de usuário com Angular e Bootstrap 5 no Checkpoint 2.
+
+## Estrutura do backend
+
+```text
+.
+├── config/                 # Settings, URLs e gateways ASGI/WSGI
+├── usuarios/               # App de usuários (modelos em etapa posterior)
+├── ambientes/              # App de ambientes e equipamentos
+├── reservas/               # App de reservas
+├── docs/                   # Documentação do projeto
+├── requirements.txt
+├── manage.py
+└── .gitignore
+```
+
+Os três apps estão registrados em `INSTALLED_APPS`. A pasta `frontend/` será criada no Checkpoint 2.
