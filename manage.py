@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+"""Command-line utility for administrative tasks."""
+
+import os
+import sys
+
+
+def main():
+    """Run administrative commands."""
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+    try:
+        from django.core.management import execute_from_command_line
+    except ImportError as exc:
+        raise ImportError(
+            "Django não está instalado. Ative o ambiente virtual e instale "
+            "as dependências com `python -m pip install -r requirements.txt`."
+        ) from exc
+    execute_from_command_line(sys.argv)
+
+
+if __name__ == "__main__":
+    main()
