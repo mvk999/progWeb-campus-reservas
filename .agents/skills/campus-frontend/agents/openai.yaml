@@ -1,4 +1,0 @@
-interface:
-  display_name: "Campus Reservas Frontend"
-  short_description: "Jazzmin no C1 e Angular com Bootstrap no C2"
-  default_prompt: "Use $campus-frontend para executar a tarefa visual autorizada do Campus Reservas."
