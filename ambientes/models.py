@@ -56,3 +56,37 @@ class Ambiente(models.Model):
 
     def __str__(self):
         return f"{self.codigo} - {self.nome}"
+
+
+class CategoriaEquipamento(models.Model):
+    nome = models.CharField(max_length=100, unique=True)
+    descricao = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "categoria de equipamento"
+        verbose_name_plural = "categorias de equipamentos"
+        ordering = ("nome",)
+
+    def __str__(self):
+        return self.nome
+
+
+class Equipamento(models.Model):
+    codigo = models.CharField(max_length=30, unique=True)
+    nome = models.CharField(max_length=150)
+    descricao = models.TextField(blank=True)
+    quantidade_total = models.PositiveIntegerField()
+    ativo = models.BooleanField(default=True)
+    categoria = models.ForeignKey(
+        CategoriaEquipamento,
+        on_delete=models.PROTECT,
+        related_name="equipamentos",
+    )
+
+    class Meta:
+        verbose_name = "equipamento"
+        verbose_name_plural = "equipamentos"
+        ordering = ("codigo",)
+
+    def __str__(self):
+        return f"{self.codigo} - {self.nome}"
