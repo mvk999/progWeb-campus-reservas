@@ -3,6 +3,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 
 class ReservaStatus(models.TextChoices):
@@ -69,4 +70,5 @@ class Reserva(models.Model):
             )
 
     def __str__(self):
-        return f"{self.solicitante} — {self.ambiente} — {self.inicio:%d/%m/%Y %H:%M}"
+        inicio_local = timezone.localtime(self.inicio)
+        return f"{self.solicitante} — {self.ambiente} — {inicio_local:%d/%m/%Y %H:%M}"
