@@ -56,6 +56,17 @@ python -m pip install -r requirements.txt
 
 O arquivo `requirements.txt` fixa Django 5.2.18. Nenhuma outra biblioteca externa é necessária nesta etapa.
 
+## Banco de dados e conta administrativa
+
+O projeto configura `AUTH_USER_MODEL = "usuarios.Usuario"` antes das migrations iniciais. Em um ambiente novo, aplique as migrations e crie uma conta administrativa:
+
+```bash
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+O modelo herda de `AbstractUser`, mantém autenticação por nome de usuário e senha com hash e oferece suporte aos mecanismos nativos de Groups e Permissions. A definição dos grupos de Administrador, Responsável e Solicitante e suas permissões específicas fica para a etapa C1.11. Telas de login/cadastro de usuários finais não fazem parte desta etapa e permanecem planejadas para o Checkpoint 2.
+
 ## Configuração e execução
 
 As configurações locais podem ser fornecidas por variáveis de ambiente. A chave padrão do projeto é exclusiva para desenvolvimento local; defina uma chave própria fora do repositório para qualquer outro ambiente.
@@ -78,18 +89,7 @@ python manage.py check
 python manage.py runserver
 ```
 
-O servidor local ficará disponível em `http://127.0.0.1:8000/`. O caminho `/admin/` usa a autenticação nativa do Django e o modelo customizado `usuarios.Usuario`.
-
-## Banco de dados e conta administrativa
-
-O projeto configura `AUTH_USER_MODEL = "usuarios.Usuario"` antes das migrations iniciais. Em um ambiente novo, aplique as migrations e crie uma conta administrativa:
-
-```bash
-python manage.py migrate
-python manage.py createsuperuser
-```
-
-O modelo herda de `AbstractUser`, mantém autenticação por nome de usuário e senha com hash e oferece suporte aos mecanismos nativos de Groups e Permissions. A definição dos grupos de Administrador, Responsável e Solicitante e suas permissões específicas fica para a etapa C1.11. Telas de login/cadastro de usuários finais não fazem parte desta etapa e permanecem planejadas para o Checkpoint 2.
+Depois de aplicar as migrations e criar o superusuário conforme a seção anterior, o servidor local ficará disponível em `http://127.0.0.1:8000/`. O caminho `/admin/` usa a autenticação nativa do Django e o modelo customizado `usuarios.Usuario`.
 
 ## Funcionalidades
 
