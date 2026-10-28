@@ -32,6 +32,9 @@ INSTALLED_APPS = [
     "reservas.apps.ReservasConfig",
 ]
 
+# Modelo customizado definido antes das primeiras migrations de autenticação.
+AUTH_USER_MODEL = "usuarios.Usuario"
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
