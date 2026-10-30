@@ -10,7 +10,7 @@
 
 O Campus Reservas é um sistema web para gerenciar reservas de ambientes e equipamentos universitários. Solicitantes poderão pedir reservas; responsáveis poderão avaliar pedidos dos ambientes sob sua responsabilidade; administradores poderão gerenciar os recursos do sistema.
 
-O projeto está em desenvolvimento para o Checkpoint 1 da disciplina GAC116 — Programação Web. A etapa C1.02 preparou a estrutura inicial do backend Django; a C1.03 configurou a autenticação nativa com o modelo customizado `usuarios.Usuario`; a C1.04 definiu categorias e ambientes universitários; a C1.05 modelou categorias e equipamentos com estoque compartilhado; e a C1.06 criou a estrutura de dados das reservas. Os fluxos de solicitação, avaliação, cancelamento e disponibilidade serão desenvolvidos em etapas posteriores.
+O projeto está em desenvolvimento para o Checkpoint 1 da disciplina GAC116 — Programação Web. A etapa C1.02 preparou a estrutura inicial do backend Django; a C1.03 configurou a autenticação nativa com o modelo customizado `usuarios.Usuario`; a C1.04 definiu categorias e ambientes universitários; a C1.05 modelou categorias e equipamentos com estoque compartilhado; a C1.06 criou a estrutura de dados das reservas; e a C1.07 modelou os equipamentos solicitados e os bloqueios de ambientes. Os fluxos de solicitação, avaliação, cancelamento e disponibilidade serão desenvolvidos em etapas posteriores.
 
 ## Tecnologias
 
@@ -103,18 +103,20 @@ Depois de aplicar as migrations e criar o superusuário conforme a seção anter
 - `Ambiente`, com `codigo` único, `nome`, `descricao`, `localizacao`, `capacidade` e `ativo`; relaciona-se à categoria e a `Usuario` como responsável, protegendo essas referências contra exclusão.
 - A capacidade mínima de 1 consta na validação do modelo e em uma `CheckConstraint` na migration. A migration inicial de ambientes depende do modelo customizado de usuário.
 - `CategoriaEquipamento`, com `nome` único e `descricao` opcional.
-- `Equipamento`, com `codigo` único, `nome`, `descricao`, `quantidade_total` não negativa e `ativo`; pertence a uma categoria protegida contra exclusão. A quantidade representa estoque compartilhado, aceita zero e será associada futuramente às reservas por `ReservaEquipamento`.
+- `Equipamento`, com `codigo` único, `nome`, `descricao`, `quantidade_total` não negativa e `ativo`; pertence a uma categoria protegida contra exclusão. A quantidade representa estoque compartilhado, aceita zero e pode ser associada às reservas por `ReservaEquipamento`.
 - `Reserva`, relacionada a `usuarios.Usuario` como solicitante e a `Ambiente`, preservando essas referências contra exclusão. Armazena início, fim, status, observações, campos opcionais de avaliação e timestamps de criação e atualização. Os estados são `PENDENTE`, `APROVADA`, `REJEITADA`, `CANCELADA` e `CONCLUIDA`; o padrão é `PENDENTE`.
 - A reserva valida `inicio < fim` no modelo e no banco SQLite. A restrição SQL também limita o status aos cinco valores definidos. A avaliação pode apontar para um usuário opcional e protegido contra exclusão.
+- `ReservaEquipamento`, associação entre `Reserva` e `Equipamento` por meio de `Reserva.equipamentos`, com quantidade mínima de 1, combinação `(reserva, equipamento)` única e referências protegidas contra exclusão.
+- `BloqueioAmbiente`, associado obrigatoriamente a um `Ambiente` e ao usuário que o registrou. Armazena motivo e intervalo; a regra `inicio < fim` é validada pelo modelo e por constraint no SQLite. O cadastro de bloqueios está modelado, mas conflitos com reservas ainda não são verificados.
 
 ### Planejado
 
 - Grupos e permissões específicos para os perfis do sistema (C1.11).
-- Fluxos de solicitação, aprovação, rejeição e cancelamento; disponibilidade e bloqueios de ambientes.
-- Associação de equipamentos às reservas por `ReservaEquipamento` (C1.07) e cálculo de disponibilidade por intervalo.
+- Fluxos de solicitação, aprovação, rejeição e cancelamento; verificação de disponibilidade e conflitos com bloqueios.
+- Cálculo da disponibilidade de equipamentos compartilhados por intervalo.
 - Registro e operação de categorias e ambientes pelo Django Admin (C1.08).
 - Solicitação, avaliação, cancelamento e consulta de reservas.
-- Controle de disponibilidade e bloqueios.
+- Gerenciamento dos bloqueios pelo Django Admin.
 - Django Admin personalizado com Jazzmin.
 - Interface de usuário com Angular e Bootstrap 5 no Checkpoint 2.
 
@@ -125,7 +127,7 @@ Depois de aplicar as migrations e criar o superusuário conforme a seção anter
 ├── config/                 # Settings, URLs e gateways ASGI/WSGI
 ├── usuarios/               # App de usuários com Usuario; grupos e permissões específicos em etapas posteriores
 ├── ambientes/              # Categorias, ambientes (C1.04) e equipamentos (C1.05)
-├── reservas/               # Modelagem da reserva (C1.06); fluxos em etapas posteriores
+├── reservas/               # Reserva (C1.06), itens e bloqueios (C1.07); fluxos posteriores
 ├── docs/                   # Documentação do projeto
 ├── requirements.txt
 ├── manage.py
