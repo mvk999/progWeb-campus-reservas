@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 
 
@@ -15,8 +16,26 @@ class ReservaStatus(models.TextChoices):
     CONCLUIDA = "CONCLUIDA", "Concluída"
 
 
+RESERVA_CONCLUIDA_DELETE_ERROR = (
+    "Reservas concluídas são registros históricos e não podem ser excluídas."
+)
+
+
+class ReservaQuerySet(models.QuerySet):
+    def delete(self):
+        concluidas = list(
+            self.filter(status=ReservaStatus.CONCLUIDA)
+            .select_related(None)
+            .only("pk", "status")
+        )
+        if concluidas:
+            raise ProtectedError(RESERVA_CONCLUIDA_DELETE_ERROR, concluidas)
+        return super().delete()
+
+
 class Reserva(models.Model):
     Status = ReservaStatus
+    objects = ReservaQuerySet.as_manager()
 
     solicitante = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -75,6 +94,19 @@ class Reserva(models.Model):
             raise ValidationError(
                 {"fim": "O fim da reserva deve ser posterior ao início."}
             )
+
+    def delete(self, using=None, keep_parents=False):
+        if self.pk:
+            concluida = type(self).objects.filter(
+                pk=self.pk,
+                status=ReservaStatus.CONCLUIDA,
+            ).first()
+            if concluida is not None:
+                raise ProtectedError(
+                    RESERVA_CONCLUIDA_DELETE_ERROR,
+                    [concluida],
+                )
+        return super().delete(using=using, keep_parents=keep_parents)
 
     def __str__(self):
         inicio_local = timezone.localtime(self.inicio)
