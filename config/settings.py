@@ -21,6 +21,7 @@ ALLOWED_HOSTS = [
 ]
 
 INSTALLED_APPS = [
+    "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -87,3 +88,36 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+JAZZMIN_SETTINGS = {
+    "site_title": "Administração — Campus Reservas",
+    "site_header": "Campus Reservas",
+    "site_brand": "Campus Reservas",
+    "welcome_sign": "Sistema de Reservas de Ambientes e Equipamentos",
+    "copyright": "Campus Reservas · UFLA",
+    "order_with_respect_to": ["usuarios", "ambientes", "reservas", "auth"],
+    "icons": {
+        "usuarios": "fas fa-users",
+        "usuarios.usuario": "fas fa-user",
+        "ambientes": "fas fa-building",
+        "ambientes.categoriaambiente": "fas fa-tags",
+        "ambientes.ambiente": "fas fa-door-open",
+        "ambientes.categoriaequipamento": "fas fa-tags",
+        "ambientes.equipamento": "fas fa-cube",
+        "reservas": "fas fa-calendar-alt",
+        "reservas.reserva": "fas fa-calendar-check",
+        "reservas.reservaequipamento": "fas fa-cubes",
+        "reservas.bloqueioambiente": "fas fa-ban",
+        "auth": "fas fa-users-cog",
+        "auth.group": "fas fa-user-shield",
+    },
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "show_theme_chooser": True,
+    "use_google_fonts_cdn": False,
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "theme": "flatly",
+    "default_theme_mode": "light",
+}
