@@ -122,6 +122,21 @@ class DjangoAdminHTTPTests(TestCase):
             f"{field_name}_1": value.strftime(time_format),
         }
 
+    @staticmethod
+    def inline_management_data(response):
+        inline_formset = response.context["inline_admin_formsets"][0].formset
+        data = {
+            f"{inline_formset.prefix}-{name}": str(value)
+            for name, value in inline_formset.management_form.initial.items()
+        }
+        for index, form in enumerate(inline_formset.initial_forms):
+            for field_name in form.fields:
+                value = form[field_name].value()
+                if value is not None:
+                    field_key = f"{inline_formset.prefix}-{index}-{field_name}"
+                    data[field_key] = str(value)
+        return data
+
     def assert_denied_or_login_page(self, response):
         self.assertIn(response.status_code, (200, 302, 403))
         if response.status_code == 302:
@@ -342,6 +357,9 @@ class DjangoAdminHTTPTests(TestCase):
         }
         dados.update(self.datetime_post_data("inicio", inicio))
         dados.update(self.datetime_post_data("fim", fim))
+        resposta_formulario = self.client.get(self.admin_url(model, "add"))
+        self.assertEqual(resposta_formulario.status_code, 200)
+        dados.update(self.inline_management_data(resposta_formulario))
         resposta = self.client.post(self.admin_url(model, "add"), dados)
         self.assertEqual(resposta.status_code, 302, resposta.content.decode())
         reserva = model.objects.get(observacoes="Criada pelo Admin.")
@@ -350,6 +368,11 @@ class DjangoAdminHTTPTests(TestCase):
         dados["avaliado_por"] = str(self.admin_user.pk)
         dados.update(self.datetime_post_data("avaliado_em", fim))
         dados["justificativa"] = "Avaliada em teste do Admin."
+        resposta_formulario = self.client.get(
+            self.admin_url(model, "change", reserva.pk)
+        )
+        self.assertEqual(resposta_formulario.status_code, 200)
+        dados.update(self.inline_management_data(resposta_formulario))
         resposta = self.client.post(
             self.admin_url(model, "change", reserva.pk), dados
         )
@@ -391,6 +414,7 @@ class DjangoAdminHTTPTests(TestCase):
         }
         dados.update(self.datetime_post_data("inicio", reserva.inicio))
         dados.update(self.datetime_post_data("fim", reserva.fim))
+        dados.update(self.inline_management_data(response))
         with patch(
             "django.db.models.fields.timezone.now",
             return_value=atualizado_em_antes,
