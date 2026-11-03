@@ -65,7 +65,7 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
-O modelo herda de `AbstractUser`, mantém autenticação por nome de usuário e senha com hash e oferece suporte aos mecanismos nativos de Groups e Permissions. A definição dos grupos de Administrador, Responsável e Solicitante e suas permissões específicas fica para a etapa C1.11. Telas de login/cadastro de usuários finais não fazem parte desta etapa e permanecem planejadas para o Checkpoint 2.
+O modelo herda de `AbstractUser`, mantém autenticação por nome de usuário e senha com hash e oferece suporte aos mecanismos nativos de Groups e Permissions. Os grupos iniciais são configurados na C1.11; telas de login/cadastro de usuários finais permanecem planejadas para o Checkpoint 2.
 
 ## Configuração e execução
 
@@ -91,6 +91,50 @@ python manage.py runserver
 
 Depois de aplicar as migrations e criar o superusuário conforme a seção anterior, o servidor local ficará disponível em `http://127.0.0.1:8000/`. O caminho `/admin/` usa a autenticação nativa do Django e o modelo customizado `usuarios.Usuario`, com apresentação do Jazzmin identificada como Campus Reservas.
 
+## Perfis e dados de demonstração
+
+Configure os grupos e, se desejar, dados sintéticos em uma base local após aplicar
+as migrations:
+
+```bash
+python manage.py configurar_perfis
+python manage.py popular_demo
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+O acesso administrativo fica em `http://127.0.0.1:8000/admin/`. `popular_demo`
+cria registros identificados com `DEMO`/`DEMO:C1.11`, não apaga registros e
+pode ser executado novamente. As contas `demo.c111.*` são fictícias, não são
+staff nem superusuários e recebem senha inutilizável; não há credencial demo
+fixa. Crie uma conta administrativa própria com `createsuperuser`.
+
+| Grupo | Permissões de modelo configuradas | Limites nesta etapa |
+| --- | --- | --- |
+| `Administrador` | add, view, change e delete para categorias, ambientes, equipamentos, reservas, associações de equipamentos e bloqueios | Não recebe permissões de usuários, grupos ou credenciais. Para acesso ao Admin, `is_staff` deve ser concedido separadamente por uma conta autorizada; o comando não altera essa flag. |
+| `Responsável` | Nenhuma permissão global de modelo no Admin | A relação com os ambientes não concede acesso global. Decisões sobre reservas dos próprios ambientes e autorização por objeto ficam para o Checkpoint 2. |
+| `Solicitante` | Nenhuma permissão global de modelo no Admin | Consulta e gestão das próprias reservas ainda não estão disponíveis; ficam para o Checkpoint 2. |
+
+`configurar_perfis` sincroniza apenas as permissões padrão dos modelos
+administrados e dos modelos sensíveis de usuário/grupo, preservando permissões
+customizadas e permissões fora dessa matriz. Não modifica usuários, associações
+de grupo, `user_permissions`, `is_staff`, `is_superuser` ou senhas. Superusuários
+mantêm o comportamento nativo do Django.
+
+Os registros com os cinco estados de reserva são sintéticos e servem à
+demonstração das listagens; o comando não implementa os fluxos de aprovação,
+cancelamento ou disponibilidade. Acesso por objeto de Responsáveis, a área de
+usuários finais, a API e a interface Angular continuam planejados para o
+Checkpoint 2.
+
+## Verificações
+
+Execute a suíte automatizada com:
+
+```bash
+python manage.py test
+```
+
 ## Funcionalidades
 
 ### Implementado
@@ -113,10 +157,10 @@ Depois de aplicar as migrations e criar o superusuário conforme a seção anter
 - O Django Admin utiliza Jazzmin 3.0.5, com identidade visual Campus Reservas, navegação organizada por app, tema Flatly e seletor nativo de esquema claro, escuro ou automático. Fontes externas e CSS de marca customizados não são necessários.
 - As listagens administrativas de ambientes, equipamentos, reservas, bloqueios e associações de equipamentos exibem campos úteis e oferecem filtros nativos por categoria, situação, responsável, status, ambiente, solicitante, equipamento e período, conforme cada entidade. Pesquisas por código, nome, localização e identificação de usuários estão disponíveis nos modelos pertinentes; reservas e bloqueios também oferecem navegação por data.
 - A edição de uma reserva inclui um inline para consultar, adicionar, alterar e remover equipamentos solicitados. As permissões nativas do Django e as validações existentes de quantidade positiva e associação única continuam aplicadas.
+- Os grupos `Administrador`, `Responsável` e `Solicitante` e a matriz inicial do Admin são configuráveis com `python manage.py configurar_perfis`. O comando `python manage.py popular_demo` cria registros sintéticos repetíveis, sem credenciais utilizáveis ou exclusão de dados.
 
 ### Planejado
 
-- Grupos e permissões específicos para os perfis do sistema (C1.11).
 - Fluxos de solicitação, aprovação, rejeição e cancelamento; verificação de disponibilidade e conflitos com bloqueios.
 - Cálculo da disponibilidade de equipamentos compartilhados por intervalo.
 - Solicitação, avaliação, cancelamento e consulta de reservas.
@@ -127,7 +171,7 @@ Depois de aplicar as migrations e criar o superusuário conforme a seção anter
 ```text
 .
 ├── config/                 # Settings, URLs e gateways ASGI/WSGI
-├── usuarios/               # App de usuários com Usuario; grupos e permissões específicos em etapas posteriores
+├── usuarios/               # App de usuários com Usuario e comando de configuração de grupos
 ├── ambientes/              # Categorias, ambientes (C1.04) e equipamentos (C1.05)
 ├── reservas/               # Reserva (C1.06), itens e bloqueios (C1.07); fluxos posteriores
 ├── docs/                   # Documentação do projeto
