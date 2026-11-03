@@ -137,6 +137,7 @@ Checkpoint 2.
 - [Modelo de dados, relacionamentos e integridade](docs/modelagem.md).
 - [Diagrama entidade-relacionamento](docs/diagrama-er.md).
 - [Roteiro prático de apresentação](docs/apresentacao-checkpoint1.md).
+- [Checklist de revisão final do Checkpoint 1](docs/checkpoint1-checklist.md).
 
 ## Verificações
 
