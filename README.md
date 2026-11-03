@@ -111,6 +111,8 @@ Depois de aplicar as migrations e criar o superusuário conforme a seção anter
 - Os oito models (`Usuario`, categorias, ambientes, equipamentos, reservas, itens de equipamento e bloqueios) estão disponíveis no Django Admin autenticado em `/admin/`, com criação, consulta, edição e exclusão sujeitas às permissões nativas e às restrições dos modelos. `Reserva` exibe seus campos de auditoria como somente leitura.
 - A conta administrativa pode ser criada com `python manage.py createsuperuser`; o Admin não implementa fluxos de aprovação, disponibilidade ou permissões por objeto.
 - O Django Admin utiliza Jazzmin 3.0.5, com identidade visual Campus Reservas, navegação organizada por app, tema Flatly e seletor nativo de esquema claro, escuro ou automático. Fontes externas e CSS de marca customizados não são necessários.
+- As listagens administrativas de ambientes, equipamentos, reservas, bloqueios e associações de equipamentos exibem campos úteis e oferecem filtros nativos por categoria, situação, responsável, status, ambiente, solicitante, equipamento e período, conforme cada entidade. Pesquisas por código, nome, localização e identificação de usuários estão disponíveis nos modelos pertinentes; reservas e bloqueios também oferecem navegação por data.
+- A edição de uma reserva inclui um inline para consultar, adicionar, alterar e remover equipamentos solicitados. As permissões nativas do Django e as validações existentes de quantidade positiva e associação única continuam aplicadas.
 
 ### Planejado
 
@@ -118,7 +120,6 @@ Depois de aplicar as migrations e criar o superusuário conforme a seção anter
 - Fluxos de solicitação, aprovação, rejeição e cancelamento; verificação de disponibilidade e conflitos com bloqueios.
 - Cálculo da disponibilidade de equipamentos compartilhados por intervalo.
 - Solicitação, avaliação, cancelamento e consulta de reservas.
-- Filtros, buscas e inlines administrativos (C1.10).
 - Interface de usuário com Angular e Bootstrap 5 no Checkpoint 2.
 
 ## Estrutura do backend
