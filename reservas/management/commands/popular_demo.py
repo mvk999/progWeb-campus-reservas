@@ -225,12 +225,19 @@ class Command(BaseCommand):
             )
 
         equipment_specs = (
-            ("DEMO-EQP-01", "Projetor de demonstração", "audiovisual", 5),
-            ("DEMO-EQP-02", "Notebook de demonstração", "informatica", 8),
-            ("DEMO-EQP-03", "Microfone de demonstração", "audio", 6),
+            ("DEMO-EQP-01", "Projetor de demonstração", "audiovisual", 5, True),
+            ("DEMO-EQP-02", "Notebook de demonstração", "informatica", 8, True),
+            ("DEMO-EQP-03", "Microfone de demonstração", "audio", 6, True),
+            (
+                "DEMO-EQP-04",
+                "Projetor inativo de demonstração",
+                "audiovisual",
+                1,
+                False,
+            ),
         )
         equipment = {}
-        for code, name, category, quantity in equipment_specs:
+        for code, name, category, quantity, active in equipment_specs:
             equipment[code] = self._record(
                 Equipamento,
                 {"codigo": code},
@@ -238,7 +245,7 @@ class Command(BaseCommand):
                     "nome": name,
                     "descricao": DEMO_DESCRIPTION,
                     "quantidade_total": quantity,
-                    "ativo": True,
+                    "ativo": active,
                     "categoria": equipment_categories[category],
                 },
                 "descricao",
