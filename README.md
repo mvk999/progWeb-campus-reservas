@@ -18,7 +18,7 @@ O projeto está em desenvolvimento para o Checkpoint 1 da disciplina GAC116 — 
 | --- | --- | --- |
 | Backend | Python 3.12 e Django 5.2.18 | Estrutura, usuário customizado, categorias, ambientes, equipamentos e modelagem de reservas. |
 | Banco de dados | SQLite relacional | Configurado para execução local. |
-| Administração | Django Admin | Autenticação com `usuarios.Usuario`; cadastros de ambientes e equipamentos no Admin ainda não configurados. Jazzmin será tratado em etapa posterior. |
+| Administração | Django Admin | Models registrados com autenticação e permissões nativas; operações administrativas básicas disponíveis. Jazzmin será tratado em etapa posterior. |
 | Frontend | Angular | Reservado para o Checkpoint 2. |
 | Estilização | Bootstrap 5 | Reservado para o Checkpoint 2. |
 
@@ -108,16 +108,16 @@ Depois de aplicar as migrations e criar o superusuário conforme a seção anter
 - A reserva valida `inicio < fim` no modelo e no banco SQLite. A restrição SQL também limita o status aos cinco valores definidos. A avaliação pode apontar para um usuário opcional e protegido contra exclusão.
 - `ReservaEquipamento`, associação entre `Reserva` e `Equipamento` por meio de `Reserva.equipamentos`, com quantidade mínima de 1, combinação `(reserva, equipamento)` única e referências protegidas contra exclusão.
 - `BloqueioAmbiente`, associado obrigatoriamente a um `Ambiente` e ao usuário que o registrou. Armazena motivo e intervalo; a regra `inicio < fim` é validada pelo modelo e por constraint no SQLite. O cadastro de bloqueios está modelado, mas conflitos com reservas ainda não são verificados.
+- Os oito models (`Usuario`, categorias, ambientes, equipamentos, reservas, itens de equipamento e bloqueios) estão disponíveis no Django Admin autenticado em `/admin/`, com criação, consulta, edição e exclusão sujeitas às permissões nativas e às restrições dos modelos. `Reserva` exibe seus campos de auditoria como somente leitura.
+- A conta administrativa pode ser criada com `python manage.py createsuperuser`; o Admin não implementa fluxos de aprovação, disponibilidade ou permissões por objeto.
 
 ### Planejado
 
 - Grupos e permissões específicos para os perfis do sistema (C1.11).
 - Fluxos de solicitação, aprovação, rejeição e cancelamento; verificação de disponibilidade e conflitos com bloqueios.
 - Cálculo da disponibilidade de equipamentos compartilhados por intervalo.
-- Registro e operação de categorias e ambientes pelo Django Admin (C1.08).
 - Solicitação, avaliação, cancelamento e consulta de reservas.
-- Gerenciamento dos bloqueios pelo Django Admin.
-- Django Admin personalizado com Jazzmin.
+- Django Admin personalizado com Jazzmin (C1.09), filtros, buscas e inlines administrativos (C1.10).
 - Interface de usuário com Angular e Bootstrap 5 no Checkpoint 2.
 
 ## Estrutura do backend
