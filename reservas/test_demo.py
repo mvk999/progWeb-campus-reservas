@@ -3,6 +3,7 @@
 from io import StringIO
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
@@ -73,7 +74,13 @@ class PopularDemoCommandTests(TestCase):
         )
         self.assertEqual(Ambiente.objects.filter(codigo__startswith="DEMO-").count(), 3)
         self.assertEqual(
-            Equipamento.objects.filter(codigo__startswith="DEMO-").count(), 3
+            Equipamento.objects.filter(codigo__startswith="DEMO-").count(), 4
+        )
+        equipamento_inativo = Equipamento.objects.get(codigo="DEMO-EQP-04")
+        self.assertFalse(equipamento_inativo.ativo)
+        self.assertEqual(
+            equipamento_inativo.categoria.nome,
+            "DEMO C1.11 — Audiovisual",
         )
 
         demo_reservations = Reserva.objects.filter(
@@ -204,4 +211,46 @@ class PopularDemoCommandTests(TestCase):
         self.assertEqual(
             results[0].observacoes,
             "DEMO:C1.11:reserva:aprovada",
+        )
+
+    def test_dados_demo_permitem_filtrar_equipamentos_ativos_e_inativos_no_admin(self):
+        self.populate_demo()
+        administrador = User.objects.create_user(
+            username="admin-filter-equipamento-demo",
+            password=None,
+            is_staff=True,
+        )
+        administrador.groups.add(Group.objects.get(name="Administrador"))
+        self.client.force_login(administrador)
+        changelist_url = reverse("admin:ambientes_equipamento_changelist")
+
+        resposta_inativos = self.client.get(
+            changelist_url,
+            {"ativo__exact": "0"},
+        )
+
+        self.assertEqual(resposta_inativos.status_code, 200)
+        codigos_inativos = list(
+            resposta_inativos.context["cl"].result_list.values_list(
+                "codigo",
+                flat=True,
+            )
+        )
+        self.assertEqual(codigos_inativos, ["DEMO-EQP-04"])
+
+        resposta_ativos = self.client.get(
+            changelist_url,
+            {"ativo__exact": "1"},
+        )
+
+        self.assertEqual(resposta_ativos.status_code, 200)
+        codigos_ativos = set(
+            resposta_ativos.context["cl"].result_list.values_list(
+                "codigo",
+                flat=True,
+            )
+        )
+        self.assertEqual(
+            codigos_ativos,
+            {"DEMO-EQP-01", "DEMO-EQP-02", "DEMO-EQP-03"},
         )
