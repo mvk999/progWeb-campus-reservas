@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import Group, Permission
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import formats, timezone
@@ -575,6 +576,94 @@ class DjangoAdminHTTPTests(TestCase):
         self.assertTrue(
             ReservaEquipamento.objects.filter(pk=self.item_reserva.pk).exists()
         )
+
+    def test_admin_bloqueia_exclusao_direta_e_em_lote_de_reserva_concluida(self):
+        permissoes = Permission.objects.filter(
+            content_type__app_label="reservas",
+            codename__in=("delete_reserva", "view_reserva"),
+        )
+        grupo = Group.objects.create(name="administrador-preservacao-historico")
+        grupo.permissions.add(*permissoes)
+        administrador = User.objects.create_user(
+            username="staff-administrador-historico",
+            password="test-only-password",
+            is_staff=True,
+        )
+        administrador.groups.add(grupo)
+        self.client.force_login(administrador)
+
+        reserva_concluida = Reserva.objects.create(
+            solicitante=self.solicitante,
+            ambiente=self.ambiente,
+            inicio=INICIO_BASE + timedelta(days=30),
+            fim=INICIO_BASE + timedelta(days=30, hours=1),
+            status=Reserva.Status.CONCLUIDA,
+        )
+        delete_url = self.admin_url(
+            Reserva,
+            "delete",
+            reserva_concluida.pk,
+        )
+        resposta_direta = self.client.post(
+            delete_url,
+            {"post": "yes"},
+            follow=True,
+        )
+
+        self.assertEqual(resposta_direta.status_code, 200)
+        self.assertTrue(Reserva.objects.filter(pk=reserva_concluida.pk).exists())
+        self.assertTrue(
+            any(
+                "registros históricos" in str(mensagem)
+                for mensagem in resposta_direta.context["messages"]
+            )
+        )
+
+        reserva_pendente = Reserva.objects.create(
+            solicitante=self.solicitante,
+            ambiente=self.ambiente,
+            inicio=INICIO_BASE + timedelta(days=31),
+            fim=INICIO_BASE + timedelta(days=31, hours=1),
+        )
+        changelist_url = self.admin_url(Reserva, "changelist")
+        resposta_lote_misto = self.client.post(
+            changelist_url,
+            {
+                "action": "delete_selected_reservas",
+                "_selected_action": [
+                    str(reserva_concluida.pk),
+                    str(reserva_pendente.pk),
+                ],
+                "index": "0",
+                "post": "yes",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(resposta_lote_misto.status_code, 200)
+        self.assertTrue(Reserva.objects.filter(pk=reserva_concluida.pk).exists())
+        self.assertTrue(Reserva.objects.filter(pk=reserva_pendente.pk).exists())
+        self.assertTrue(
+            any(
+                "Nenhuma reserva selecionada foi excluída" in str(mensagem)
+                for mensagem in resposta_lote_misto.context["messages"]
+            )
+        )
+
+        resposta_lote_pendente = self.client.post(
+            changelist_url,
+            {
+                "action": "delete_selected_reservas",
+                "_selected_action": [str(reserva_pendente.pk)],
+                "index": "0",
+                "post": "yes",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(resposta_lote_pendente.status_code, 200)
+        self.assertFalse(Reserva.objects.filter(pk=reserva_pendente.pk).exists())
+        self.assertTrue(Reserva.objects.filter(pk=reserva_concluida.pk).exists())
 
     def test_admin_rejeita_ambiente_com_capacidade_zero_sem_salvar(self):
         dados = {

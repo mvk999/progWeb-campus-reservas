@@ -1,8 +1,18 @@
 """Listagens, filtros e operações administrativas de reservas."""
 
 from django.contrib import admin
+from django.contrib import messages
+from django.contrib.admin.actions import delete_selected
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 
-from .models import BloqueioAmbiente, Reserva, ReservaEquipamento
+from .models import (
+    RESERVA_CONCLUIDA_DELETE_ERROR,
+    BloqueioAmbiente,
+    Reserva,
+    ReservaEquipamento,
+    ReservaStatus,
+)
 
 
 class ReservaEquipamentoInline(admin.TabularInline):
@@ -13,6 +23,7 @@ class ReservaEquipamentoInline(admin.TabularInline):
 
 @admin.register(Reserva)
 class ReservaAdmin(admin.ModelAdmin):
+    actions = ("delete_selected_reservas",)
     readonly_fields = ("criado_em", "atualizado_em")
     fieldsets = (
         (
@@ -63,6 +74,35 @@ class ReservaAdmin(admin.ModelAdmin):
     list_select_related = ("solicitante", "ambiente")
     list_per_page = 25
     inlines = (ReservaEquipamentoInline,)
+
+    def delete_view(self, request, object_id, extra_context=None):
+        reserva = self.get_object(request, object_id)
+        if (
+            reserva is not None
+            and self.has_delete_permission(request, reserva)
+            and reserva.status == ReservaStatus.CONCLUIDA
+        ):
+            self.message_user(
+                request,
+                RESERVA_CONCLUIDA_DELETE_ERROR,
+                level=messages.ERROR,
+            )
+            return HttpResponseRedirect(reverse("admin:index"))
+        return super().delete_view(request, object_id, extra_context)
+
+    @admin.action(
+        permissions=("delete",),
+        description="Excluir reservas selecionadas",
+    )
+    def delete_selected_reservas(self, request, queryset):
+        mensagem_protecao = (
+            RESERVA_CONCLUIDA_DELETE_ERROR
+            + " Nenhuma reserva selecionada foi excluída."
+        )
+        if queryset.filter(status=ReservaStatus.CONCLUIDA).exists():
+            self.message_user(request, mensagem_protecao, level=messages.ERROR)
+            return None
+        return delete_selected(self, request, queryset)
 
 
 @admin.register(ReservaEquipamento)

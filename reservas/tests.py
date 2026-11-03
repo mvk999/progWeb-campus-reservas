@@ -212,6 +212,28 @@ class ReservaModelTests(TestCase):
         salva = Reserva.objects.get(pk=reserva.pk)
         self.assertEqual(salva.avaliado_por, self.avaliador)
 
+    def test_reserva_concluida_nao_pode_ser_excluida_por_instancia_ou_queryset(
+        self,
+    ):
+        reserva = self.make_reserva(status=Reserva.Status.CONCLUIDA)
+        reserva.save()
+
+        with self.assertRaisesMessage(ProtectedError, "registros históricos"):
+            reserva.delete()
+        with self.assertRaisesMessage(ProtectedError, "registros históricos"):
+            Reserva.objects.filter(pk=reserva.pk).delete()
+
+        self.assertTrue(Reserva.objects.filter(pk=reserva.pk).exists())
+
+    def test_reserva_pendente_sem_dependencias_pode_ser_excluida(self):
+        reserva = self.make_reserva()
+        reserva.save()
+
+        deleted_count, _ = reserva.delete()
+
+        self.assertGreaterEqual(deleted_count, 1)
+        self.assertFalse(Reserva.objects.filter(pk=reserva.pk).exists())
+
     def test_campos_opcionais_aceitam_valores_vazios_e_preenchidos(self):
         vazia = self.make_reserva()
         vazia.save()
