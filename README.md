@@ -18,7 +18,7 @@ O projeto está em desenvolvimento para o Checkpoint 1 da disciplina GAC116 — 
 | --- | --- | --- |
 | Backend | Python 3.12 e Django 5.2.18 | Estrutura, usuário customizado, categorias, ambientes, equipamentos e modelagem de reservas. |
 | Banco de dados | SQLite relacional | Configurado para execução local. |
-| Administração | Django Admin | Models registrados com autenticação e permissões nativas; operações administrativas básicas disponíveis. Jazzmin será tratado em etapa posterior. |
+| Administração | Django Admin com Jazzmin 3.0.5 | Models registrados com autenticação e permissões nativas; identidade Campus Reservas e seletor de tema claro/escuro. |
 | Frontend | Angular | Reservado para o Checkpoint 2. |
 | Estilização | Bootstrap 5 | Reservado para o Checkpoint 2. |
 
@@ -54,7 +54,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-O arquivo `requirements.txt` fixa Django 5.2.18. Nenhuma outra biblioteca externa é necessária nesta etapa.
+O arquivo `requirements.txt` fixa Django 5.2.18 e Jazzmin 3.0.5.
 
 ## Banco de dados e conta administrativa
 
@@ -89,7 +89,7 @@ python manage.py check
 python manage.py runserver
 ```
 
-Depois de aplicar as migrations e criar o superusuário conforme a seção anterior, o servidor local ficará disponível em `http://127.0.0.1:8000/`. O caminho `/admin/` usa a autenticação nativa do Django e o modelo customizado `usuarios.Usuario`.
+Depois de aplicar as migrations e criar o superusuário conforme a seção anterior, o servidor local ficará disponível em `http://127.0.0.1:8000/`. O caminho `/admin/` usa a autenticação nativa do Django e o modelo customizado `usuarios.Usuario`, com apresentação do Jazzmin identificada como Campus Reservas.
 
 ## Funcionalidades
 
@@ -110,6 +110,7 @@ Depois de aplicar as migrations e criar o superusuário conforme a seção anter
 - `BloqueioAmbiente`, associado obrigatoriamente a um `Ambiente` e ao usuário que o registrou. Armazena motivo e intervalo; a regra `inicio < fim` é validada pelo modelo e por constraint no SQLite. O cadastro de bloqueios está modelado, mas conflitos com reservas ainda não são verificados.
 - Os oito models (`Usuario`, categorias, ambientes, equipamentos, reservas, itens de equipamento e bloqueios) estão disponíveis no Django Admin autenticado em `/admin/`, com criação, consulta, edição e exclusão sujeitas às permissões nativas e às restrições dos modelos. `Reserva` exibe seus campos de auditoria como somente leitura.
 - A conta administrativa pode ser criada com `python manage.py createsuperuser`; o Admin não implementa fluxos de aprovação, disponibilidade ou permissões por objeto.
+- O Django Admin utiliza Jazzmin 3.0.5, com identidade visual Campus Reservas, navegação organizada por app, tema Flatly e seletor nativo de esquema claro, escuro ou automático. Fontes externas e CSS de marca customizados não são necessários.
 
 ### Planejado
 
@@ -117,7 +118,7 @@ Depois de aplicar as migrations e criar o superusuário conforme a seção anter
 - Fluxos de solicitação, aprovação, rejeição e cancelamento; verificação de disponibilidade e conflitos com bloqueios.
 - Cálculo da disponibilidade de equipamentos compartilhados por intervalo.
 - Solicitação, avaliação, cancelamento e consulta de reservas.
-- Django Admin personalizado com Jazzmin (C1.09), filtros, buscas e inlines administrativos (C1.10).
+- Filtros, buscas e inlines administrativos (C1.10).
 - Interface de usuário com Angular e Bootstrap 5 no Checkpoint 2.
 
 ## Estrutura do backend
