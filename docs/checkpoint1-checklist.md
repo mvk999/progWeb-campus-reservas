@@ -58,3 +58,16 @@ O comando de demonstração criou categorias, ambientes, usuários, equipamentos
 ## Veredicto
 
 **REPROVADO para declarar todos os requisitos do Checkpoint 1 concluídos**, exclusivamente pelas falhas registradas no critério GIT-03 e no README da branch padrão. A versão de aplicação em `develop` passou nas verificações técnicas, administrativas, de integridade, documentação dessa branch e inspeção visual acima. As confirmações externas permanecem pendentes. Não implemente funcionalidades do Checkpoint 2.
+
+## Revalidação da suíte em 04/11/2026
+
+Arthur executou esta revalidação na branch `feature/validacao-checkpoint1-arthur`, sobre o código do commit `5bb1474`:
+
+```text
+Teste focado de POST no Admin sem token CSRF → 1 teste aprovado
+python manage.py test                     → 120 testes, 0 falhas, 0 erros, 0 skips
+System check do Django                    → sem problemas
+git diff --check                          → limpo
+```
+
+Ambiente: Python 3.12.14 e Django 5.2.18, em ambiente temporário. O banco de teste foi criado pela suíte e descartado ao final; o banco local do projeto não foi usado. O total de 120 testes inclui o novo caso de rejeição do POST sem token CSRF.
