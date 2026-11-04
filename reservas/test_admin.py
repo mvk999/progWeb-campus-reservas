@@ -8,7 +8,7 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group, Permission
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import formats, timezone
 
@@ -213,6 +213,19 @@ class DjangoAdminHTTPTests(TestCase):
                 with self.subTest(model=model.__name__, action=action):
                     response = self.client.get(self.admin_url(model, action))
                     self.assertEqual(response.status_code, 403)
+
+    def test_post_no_admin_sem_token_csrf_e_rejeitado(self):
+        client_com_csrf = Client(enforce_csrf_checks=True)
+        client_com_csrf.force_login(self.admin_user)
+        nome = "Categoria sem token CSRF"
+
+        response = client_com_csrf.post(
+            self.admin_url(CategoriaAmbiente, "add"),
+            {"nome": nome, "descricao": ""},
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(CategoriaAmbiente.objects.filter(nome=nome).exists())
 
     def test_staff_com_permissao_apenas_de_visualizacao_nao_edita_modelo(self):
         from django.contrib.auth.models import Permission
