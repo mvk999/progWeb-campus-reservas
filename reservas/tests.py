@@ -396,6 +396,89 @@ class ReservaConflitoAprovadaTests(TestCase):
         self.aprovada.full_clean()
 
 
+class ReservaConflitoBloqueioTests(TestCase):
+    """Reserva APROVADA não pode coincidir com bloqueio do mesmo ambiente."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.solicitante = User.objects.create_user(username="solicitante-bloq")
+        cls.responsavel = User.objects.create_user(username="responsavel-bloq")
+        cls.categoria = CategoriaAmbiente.objects.create(nome="Salas bloqueio")
+        cls.ambiente = Ambiente.objects.create(
+            codigo="BLQ-AMB-001",
+            nome="Sala Bloqueio A",
+            localizacao="Bloco B",
+            capacidade=20,
+            categoria=cls.categoria,
+            responsavel=cls.responsavel,
+        )
+        cls.outro_ambiente = Ambiente.objects.create(
+            codigo="BLQ-AMB-002",
+            nome="Sala Bloqueio B",
+            localizacao="Bloco B",
+            capacidade=20,
+            categoria=cls.categoria,
+            responsavel=cls.responsavel,
+        )
+        # Bloqueio existente: 08h–12h.
+        cls.inicio = datetime(2026, 11, 21, 8, 0, tzinfo=SAO_PAULO)
+        cls.fim = datetime(2026, 11, 21, 12, 0, tzinfo=SAO_PAULO)
+        cls.bloqueio = BloqueioAmbiente.objects.create(
+            ambiente=cls.ambiente,
+            inicio=cls.inicio,
+            fim=cls.fim,
+            motivo="Manutenção elétrica",
+            criado_por=cls.responsavel,
+        )
+
+    def make_reserva(self, inicio, fim, **overrides):
+        values = {
+            "solicitante": self.solicitante,
+            "ambiente": self.ambiente,
+            "inicio": inicio,
+            "fim": fim,
+            "status": Reserva.Status.APROVADA,
+        }
+        values.update(overrides)
+        return Reserva(**values)
+
+    def test_aprovada_durante_bloqueio_e_rejeitada_com_motivo(self):
+        hora = timedelta(hours=1)
+        casos = {
+            "comeca_durante": (self.inicio + hora, self.fim + hora),
+            "termina_durante": (self.inicio - hora, self.inicio + hora),
+            "contida": (self.inicio + hora, self.fim - hora),
+            "contem": (self.inicio - hora, self.fim + hora),
+        }
+        for nome, (inicio, fim) in casos.items():
+            with self.subTest(caso=nome):
+                with self.assertRaises(ValidationError) as contexto:
+                    self.make_reserva(inicio, fim).full_clean()
+                mensagem = contexto.exception.message_dict["status"][0]
+                self.assertIn("bloqueado", mensagem)
+                self.assertIn("Manutenção elétrica", mensagem)
+
+    def test_reserva_imediatamente_antes_ou_depois_do_bloqueio_e_permitida(self):
+        self.make_reserva(self.inicio - timedelta(hours=1), self.inicio).full_clean()
+        self.make_reserva(self.fim, self.fim + timedelta(hours=1)).full_clean()
+
+    def test_bloqueio_de_outro_ambiente_nao_impede_aprovacao(self):
+        self.make_reserva(
+            self.inicio, self.fim, ambiente=self.outro_ambiente
+        ).full_clean()
+
+    def test_pendente_durante_bloqueio_e_permitida_mas_nao_pode_ser_aprovada(self):
+        pendente = self.make_reserva(
+            self.inicio, self.fim, status=Reserva.Status.PENDENTE
+        )
+        pendente.full_clean()
+        pendente.save()
+
+        pendente.status = Reserva.Status.APROVADA
+        with self.assertRaises(ValidationError):
+            pendente.full_clean()
+
+
 class ReservaEquipamentoModelTests(TestCase):
     @classmethod
     def setUpTestData(cls):

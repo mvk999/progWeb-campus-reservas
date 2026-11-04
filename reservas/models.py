@@ -95,6 +95,43 @@ class Reserva(models.Model):
                 {"fim": "O fim da reserva deve ser posterior ao início."}
             )
         self._validar_conflito_com_aprovadas()
+        self._validar_conflito_com_bloqueios()
+
+    def _validar_conflito_com_bloqueios(self):
+        """Impede aprovar reserva durante um bloqueio do mesmo ambiente.
+
+        Usa a mesma regra de sobreposição das reservas: um bloqueio que
+        termina exatamente quando a reserva começa (ou vice-versa) não conflita.
+        """
+        if (
+            self.status != ReservaStatus.APROVADA
+            or self.ambiente_id is None
+            or self.inicio is None
+            or self.fim is None
+        ):
+            return
+
+        bloqueio = (
+            BloqueioAmbiente.objects.filter(
+                ambiente_id=self.ambiente_id,
+                inicio__lt=self.fim,
+                fim__gt=self.inicio,
+            )
+            .order_by("inicio")
+            .first()
+        )
+        if bloqueio is not None:
+            inicio_local = timezone.localtime(bloqueio.inicio)
+            fim_local = timezone.localtime(bloqueio.fim)
+            raise ValidationError(
+                {
+                    "status": (
+                        "Não é possível aprovar: o ambiente está bloqueado de "
+                        f"{inicio_local:%d/%m/%Y %H:%M} a "
+                        f"{fim_local:%d/%m/%Y %H:%M} ({bloqueio.motivo})."
+                    )
+                }
+            )
 
     def _validar_conflito_com_aprovadas(self):
         """Impede duas reservas APROVADAS sobrepostas no mesmo ambiente.

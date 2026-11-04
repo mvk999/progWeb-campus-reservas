@@ -767,6 +767,34 @@ class DjangoAdminHTTPTests(TestCase):
         resposta = self.client.post(self.admin_url(Reserva, "add"), dados)
         self.assertEqual(resposta.status_code, 302, resposta.content.decode())
 
+    def test_admin_rejeita_aprovar_reserva_durante_bloqueio(self):
+        # self.bloqueio ocupa o ambiente de INICIO_BASE+2d a FIM_BASE+2d.
+        dados = {
+            "solicitante": str(self.solicitante.pk),
+            "ambiente": str(self.ambiente.pk),
+            "status": Reserva.Status.APROVADA,
+            "observacoes": "Tentativa durante bloqueio.",
+            "avaliado_por": "",
+            "avaliado_em_0": "",
+            "avaliado_em_1": "",
+            "justificativa": "",
+        }
+        dados.update(self.datetime_post_data("inicio", self.bloqueio.inicio))
+        dados.update(self.datetime_post_data("fim", self.bloqueio.fim))
+        dados.update(
+            self.inline_management_data(
+                self.client.get(self.admin_url(Reserva, "add"))
+            )
+        )
+
+        resposta = self.assert_admin_post_invalid(Reserva, dados, "status")
+        self.assertContains(resposta, "o ambiente está bloqueado")
+
+        # Como PENDENTE a mesma solicitação pode ser registrada.
+        dados["status"] = Reserva.Status.PENDENTE
+        resposta = self.client.post(self.admin_url(Reserva, "add"), dados)
+        self.assertEqual(resposta.status_code, 302, resposta.content.decode())
+
     def test_admin_rejeita_quantidade_zero_e_associacao_duplicada(self):
         nova_reserva = Reserva.objects.create(
             solicitante=self.solicitante,
