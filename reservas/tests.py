@@ -281,6 +281,121 @@ class ReservaModelTests(TestCase):
         self.assertEqual(reserva.atualizado_em, atualizado_em)
 
 
+class ReservaConflitoAprovadaTests(TestCase):
+    """Duas reservas APROVADAS do mesmo ambiente não podem se sobrepor."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.solicitante = User.objects.create_user(username="solicitante-conflito")
+        cls.responsavel = User.objects.create_user(username="responsavel-conflito")
+        cls.categoria = CategoriaAmbiente.objects.create(nome="Salas de conflito")
+        cls.ambiente = Ambiente.objects.create(
+            codigo="CONF-AMB-001",
+            nome="Sala Conflito A",
+            localizacao="Bloco C",
+            capacidade=20,
+            categoria=cls.categoria,
+            responsavel=cls.responsavel,
+        )
+        cls.outro_ambiente = Ambiente.objects.create(
+            codigo="CONF-AMB-002",
+            nome="Sala Conflito B",
+            localizacao="Bloco C",
+            capacidade=20,
+            categoria=cls.categoria,
+            responsavel=cls.responsavel,
+        )
+        # Reserva aprovada existente: 14h–16h.
+        cls.inicio = datetime(2026, 11, 20, 14, 0, tzinfo=SAO_PAULO)
+        cls.fim = datetime(2026, 11, 20, 16, 0, tzinfo=SAO_PAULO)
+        cls.aprovada = Reserva.objects.create(
+            solicitante=cls.solicitante,
+            ambiente=cls.ambiente,
+            inicio=cls.inicio,
+            fim=cls.fim,
+            status=Reserva.Status.APROVADA,
+        )
+
+    def make_reserva(self, inicio, fim, **overrides):
+        values = {
+            "solicitante": self.solicitante,
+            "ambiente": self.ambiente,
+            "inicio": inicio,
+            "fim": fim,
+            "status": Reserva.Status.APROVADA,
+        }
+        values.update(overrides)
+        return Reserva(**values)
+
+    def test_aprovada_sobreposta_no_mesmo_ambiente_e_rejeitada(self):
+        hora = timedelta(hours=1)
+        casos = {
+            "comeca_durante": (self.inicio + hora, self.fim + hora),
+            "termina_durante": (self.inicio - hora, self.inicio + hora),
+            "contida": (self.inicio + timedelta(minutes=30), self.fim - hora),
+            "contem": (self.inicio - hora, self.fim + hora),
+            "identica": (self.inicio, self.fim),
+        }
+        for nome, (inicio, fim) in casos.items():
+            with self.subTest(caso=nome):
+                reserva = self.make_reserva(inicio, fim)
+                with self.assertRaises(ValidationError) as contexto:
+                    reserva.full_clean()
+                self.assertIn("status", contexto.exception.message_dict)
+                self.assertIn(
+                    "reserva aprovada",
+                    contexto.exception.message_dict["status"][0],
+                )
+
+    def test_horarios_consecutivos_sao_permitidos(self):
+        antes = self.make_reserva(self.inicio - timedelta(hours=2), self.inicio)
+        depois = self.make_reserva(self.fim, self.fim + timedelta(hours=2))
+
+        antes.full_clean()
+        depois.full_clean()
+
+    def test_sobreposicao_em_outro_ambiente_e_permitida(self):
+        reserva = self.make_reserva(
+            self.inicio, self.fim, ambiente=self.outro_ambiente
+        )
+
+        reserva.full_clean()
+
+    def test_status_nao_aprovados_podem_disputar_o_mesmo_horario(self):
+        for status in (
+            Reserva.Status.PENDENTE,
+            Reserva.Status.REJEITADA,
+            Reserva.Status.CANCELADA,
+            Reserva.Status.CONCLUIDA,
+        ):
+            with self.subTest(status=status):
+                self.make_reserva(self.inicio, self.fim, status=status).full_clean()
+
+    def test_reservas_nao_aprovadas_existentes_nao_bloqueiam_aprovacao(self):
+        self.aprovada.status = Reserva.Status.CANCELADA
+        self.aprovada.save()
+
+        self.make_reserva(self.inicio, self.fim).full_clean()
+
+    def test_aprovar_pendente_sobreposta_e_rejeitado(self):
+        pendente = self.make_reserva(
+            self.inicio + timedelta(minutes=30),
+            self.fim,
+            status=Reserva.Status.PENDENTE,
+        )
+        pendente.full_clean()
+        pendente.save()
+
+        pendente.status = Reserva.Status.APROVADA
+        with self.assertRaises(ValidationError):
+            pendente.full_clean()
+
+    def test_reeditar_a_propria_reserva_aprovada_nao_gera_conflito(self):
+        self.aprovada.observacoes = "Atualizada sem mudar horário."
+
+        self.aprovada.full_clean()
+
+
 class ReservaEquipamentoModelTests(TestCase):
     @classmethod
     def setUpTestData(cls):

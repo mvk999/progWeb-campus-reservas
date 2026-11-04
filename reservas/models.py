@@ -94,6 +94,48 @@ class Reserva(models.Model):
             raise ValidationError(
                 {"fim": "O fim da reserva deve ser posterior ao início."}
             )
+        self._validar_conflito_com_aprovadas()
+
+    def _validar_conflito_com_aprovadas(self):
+        """Impede duas reservas APROVADAS sobrepostas no mesmo ambiente.
+
+        Dois intervalos se sobrepõem quando
+        ``inicio_existente < fim_novo`` e ``fim_existente > inicio_novo``.
+        Horários consecutivos (ex.: 14h–16h e 16h–18h) não conflitam.
+        Reservas em outros status não ocupam o ambiente.
+        """
+        if (
+            self.status != ReservaStatus.APROVADA
+            or self.ambiente_id is None
+            or self.inicio is None
+            or self.fim is None
+        ):
+            return
+
+        conflitos = (
+            type(self)
+            .objects.filter(
+                ambiente_id=self.ambiente_id,
+                status=ReservaStatus.APROVADA,
+                inicio__lt=self.fim,
+                fim__gt=self.inicio,
+            )
+            .exclude(pk=self.pk)
+            .order_by("inicio")
+        )
+        conflito = conflitos.first()
+        if conflito is not None:
+            inicio_local = timezone.localtime(conflito.inicio)
+            fim_local = timezone.localtime(conflito.fim)
+            raise ValidationError(
+                {
+                    "status": (
+                        "Não é possível aprovar: o ambiente já possui reserva "
+                        f"aprovada de {inicio_local:%d/%m/%Y %H:%M} a "
+                        f"{fim_local:%d/%m/%Y %H:%M}."
+                    )
+                }
+            )
 
     def delete(self, using=None, keep_parents=False):
         if self.pk:

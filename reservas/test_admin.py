@@ -728,6 +728,45 @@ class DjangoAdminHTTPTests(TestCase):
             Reserva.objects.filter(status="DESCONHECIDO").exists()
         )
 
+    def test_admin_rejeita_aprovar_reserva_sobreposta_a_outra_aprovada(self):
+        inicio = INICIO_BASE + timedelta(days=20)
+        fim = inicio + timedelta(hours=2)
+        Reserva.objects.create(
+            solicitante=self.solicitante,
+            ambiente=self.ambiente,
+            inicio=inicio,
+            fim=fim,
+            status=Reserva.Status.APROVADA,
+        )
+        dados = {
+            "solicitante": str(self.solicitante.pk),
+            "ambiente": str(self.ambiente.pk),
+            "status": Reserva.Status.APROVADA,
+            "observacoes": "Tentativa de aprovação conflitante.",
+            "avaliado_por": "",
+            "avaliado_em_0": "",
+            "avaliado_em_1": "",
+            "justificativa": "",
+        }
+        dados.update(
+            self.datetime_post_data("inicio", inicio + timedelta(hours=1))
+        )
+        dados.update(self.datetime_post_data("fim", fim + timedelta(hours=1)))
+        dados.update(
+            self.inline_management_data(
+                self.client.get(self.admin_url(Reserva, "add"))
+            )
+        )
+
+        resposta = self.assert_admin_post_invalid(Reserva, dados, "status")
+        self.assertContains(resposta, "já possui reserva aprovada")
+
+        # Horário consecutivo (começa quando a outra termina) é aceito.
+        dados.update(self.datetime_post_data("inicio", fim))
+        dados.update(self.datetime_post_data("fim", fim + timedelta(hours=1)))
+        resposta = self.client.post(self.admin_url(Reserva, "add"), dados)
+        self.assertEqual(resposta.status_code, 302, resposta.content.decode())
+
     def test_admin_rejeita_quantidade_zero_e_associacao_duplicada(self):
         nova_reserva = Reserva.objects.create(
             solicitante=self.solicitante,
