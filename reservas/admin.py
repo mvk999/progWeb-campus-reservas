@@ -75,6 +75,18 @@ class ReservaAdmin(admin.ModelAdmin):
     list_per_page = 25
     inlines = (ReservaEquipamentoInline,)
 
+    def get_actions(self, request):
+        """Remove a exclusão em lote padrão do Django.
+
+        A ação padrão não conhece a proteção de reservas concluídas e, ao
+        encontrar uma, deixava o ``ProtectedError`` sem tratamento (HTTP 500).
+        A exclusão em lote fica disponível somente por
+        ``delete_selected_reservas``, que trata esse caso.
+        """
+        actions = super().get_actions(request)
+        actions.pop("delete_selected", None)
+        return actions
+
     def delete_view(self, request, object_id, extra_context=None):
         reserva = self.get_object(request, object_id)
         if (

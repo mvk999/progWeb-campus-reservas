@@ -665,6 +665,39 @@ class DjangoAdminHTTPTests(TestCase):
         self.assertFalse(Reserva.objects.filter(pk=reserva_pendente.pk).exists())
         self.assertTrue(Reserva.objects.filter(pk=reserva_concluida.pk).exists())
 
+    def test_admin_de_reserva_nao_oferece_exclusao_em_lote_padrao(self):
+        reserva_concluida = Reserva.objects.create(
+            solicitante=self.solicitante,
+            ambiente=self.ambiente,
+            inicio=INICIO_BASE + timedelta(days=40),
+            fim=INICIO_BASE + timedelta(days=40, hours=1),
+            status=Reserva.Status.CONCLUIDA,
+        )
+        changelist_url = self.admin_url(Reserva, "changelist")
+
+        resposta = self.client.get(changelist_url)
+        acoes = [
+            nome
+            for nome, _ in resposta.context["action_form"]
+            .fields["action"]
+            .choices
+        ]
+        self.assertNotIn("delete_selected", acoes)
+        self.assertIn("delete_selected_reservas", acoes)
+
+        # Antes da correção, este POST gerava HTTP 500 (ProtectedError).
+        resposta = self.client.post(
+            changelist_url,
+            {
+                "action": "delete_selected",
+                "_selected_action": [str(reserva_concluida.pk)],
+                "index": "0",
+                "post": "yes",
+            },
+        )
+        self.assertNotEqual(resposta.status_code, 500)
+        self.assertTrue(Reserva.objects.filter(pk=reserva_concluida.pk).exists())
+
     def test_admin_rejeita_ambiente_com_capacidade_zero_sem_salvar(self):
         dados = {
             "codigo": "HTTP-AMB-CAP-0",
