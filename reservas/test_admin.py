@@ -1002,6 +1002,60 @@ class DjangoAdminHTTPTests(TestCase):
         self.assertEqual(self.reserva.status, Reserva.Status.REJEITADA)
         self.assertEqual(self.reserva.avaliado_por, self.admin_user)
 
+    def test_admin_preserva_reserva_concluida(self):
+        def dados_da(reserva, **alteracoes):
+            dados = {
+                "solicitante": str(reserva.solicitante_id),
+                "ambiente": str(reserva.ambiente_id),
+                "status": reserva.status,
+                "observacoes": reserva.observacoes,
+                "avaliado_por": "",
+                "avaliado_em_0": "",
+                "avaliado_em_1": "",
+                "justificativa": "",
+            }
+            dados.update(
+                self.datetime_post_data("inicio", timezone.localtime(reserva.inicio))
+            )
+            dados.update(
+                self.datetime_post_data("fim", timezone.localtime(reserva.fim))
+            )
+            url = self.admin_url(Reserva, "change", reserva.pk)
+            dados.update(self.inline_management_data(self.client.get(url)))
+            dados.update(alteracoes)
+            return url, dados
+
+        # Concluir uma reserva futura é recusado.
+        url, dados = dados_da(self.reserva, status=Reserva.Status.CONCLUIDA)
+        resposta = self.client.post(url, dados)
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "cujo período já terminou")
+        self.reserva.refresh_from_db()
+        self.assertEqual(self.reserva.status, Reserva.Status.PENDENTE)
+
+        # Reserva já concluída não volta a outro status...
+        agora = timezone.now().replace(second=0, microsecond=0)
+        concluida = Reserva.objects.create(
+            solicitante=self.solicitante,
+            ambiente=self.ambiente,
+            inicio=agora - timedelta(days=2, hours=2),
+            fim=agora - timedelta(days=2),
+            status=Reserva.Status.CONCLUIDA,
+        )
+        url, dados = dados_da(concluida, status=Reserva.Status.PENDENTE)
+        resposta = self.client.post(url, dados)
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "registro histórico")
+        concluida.refresh_from_db()
+        self.assertEqual(concluida.status, Reserva.Status.CONCLUIDA)
+
+        # ...mas as observações podem ser atualizadas.
+        url, dados = dados_da(concluida, observacoes="Uso registrado.")
+        resposta = self.client.post(url, dados)
+        self.assertEqual(resposta.status_code, 302, resposta.content.decode())
+        concluida.refresh_from_db()
+        self.assertEqual(concluida.observacoes, "Uso registrado.")
+
     def test_admin_rejeita_quantidade_zero_e_associacao_duplicada(self):
         nova_reserva = Reserva.objects.create(
             solicitante=self.solicitante,

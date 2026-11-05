@@ -376,11 +376,12 @@ class ReservaConflitoAprovadaTests(TestCase):
         reserva.full_clean()
 
     def test_status_nao_aprovados_podem_disputar_o_mesmo_horario(self):
+        # CONCLUIDA exige período já encerrado e é coberta por
+        # ReservaConcluidaPreservadaTests; este horário é futuro.
         for status in (
             Reserva.Status.PENDENTE,
             Reserva.Status.REJEITADA,
             Reserva.Status.CANCELADA,
-            Reserva.Status.CONCLUIDA,
         ):
             with self.subTest(status=status):
                 self.make_reserva(self.inicio, self.fim, status=status).full_clean()
@@ -821,6 +822,108 @@ class ReservaDadosAvaliacaoTests(TestCase):
         for nome, reserva in casos.items():
             with self.subTest(caso=nome):
                 reserva.full_clean()
+
+
+class ReservaConcluidaPreservadaTests(TestCase):
+    """Reserva concluída só no passado e, depois, sem alterações históricas."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.solicitante = User.objects.create_user(username="solicitante-historico")
+        cls.outro_solicitante = User.objects.create_user(username="outro-historico")
+        cls.responsavel = User.objects.create_user(username="responsavel-historico")
+        categoria = CategoriaAmbiente.objects.create(nome="Salas histórico")
+        cls.ambiente = Ambiente.objects.create(
+            codigo="HIS-AMB-001",
+            nome="Sala histórico A",
+            localizacao="Bloco H",
+            capacidade=10,
+            categoria=categoria,
+            responsavel=cls.responsavel,
+        )
+        cls.outro_ambiente = Ambiente.objects.create(
+            codigo="HIS-AMB-002",
+            nome="Sala histórico B",
+            localizacao="Bloco H",
+            capacidade=10,
+            categoria=categoria,
+            responsavel=cls.responsavel,
+        )
+
+    def make_reserva(self, inicio, fim, status=Reserva.Status.CONCLUIDA):
+        return Reserva(
+            solicitante=self.solicitante,
+            ambiente=self.ambiente,
+            inicio=inicio,
+            fim=fim,
+            status=status,
+        )
+
+    def concluida_salva(self):
+        agora = timezone.now()
+        reserva = self.make_reserva(
+            agora - timedelta(days=3), agora - timedelta(days=3, hours=-2)
+        )
+        reserva.full_clean()
+        reserva.save()
+        return Reserva.objects.get(pk=reserva.pk)
+
+    def test_so_conclui_reserva_cujo_periodo_terminou(self):
+        agora = timezone.now()
+        futura = self.make_reserva(
+            agora + timedelta(days=1), agora + timedelta(days=1, hours=2)
+        )
+        em_andamento = self.make_reserva(
+            agora - timedelta(hours=1), agora + timedelta(hours=1)
+        )
+        for reserva in (futura, em_andamento):
+            with self.subTest(fim=reserva.fim):
+                with self.assertRaises(ValidationError) as contexto:
+                    reserva.full_clean()
+                self.assertIn(
+                    "já terminou", contexto.exception.message_dict["status"][0]
+                )
+
+        self.make_reserva(agora - timedelta(hours=3), agora - timedelta(hours=1)).full_clean()
+
+    def test_campos_historicos_de_concluida_nao_podem_mudar(self):
+        alteracoes = {
+            "status": ("status", Reserva.Status.CANCELADA),
+            "inicio": ("inicio", None),
+            "fim": ("fim", None),
+            "ambiente": ("ambiente", self.outro_ambiente),
+            "solicitante": ("solicitante", self.outro_solicitante),
+        }
+        for campo, (atributo, valor) in alteracoes.items():
+            with self.subTest(campo=campo):
+                reserva = self.concluida_salva()
+                if atributo == "inicio":
+                    valor = reserva.inicio - timedelta(minutes=30)
+                if atributo == "fim":
+                    valor = reserva.fim - timedelta(minutes=30)
+                setattr(reserva, atributo, valor)
+                with self.assertRaises(ValidationError) as contexto:
+                    reserva.full_clean()
+                self.assertIn(campo, contexto.exception.message_dict)
+                self.assertIn(
+                    "registro histórico",
+                    contexto.exception.message_dict[campo][0],
+                )
+
+    def test_observacoes_de_concluida_continuam_editaveis(self):
+        reserva = self.concluida_salva()
+        reserva.observacoes = "Nota acrescentada depois do uso."
+
+        reserva.full_clean()
+
+    def test_reserva_nao_concluida_continua_editavel(self):
+        reserva = self.make_reserva(
+            INICIO_BASE, FIM_BASE, status=Reserva.Status.CANCELADA
+        )
+        reserva.save()
+        reserva.ambiente = self.outro_ambiente
+
+        reserva.full_clean()
 
 
 class ReservaEquipamentoEstoqueTests(TestCase):

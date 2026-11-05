@@ -94,10 +94,55 @@ class Reserva(models.Model):
             raise ValidationError(
                 {"fim": "O fim da reserva deve ser posterior ao início."}
             )
+        self._validar_reserva_concluida()
         self._validar_ambiente_e_solicitante_ativos()
         self._validar_dados_de_avaliacao()
         self._validar_conflito_com_aprovadas()
         self._validar_conflito_com_bloqueios()
+
+    # Campos que definem o registro histórico de uma reserva concluída.
+    CAMPOS_HISTORICOS = {
+        "status": "status",
+        "inicio": "inicio",
+        "fim": "fim",
+        "ambiente_id": "ambiente",
+        "solicitante_id": "solicitante",
+    }
+
+    def _validar_reserva_concluida(self):
+        """Preserva reservas CONCLUIDAS como registro histórico.
+
+        - Só é possível concluir uma reserva cujo período já terminou.
+        - Depois de salva como CONCLUIDA, a reserva não pode ter status,
+          horário, ambiente ou solicitante alterados (observações continuam
+          editáveis).
+        """
+        erros = {}
+        if (
+            self.status == ReservaStatus.CONCLUIDA
+            and self.fim is not None
+            and self.fim > timezone.now()
+        ):
+            erros["status"] = (
+                "Só é possível concluir uma reserva cujo período já terminou."
+            )
+
+        if self.pk is not None:
+            anterior = (
+                type(self)
+                .objects.filter(pk=self.pk)
+                .values(*self.CAMPOS_HISTORICOS)
+                .first()
+            )
+            if anterior and anterior["status"] == ReservaStatus.CONCLUIDA:
+                for atributo, campo in self.CAMPOS_HISTORICOS.items():
+                    if getattr(self, atributo) != anterior[atributo]:
+                        erros[campo] = (
+                            "Reserva concluída é registro histórico; este campo "
+                            "não pode ser alterado."
+                        )
+        if erros:
+            raise ValidationError(erros)
 
     def _validar_dados_de_avaliacao(self):
         """Mantém coerentes o status e os campos de avaliação.
