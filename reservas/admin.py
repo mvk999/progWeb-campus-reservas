@@ -61,6 +61,7 @@ class ReservaAdmin(admin.ModelAdmin):
         "status",
         ("ambiente", admin.RelatedOnlyFieldListFilter),
         ("solicitante", admin.RelatedOnlyFieldListFilter),
+        ("inicio", admin.DateFieldListFilter),
     )
     search_fields = (
         "ambiente__codigo",
@@ -71,7 +72,8 @@ class ReservaAdmin(admin.ModelAdmin):
         "solicitante__email",
     )
     ordering = ("-criado_em",)
-    date_hierarchy = "criado_em"
+    # Navegação pela data em que a reserva acontece, não pela de criação.
+    date_hierarchy = "inicio"
     list_select_related = ("solicitante", "ambiente")
     list_per_page = 25
     inlines = (ReservaEquipamentoInline,)
