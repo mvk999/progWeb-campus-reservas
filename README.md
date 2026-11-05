@@ -10,7 +10,7 @@
 
 O Campus Reservas é um sistema web para gerenciar reservas de ambientes e equipamentos universitários. Solicitantes poderão pedir reservas; responsáveis poderão avaliar pedidos dos ambientes sob sua responsabilidade; administradores poderão gerenciar os recursos do sistema.
 
-O projeto está em desenvolvimento para o Checkpoint 1 da disciplina GAC116 — Programação Web. O backend usa os apps `usuarios`, `ambientes` e `reservas`; implementa o usuário customizado, as entidades e constraints do domínio, o Django Admin com Jazzmin, filtros, pesquisas, inline de equipamentos, grupos/permissões iniciais e dados sintéticos. A C1.12 também verificou a integridade e protege reservas concluídas contra exclusão pelo modelo, QuerySet e Admin. Os fluxos de solicitação, avaliação, cancelamento e disponibilidade continuam planejados para etapa posterior.
+O projeto está em desenvolvimento para o Checkpoint 1 da disciplina GAC116 — Programação Web. O backend usa os apps `usuarios`, `ambientes` e `reservas`; implementa o usuário customizado, as entidades e constraints do domínio, o Django Admin com Jazzmin, filtros, pesquisas, inline de equipamentos, grupos/permissões iniciais e dados sintéticos. O backend também valida regras de disponibilidade: impede aprovar reservas sobrepostas no mesmo ambiente ou durante bloqueios, controla o estoque de equipamentos por horário e preserva reservas concluídas. As telas de solicitação, avaliação e cancelamento para usuários finais continuam planejadas para o Checkpoint 2.
 
 ## Tecnologias
 
@@ -19,7 +19,7 @@ O projeto está em desenvolvimento para o Checkpoint 1 da disciplina GAC116 — 
 | Backend | Python 3.12 e Django 5.2.18 | Oito modelos de domínio com constraints, autenticação nativa, Groups/Permissions iniciais, Admin/Jazzmin com filtros e inline, e dados de demonstração. |
 | Banco de dados | SQLite relacional | Configurado para execução local. |
 | Administração | Django Admin com Jazzmin 3.0.5 | Models registrados com autenticação e permissões nativas; identidade Campus Reservas e seletor de tema claro/escuro. |
-| Frontend | Angular | Reservado para o Checkpoint 2. |
+| Frontend | Angular | Workspace inicial em `frontend/`, sem telas de domínio; telas e integração no Checkpoint 2. |
 | Estilização | Bootstrap 5 | Reservado para o Checkpoint 2. |
 
 Django 5.2 foi escolhido por ser uma versão LTS compatível com Python 3.12. O projeto fixa a versão patch 5.2.18, publicada em 6 de outubro de 2026. Confira as [notas oficiais de Django 5.2.18](https://docs.djangoproject.com/en/5.2/releases/5.2.18/) e a [tabela oficial de compatibilidade com Python](https://docs.djangoproject.com/en/5.2/faq/install/).
@@ -127,8 +127,8 @@ de grupo, `user_permissions`, `is_staff`, `is_superuser` ou senhas. Superusuári
 mantêm o comportamento nativo do Django.
 
 Os registros com os cinco estados de reserva são sintéticos e servem à
-demonstração das listagens; o comando não implementa os fluxos de aprovação,
-cancelamento ou disponibilidade. Acesso por objeto de Responsáveis, a área de
+demonstração das listagens e respeitam as regras de disponibilidade e de
+avaliação; o comando apenas cria os registros. Acesso por objeto de Responsáveis, a área de
 usuários finais, a API e a interface Angular continuam planejados para o
 Checkpoint 2.
 
@@ -147,6 +147,8 @@ Execute a suíte automatizada com:
 python manage.py test
 ```
 
+Na versão de 05/11/2026 a suíte tem 163 testes (18 em `usuarios`, 20 em `ambientes` e 125 em `reservas`).
+
 ## Funcionalidades
 
 ### Implementado
@@ -161,23 +163,24 @@ python manage.py test
 - `CategoriaEquipamento`, com `nome` único e `descricao` opcional.
 - `Equipamento`, com `codigo` único, `nome`, `descricao`, `quantidade_total` não negativa e `ativo`; pertence a uma categoria protegida contra exclusão. A quantidade representa estoque compartilhado, aceita zero e pode ser associada às reservas por `ReservaEquipamento`.
 - `Reserva`, relacionada a `usuarios.Usuario` como solicitante e a `Ambiente`, preservando essas referências contra exclusão. Armazena início, fim, status, observações, campos opcionais de avaliação e timestamps de criação e atualização. Os estados são `PENDENTE`, `APROVADA`, `REJEITADA`, `CANCELADA` e `CONCLUIDA`; o padrão é `PENDENTE`.
-- A reserva valida `inicio < fim` no modelo e no banco SQLite. A restrição SQL também limita o status aos cinco valores definidos. A avaliação pode apontar para um usuário opcional e protegido contra exclusão.
-- Reservas no estado `CONCLUIDA` preservam seu histórico: a exclusão é bloqueada no modelo/QuerySet e no Django Admin. Essa regra não é uma trigger SQL.
+- A reserva valida `inicio < fim` no modelo e no banco SQLite. A restrição SQL também limita o status aos cinco valores definidos. A avaliação aponta para um usuário protegido contra exclusão e precisa ser coerente com o status: `APROVADA` e `REJEITADA` exigem avaliador e data, `REJEITADA` exige justificativa, `PENDENTE` não tem avaliador e o solicitante não avalia a própria reserva.
+- Reservas no estado `CONCLUIDA` preservam seu histórico: só podem ser concluídas após o fim do período, não têm status, horário, ambiente ou solicitante alterados e não podem ser excluídas (modelo/QuerySet e Django Admin). Essas regras não são triggers SQL.
 - `ReservaEquipamento`, associação entre `Reserva` e `Equipamento` por meio de `Reserva.equipamentos`, com quantidade mínima de 1, combinação `(reserva, equipamento)` única e referências protegidas contra exclusão.
-- `BloqueioAmbiente`, associado obrigatoriamente a um `Ambiente` e ao usuário que o registrou. Armazena motivo e intervalo; a regra `inicio < fim` é validada pelo modelo e por constraint no SQLite. O cadastro de bloqueios está modelado, mas conflitos com reservas ainda não são verificados.
+- `BloqueioAmbiente`, associado obrigatoriamente a um `Ambiente` e ao usuário que o registrou. Armazena motivo e intervalo; a regra `inicio < fim` é validada pelo modelo e por constraint no SQLite. Um bloqueio impede aprovar reservas do ambiente no período; ao salvar um bloqueio que coincide com reservas já aprovadas, o Admin exibe um alerta listando-as para revisão manual.
 - Os oito models (`Usuario`, categorias, ambientes, equipamentos, reservas, itens de equipamento e bloqueios) estão disponíveis no Django Admin autenticado em `/admin/`, com criação, consulta, edição e exclusão sujeitas às permissões nativas e às restrições dos modelos. `Reserva` exibe seus campos de auditoria como somente leitura.
-- A conta administrativa pode ser criada com `python manage.py createsuperuser`; o Admin não implementa fluxos de aprovação, disponibilidade ou permissões por objeto.
+- Regras de disponibilidade validadas no backend e exibidas como erro no Admin: duas reservas `APROVADA` do mesmo ambiente não podem se sobrepor (horários consecutivos são permitidos); reservas não podem ser aprovadas durante bloqueios; ambientes e usuários inativos não originam reservas novas; a quantidade de um equipamento não excede o estoque total nem, em reservas aprovadas, o saldo do horário; equipamentos inativos não podem ser adicionados. Detalhes em [Regras de disponibilidade e consistência](docs/modelagem.md#regras-de-disponibilidade-e-consistência).
+- A conta administrativa pode ser criada com `python manage.py createsuperuser`. A aprovação ou rejeição é registrada alterando o status da reserva no Admin, sujeita às regras acima; não há permissões por objeto.
 - O Django Admin utiliza Jazzmin 3.0.5, com identidade visual Campus Reservas, navegação organizada por app, tema Flatly e seletor nativo de esquema claro, escuro ou automático. Fontes externas e CSS de marca customizados não são necessários.
-- As listagens administrativas de ambientes, equipamentos, reservas, bloqueios e associações de equipamentos exibem campos úteis e oferecem filtros nativos por categoria, situação, responsável, status, ambiente, solicitante, equipamento e período, conforme cada entidade. Pesquisas por código, nome, localização e identificação de usuários estão disponíveis nos modelos pertinentes; reservas e bloqueios também oferecem navegação por data.
+- As listagens administrativas de ambientes, equipamentos, reservas, bloqueios e associações de equipamentos exibem campos úteis e oferecem filtros nativos por categoria, situação, responsável, status, ambiente, solicitante, equipamento e período, conforme cada entidade. Pesquisas por código, nome, localização e identificação de usuários estão disponíveis nos modelos pertinentes; reservas (pela data de início) e bloqueios também oferecem navegação por data.
 - A edição de uma reserva inclui um inline para consultar, adicionar, alterar e remover equipamentos solicitados. As permissões nativas do Django e as validações existentes de quantidade positiva e associação única continuam aplicadas.
 - Os grupos `Administrador`, `Responsável` e `Solicitante` e a matriz inicial do Admin são configuráveis com `python manage.py configurar_perfis`. O comando `python manage.py popular_demo` cria registros sintéticos repetíveis, sem credenciais utilizáveis ou exclusão de dados.
 
 ### Planejado
 
-- Fluxos de solicitação, aprovação, rejeição e cancelamento; verificação de disponibilidade e conflitos com bloqueios.
-- Cálculo da disponibilidade de equipamentos compartilhados por intervalo.
-- Solicitação, avaliação, cancelamento e consulta de reservas.
-- Interface de usuário com Angular e Bootstrap 5 no Checkpoint 2.
+- Login, logout e cadastro de usuários finais.
+- Telas de solicitação, avaliação, cancelamento e consulta de reservas para usuários finais, com autorização por objeto (responsável apenas nos próprios ambientes, solicitante apenas nas próprias reservas).
+- API Django para o frontend e controle de concorrência nas aprovações.
+- Interface de usuário com Angular e Bootstrap 5, responsiva e com tema claro/escuro, no Checkpoint 2.
 
 ## Estrutura do backend
 
@@ -190,10 +193,12 @@ python manage.py test
 ├── docs/
 │   ├── modelagem.md         # Entidades, relações, constraints e permissões
 │   ├── diagrama-er.md      # Diagrama Mermaid das oito entidades
-│   └── apresentacao-checkpoint1.md # Roteiro prático de demonstração
+│   ├── apresentacao-checkpoint1.md # Roteiro prático de demonstração
+│   └── checkpoint1-checklist.md   # Checklist de revisão do Checkpoint 1
+├── frontend/               # Workspace Angular inicial (sem telas de domínio)
 ├── requirements.txt
 ├── manage.py
 └── .gitignore
 ```
 
-Os três apps estão registrados em `INSTALLED_APPS`. A pasta `frontend/` será criada no Checkpoint 2.
+Os três apps estão registrados em `INSTALLED_APPS`. A pasta `frontend/` contém apenas o workspace inicial do Angular; as telas e a integração com o backend fazem parte do Checkpoint 2.

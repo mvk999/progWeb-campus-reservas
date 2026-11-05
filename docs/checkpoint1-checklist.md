@@ -1,73 +1,64 @@
 # Checklist final — Checkpoint 1
 
-Revisão técnica C1.14. Esta lista registra o estado observado; não estima a nota do professor nem substitui aprovação acadêmica.
+Revisão da versão entregue no Checkpoint 1. Esta lista registra o estado observado; não estima a nota do professor nem substitui aprovação acadêmica.
 
 ## Versão e evidências
 
-- Branch de integração remota: `develop`, HEAD `c9b9676a73fa63cfeb040c877b1f37b9bcd28e95`.
-- A branch pública `origin/develop` foi consultada diretamente e estava nesse HEAD. O clone descartável de `develop` reproduziu o mesmo hash.
-- Ambiente: Python 3.12.3, Django 5.2.18, Jazzmin 3.0.5.
-- Banco usado para migrations, comandos e verificações: SQLite descartável em `/tmp/campus-c114-clean.sqlite3`. O `db.sqlite3` local não foi usado.
-- Baseline independente: `check` e `makemigrations --check --dry-run` sem erros; suíte completa com **119 testes, 0 falhas e 0 skips**; `git diff --check` limpo; migrations aplicadas do zero; `PRAGMA foreign_key_check` vazio e `PRAGMA integrity_check` igual a `ok`.
-- Instalação reproduzida em clone temporário da branch `develop`, com venv novo e `pip install -r requirements.txt`; `pip check` não encontrou dependências quebradas.
+- Revisão de 05/11/2026 sobre a branch `main`, HEAD `3d633c46ab6f6901b3ee86d89b3921dc45198c6c` (merge da `develop`, que integra o pull request #1 `feature/validacao-conflitos`). Nesse ponto `main` e `develop` têm o mesmo conteúdo.
+- Ambiente: Python 3.13, Django 5.2.18, Jazzmin 3.0.5, em venv novo com `pip install -r requirements.txt`.
+- Banco usado para migrations, comandos e verificações: SQLite descartável, fora do projeto. O `db.sqlite3` local não foi usado.
+- `check` e `makemigrations --check --dry-run` sem erros; suíte completa com **163 testes, 0 falhas, 0 erros e 0 skips** (18 em `usuarios`, 20 em `ambientes`, 125 em `reservas`); migrations aplicadas do zero; `PRAGMA foreign_key_check` vazio e `PRAGMA integrity_check` igual a `ok`.
 
 ## Matriz de conformidade
 
 | Requisito | Situação | Evidência observada | Responsável por pendências |
 | --- | --- | --- | --- |
-| C1-MOD — modelagem, relações, migrations e ER | **ATENDE** | Oito modelos conferidos com migrations e diagrama. Migrations aplicadas do zero; chaves estrangeiras e integridade SQLite verificadas. | — |
-| C1-ADM — Django Admin autenticado e operações administrativas | **ATENDE** | Oito modelos registrados. Provas HTTP cobriram anônimo, usuário comum, staff sem permissão (403) e usuário autorizado. No Chrome, foi criado um bloqueio e uma reserva com `ReservaEquipamento`; quantidade e associação persistiram no banco descartável. | — |
-| C1-TEM — Jazzmin e apresentação administrativa | **ATENDE** | Jazzmin 3.0.5 carregado no Admin; login, Dashboard e navegação observados em Chrome/CDP. Temas claro e escuro renderizaram; viewport mobile testado em 390 × 844. | — |
-| C1-FIL — filtros, buscas, listagens e inline | **ATENDE** | Com dados contrastantes, categoria de ambiente retornou 1 de 3, busca de equipamento retornou `DEMO-EQP-01`, filtro inativo retornou somente `DEMO-EQP-04` e status `APROVADA` retornou 1 reserva. Os 16 testes focados de filtros, pesquisa e inline passaram. | — |
-| C1-COM — complexidade implementada | **ATENDE** | Oito entidades, FKs protegidas, relação N:N com quantidade, cinco estados, constraints, grupos/permissões e Admin com filtros e inline foram inspecionados e exercitados. Disponibilidade temporal e fluxos finais continuam corretamente planejados. | — |
-| DOC-01 — README em `develop` | **ATENDE** | README contém nome, integrantes declarados, descrição, tecnologias, instalação, execução, funcionalidades e estrutura; separa implementado de planejado. Documentação de modelos, ER e apresentação confere com o código. | — |
-| GIT-01 — repositório público e `develop` remota | **ATENDE** | API pública informou `private: false`; consulta ao remoto confirmou `develop` em `c9b9676a73fa63cfeb040c877b1f37b9bcd28e95` e `main` em `b657f4eed0e60b0d34f364f6cbda5914ab252f19`. | — |
-| GIT-02 — convenção `feature/*` | **NÃO VERIFICADO** | As branches remotas usam `feature/*`, conforme decisão do grupo. O enunciado original menciona uma branch literal `feature`; a confirmação dessa divergência com o professor não está registrada. | Grupo / professor |
-| GIT-03 — colaboração e dois commits próprios por integrante | **FALHA** | `git shortlog -sne --all` nas refs locais disponíveis atribui 60 commits a Marcos (59 com e-mail institucional e 1 alias GitHub); não há autoria registrada de Arthur ou Lana. A API de colaboradores exige autenticação (HTTP 401), então a associação de cada pessoa à lista de colaboradores não foi conferida. Nenhuma autoria foi alterada. | Arthur, Lana e grupo |
-| README na branch padrão do GitHub | **FALHA** | A branch padrão remota é `main` (`b657f4e`), cujo README ainda descreve a aplicação como não implementada. O README completo está em `develop`. `main` não foi alterada nesta revisão. | Grupo; decidir como apresentar o link sem alterar `main` nesta tarefa |
-| Aprovação do tema pelo professor | **NÃO VERIFICADO** | Não há confirmação no repositório nem na sessão. | Grupo / professor |
-| Envio do link no Campus Virtual | **NÃO VERIFICADO** | A auditoria confirma o endereço público, mas não acessa nem submete ao Campus Virtual. Prazo informado: 05/11/2026 às 12h00. | Grupo |
+| C1-MOD — modelagem, relações, migrations e ER | **ATENDE** | Oito modelos conferidos com migrations e diagrama ER. Migrations aplicadas do zero em banco descartável; chaves estrangeiras e integridade SQLite verificadas. As regras novas não alteraram o esquema (nenhuma migration nova). | — |
+| C1-ADM — Django Admin autenticado e operações administrativas | **ATENDE** | Oito modelos registrados. Testes HTTP cobrem anônimo, usuário comum, staff sem permissão (403), usuário autorizado, rejeição de POST sem token CSRF e as mensagens de erro das regras de disponibilidade nos formulários e no inline. | — |
+| C1-TEM — Jazzmin e apresentação administrativa | **ATENDE** | Jazzmin 3.0.5 instalado antes de `django.contrib.admin`; testes de `reservas/test_jazzmin.py` passaram. A inspeção visual (temas claro/escuro e viewport 390 × 844) foi registrada na revisão C1.14 e não foi repetida nesta revisão. | Conferir no computador da apresentação |
+| C1-FIL — filtros, buscas, listagens e inline | **ATENDE** | Filtros e pesquisas testados com dados contrastantes em ambientes, equipamentos, reservas, bloqueios e associações. Reservas passaram a ser navegadas e filtradas pela data de início. | — |
+| C1-COM — complexidade implementada | **ATENDE** | Além de FKs protegidas, N:N com quantidade, cinco estados, constraints e grupos/permissões, o backend valida: conflito entre reservas aprovadas, aprovação durante bloqueio, estoque de equipamentos por horário, recursos e usuários inativos, coerência dos dados de avaliação e preservação de reservas concluídas; o Admin alerta sobre reservas aprovadas ao criar bloqueios. | — |
+| DOC-01 — README e documentação | **ATENDE** | README com nome, integrantes, descrição, tecnologias, instalação, execução, funcionalidades e estrutura, separando implementado de planejado. README, modelagem, roteiro e este checklist atualizados para as regras de disponibilidade. | — |
+| GIT-01 — repositório público, `main` e `develop` | **ATENDE** | API pública do GitHub informou `private: false` e branch padrão `main`. A `main` contém a versão integrada do Checkpoint 1. | — |
+| GIT-02 — branches de funcionalidade | **ATENDE** | O grupo adotou o padrão `feature/nome-da-funcionalidade` para a exigência de branches `feature`: há 16 branches `feature/*` criadas a partir de `develop` e integradas por merge, incluindo o pull request #1. | — |
+| GIT-03 — commits próprios de cada integrante | **ATENDE** | `git shortlog -sne --no-merges` em `3d633c4`: Marcos 48 commits (incluindo 1 com alias GitHub), Lana 9 e Arthur 4. Todos têm ao menos dois commits. | — |
+| GIT-04 — integrantes como colaboradores | **ATENDE** | Marcos, Arthur e Lana constam como colaboradores do repositório, conforme conferido pelo grupo em 05/11/2026. | — |
+| Aprovação do tema pelo professor | **NÃO VERIFICADO** | Não há confirmação registrada no repositório. | Grupo / professor |
+| Envio do link no Campus Virtual | **NÃO VERIFICADO** | Prazo informado: 05/11/2026 às 12h00. Esta revisão não acessa o Campus Virtual. | Grupo |
+
+**Observação:** a `main` também contém `frontend/`, com o workspace inicial do Angular (sem telas de domínio, autenticação ou chamadas à API). Ele não faz parte dos critérios do Checkpoint 1; as telas e a integração pertencem ao Checkpoint 2.
 
 ## Verificações reproduzidas
 
-No clone temporário da branch `develop`:
+Na branch `main` (`3d633c4`):
 
 ```text
-python manage.py check                         → sem problemas
+python manage.py check                            → sem problemas
 python manage.py makemigrations --check --dry-run → nenhuma migration pendente
-python manage.py test                          → 119 testes, 0 falhas, 0 skips
-python manage.py migrate --noinput             → migrations aplicadas em SQLite descartável
-python manage.py configurar_perfis              → três grupos criados
-python manage.py popular_demo                   → dados sintéticos criados
-python manage.py popular_demo                   → nenhum registro duplicado
-python manage.py createsuperuser --noinput      → superusuário temporário criado
-PRAGMA foreign_key_check                       → []
-PRAGMA integrity_check                         → ok
-git diff --check                               → limpo
+python manage.py test                             → 163 testes, 0 falhas, 0 erros, 0 skips
+python manage.py migrate                          → migrations aplicadas em SQLite descartável
+python manage.py configurar_perfis (2 vezes)      → grupos configurados; segunda execução sem mudanças
+python manage.py popular_demo (2 vezes)           → dados sintéticos criados; segunda execução sem registros novos
+full_clean() nos 25 registros de ambientes/reservas do demo → todos válidos pelas regras atuais
+PRAGMA foreign_key_check                          → []
+PRAGMA integrity_check                            → ok
+git diff --check                                  → limpo
 ```
-
-O comando de demonstração criou categorias, ambientes, usuários, equipamentos (incluindo um inativo), reservas nos cinco estados, associações e bloqueio. A segunda execução não duplicou registros. A senha usada para criar o superusuário descartável foi gerada em memória e não foi registrada no projeto.
 
 ## Pendências para o grupo antes da apresentação
 
-1. Arthur e Lana devem registrar contribuições reais próprias no repositório; depois, conferir as autorias e a lista de colaboradores autenticada. Não alterar autores ou datas de commits existentes.
-2. Conferir com o professor a divergência entre `feature` literal e `feature/*` e confirmar a aprovação do tema.
-3. Para apresentar o código atual, usar o endereço da branch integrada: <https://github.com/mvk999/progWeb-campus-reservas/tree/develop>. O endereço raiz do repositório abre `main`, cujo README ainda é inicial.
-4. Enviar o link público no Campus Virtual até 05/11/2026 às 12h00; esta revisão não realizou a submissão.
+1. Confirmar com o professor a aprovação do tema.
+2. Repetir a inspeção visual do Admin (tema claro/escuro e tela estreita) no computador da apresentação.
+3. Enviar o link público do repositório no Campus Virtual até 05/11/2026 às 12h00.
 
 ## Veredicto
 
-**REPROVADO para declarar todos os requisitos do Checkpoint 1 concluídos**, exclusivamente pelas falhas registradas no critério GIT-03 e no README da branch padrão. A versão de aplicação em `develop` passou nas verificações técnicas, administrativas, de integridade, documentação dessa branch e inspeção visual acima. As confirmações externas permanecem pendentes. Não implemente funcionalidades do Checkpoint 2.
+**Requisitos técnicos do Checkpoint 1 atendidos** na versão da `main` verificada: modelagem, Admin, Jazzmin, filtros, repositório público com `main`, `develop` e branches `feature/*`, colaboradores, commits de todos os integrantes, documentação e complexidade, com a suíte completa passando. Permanecem apenas a aprovação do tema e o envio do link no Campus Virtual.
 
-## Revalidação da suíte em 04/11/2026
+## Histórico de revisões
 
-Arthur executou esta revalidação na branch `feature/validacao-checkpoint1-arthur`, sobre o código do commit `5bb1474`:
-
-```text
-Teste focado de POST no Admin sem token CSRF → 1 teste aprovado
-python manage.py test                     → 120 testes, 0 falhas, 0 erros, 0 skips
-System check do Django                    → sem problemas
-git diff --check                          → limpo
-```
-
-Ambiente: Python 3.12.14 e Django 5.2.18, em ambiente temporário. O banco de teste foi criado pela suíte e descartado ao final; o banco local do projeto não foi usado. O total de 120 testes inclui o novo caso de rejeição do POST sem token CSRF.
+| Data | Versão | Resultado |
+| --- | --- | --- |
+| 03/11/2026 | `develop` em `c9b9676` (revisão C1.14) | 119 testes; reprovado apenas por falta de commits de Arthur e Lana e pelo README inicial na `main`. |
+| 04/11/2026 | `5bb1474` (revalidação de Arthur) | 120 testes, incluindo a rejeição de POST sem token CSRF. |
+| 05/11/2026 | `main` em `3d633c4` | 163 testes, com as regras de disponibilidade; pendências anteriores de autoria e README resolvidas. |
