@@ -828,6 +828,97 @@ class DjangoAdminHTTPTests(TestCase):
         resposta = self.client.post(self.admin_url(Reserva, "add"), dados)
         self.assertEqual(resposta.status_code, 302, resposta.content.decode())
 
+    def test_admin_rejeita_aprovar_reserva_sem_estoque_no_horario(self):
+        outro_ambiente = Ambiente.objects.create(
+            codigo="HTTP-AMB-EST",
+            nome="Sala estoque HTTP",
+            localizacao="Bloco HTTP",
+            capacidade=10,
+            categoria=self.categoria_ambiente,
+            responsavel=self.responsavel,
+        )
+        # Outra reserva aprovada no mesmo horário usa 3 dos 4 projetores.
+        concorrente = Reserva.objects.create(
+            solicitante=self.solicitante,
+            ambiente=outro_ambiente,
+            inicio=INICIO_BASE,
+            fim=FIM_BASE,
+            status=Reserva.Status.APROVADA,
+        )
+        ReservaEquipamento.objects.create(
+            reserva=concorrente, equipamento=self.equipamento, quantidade=3
+        )
+        change_url = self.admin_url(Reserva, "change", self.reserva.pk)
+        dados = {
+            "solicitante": str(self.solicitante.pk),
+            "ambiente": str(self.ambiente.pk),
+            "status": Reserva.Status.APROVADA,
+            "observacoes": self.reserva.observacoes,
+            "avaliado_por": "",
+            "avaliado_em_0": "",
+            "avaliado_em_1": "",
+            "justificativa": "",
+        }
+        dados.update(self.datetime_post_data("inicio", INICIO_BASE))
+        dados.update(self.datetime_post_data("fim", FIM_BASE))
+        dados.update(self.inline_management_data(self.client.get(change_url)))
+
+        # self.reserva pede 2 projetores; só resta 1 no horário.
+        resposta = self.client.post(change_url, dados)
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "Estoque insuficiente no horário")
+        self.reserva.refresh_from_db()
+        self.assertEqual(self.reserva.status, Reserva.Status.PENDENTE)
+
+        # Reduzindo o pedido para 1 unidade, a aprovação é aceita.
+        prefixo = (
+            resposta.context["inline_admin_formsets"][0].formset.prefix
+        )
+        dados[f"{prefixo}-0-quantidade"] = "1"
+        resposta = self.client.post(change_url, dados)
+        self.assertEqual(resposta.status_code, 302, resposta.content.decode())
+        self.reserva.refresh_from_db()
+        self.assertEqual(self.reserva.status, Reserva.Status.APROVADA)
+
+    def test_admin_inline_rejeita_equipamento_inativo(self):
+        inativo = Equipamento.objects.create(
+            codigo="HTTP-EQP-INATIVO",
+            nome="Projetor inativo HTTP",
+            quantidade_total=2,
+            ativo=False,
+            categoria=self.categoria_equipamento,
+        )
+        change_url = self.admin_url(Reserva, "change", self.reserva.pk)
+        resposta_formulario = self.client.get(change_url)
+        dados = {
+            "solicitante": str(self.solicitante.pk),
+            "ambiente": str(self.ambiente.pk),
+            "status": Reserva.Status.PENDENTE,
+            "observacoes": self.reserva.observacoes,
+            "avaliado_por": "",
+            "avaliado_em_0": "",
+            "avaliado_em_1": "",
+            "justificativa": "",
+        }
+        dados.update(self.datetime_post_data("inicio", INICIO_BASE))
+        dados.update(self.datetime_post_data("fim", FIM_BASE))
+        dados.update(self.inline_management_data(resposta_formulario))
+        prefixo = resposta_formulario.context["inline_admin_formsets"][
+            0
+        ].formset.prefix
+        dados[f"{prefixo}-TOTAL_FORMS"] = "2"
+        dados[f"{prefixo}-1-equipamento"] = str(inativo.pk)
+        dados[f"{prefixo}-1-quantidade"] = "1"
+
+        resposta = self.client.post(change_url, dados)
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "está inativo e não pode ser reservado")
+        self.assertFalse(
+            ReservaEquipamento.objects.filter(equipamento=inativo).exists()
+        )
+
     def test_admin_rejeita_quantidade_zero_e_associacao_duplicada(self):
         nova_reserva = Reserva.objects.create(
             solicitante=self.solicitante,

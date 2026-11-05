@@ -632,6 +632,146 @@ class ReservaEquipamentoModelTests(TestCase):
         self.assertTrue(ReservaEquipamento.objects.filter(pk=item.pk).exists())
 
 
+class ReservaEquipamentoEstoqueTests(TestCase):
+    """Estoque e situação do equipamento ao incluí-lo em uma reserva."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.solicitante = User.objects.create_user(username="solicitante-estoque")
+        cls.responsavel = User.objects.create_user(username="responsavel-estoque")
+        categoria_ambiente = CategoriaAmbiente.objects.create(nome="Salas estoque")
+        cls.ambiente = Ambiente.objects.create(
+            codigo="EST-AMB-001",
+            nome="Sala Estoque A",
+            localizacao="Bloco S",
+            capacidade=30,
+            categoria=categoria_ambiente,
+            responsavel=cls.responsavel,
+        )
+        cls.outro_ambiente = Ambiente.objects.create(
+            codigo="EST-AMB-002",
+            nome="Sala Estoque B",
+            localizacao="Bloco S",
+            capacidade=30,
+            categoria=categoria_ambiente,
+            responsavel=cls.responsavel,
+        )
+        categoria_equipamento = CategoriaEquipamento.objects.create(
+            nome="Equipamentos estoque"
+        )
+        cls.projetor = Equipamento.objects.create(
+            codigo="EST-EQP-001",
+            nome="Projetor",
+            quantidade_total=3,
+            categoria=categoria_equipamento,
+        )
+        cls.inativo = Equipamento.objects.create(
+            codigo="EST-EQP-002",
+            nome="Projetor antigo",
+            quantidade_total=2,
+            ativo=False,
+            categoria=categoria_equipamento,
+        )
+        # Reserva aprovada existente: 14h–16h, usando 2 dos 3 projetores.
+        cls.inicio = datetime(2026, 11, 23, 14, 0, tzinfo=SAO_PAULO)
+        cls.fim = datetime(2026, 11, 23, 16, 0, tzinfo=SAO_PAULO)
+        cls.aprovada = Reserva.objects.create(
+            solicitante=cls.solicitante,
+            ambiente=cls.ambiente,
+            inicio=cls.inicio,
+            fim=cls.fim,
+            status=Reserva.Status.APROVADA,
+        )
+        ReservaEquipamento.objects.create(
+            reserva=cls.aprovada, equipamento=cls.projetor, quantidade=2
+        )
+
+    def make_reserva(self, inicio, fim, status=Reserva.Status.APROVADA):
+        # Outro ambiente: o conflito de sala não interfere no teste de estoque.
+        return Reserva.objects.create(
+            solicitante=self.solicitante,
+            ambiente=self.outro_ambiente,
+            inicio=inicio,
+            fim=fim,
+            status=status,
+        )
+
+    def item(self, reserva, quantidade, equipamento=None):
+        return ReservaEquipamento(
+            reserva=reserva,
+            equipamento=equipamento or self.projetor,
+            quantidade=quantidade,
+        )
+
+    def test_quantidade_acima_do_estoque_total_e_rejeitada(self):
+        reserva = self.make_reserva(
+            self.inicio + timedelta(days=1),
+            self.fim + timedelta(days=1),
+            status=Reserva.Status.PENDENTE,
+        )
+
+        with self.assertRaises(ValidationError) as contexto:
+            self.item(reserva, 4).full_clean()
+        self.assertIn("acima do estoque", contexto.exception.message_dict["quantidade"][0])
+        self.item(reserva, 3).full_clean()
+
+    def test_aprovada_sobreposta_nao_pode_exceder_o_saldo(self):
+        reserva = self.make_reserva(self.inicio + timedelta(hours=1), self.fim)
+
+        self.item(reserva, 1).full_clean()  # 2 em uso + 1 = 3
+        with self.assertRaises(ValidationError) as contexto:
+            self.item(reserva, 2).full_clean()  # 2 em uso + 2 = 4 > 3
+        mensagem = contexto.exception.message_dict["quantidade"][0]
+        self.assertIn("Estoque insuficiente", mensagem)
+        self.assertIn("restam 1", mensagem)
+
+    def test_horario_consecutivo_nao_consome_estoque(self):
+        reserva = self.make_reserva(self.fim, self.fim + timedelta(hours=2))
+
+        self.item(reserva, 3).full_clean()
+
+    def test_reservas_nao_aprovadas_nao_consomem_estoque(self):
+        for status in (Reserva.Status.PENDENTE, Reserva.Status.CANCELADA):
+            with self.subTest(status=status):
+                reserva = self.make_reserva(self.inicio, self.fim, status=status)
+                self.item(reserva, 3).full_clean()
+
+        self.aprovada.status = Reserva.Status.CANCELADA
+        self.aprovada.save()
+        reserva = self.make_reserva(self.inicio, self.fim)
+        self.item(reserva, 3).full_clean()
+
+    def test_editar_item_da_propria_reserva_nao_conta_duas_vezes(self):
+        item = self.aprovada.itens_equipamento.get()
+        item.quantidade = 3
+
+        item.full_clean()
+
+    def test_equipamento_inativo_nao_pode_ser_adicionado(self):
+        reserva = self.make_reserva(
+            self.inicio + timedelta(days=2),
+            self.fim + timedelta(days=2),
+            status=Reserva.Status.PENDENTE,
+        )
+
+        with self.assertRaises(ValidationError) as contexto:
+            self.item(reserva, 1, equipamento=self.inativo).full_clean()
+        self.assertIn("inativo", contexto.exception.message_dict["equipamento"][0])
+
+    def test_item_existente_continua_editavel_apos_desativar_equipamento(self):
+        item = self.aprovada.itens_equipamento.get()
+        self.projetor.ativo = False
+        self.projetor.save()
+        item.refresh_from_db()
+        item.quantidade = 1
+
+        item.full_clean()
+
+        item.equipamento = self.inativo
+        with self.assertRaises(ValidationError):
+            item.full_clean()
+
+
 class BloqueioAmbienteModelTests(TestCase):
     @classmethod
     def setUpTestData(cls):

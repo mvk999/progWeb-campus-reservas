@@ -226,6 +226,87 @@ class ReservaEquipamento(models.Model):
             raise ValidationError(
                 {"quantidade": "A quantidade solicitada deve ser pelo menos 1."}
             )
+        if self.equipamento_id is None:
+            return
+        self._validar_equipamento_ativo()
+        self._validar_estoque()
+
+    def _validar_equipamento_ativo(self):
+        """Equipamento inativo não pode ser adicionado nem trocado em um item.
+
+        Itens já existentes continuam editáveis mesmo que o equipamento seja
+        desativado depois, para não travar reservas antigas.
+        """
+        if self.equipamento.ativo:
+            return
+        if self.pk is not None:
+            anterior = (
+                type(self)
+                .objects.filter(pk=self.pk)
+                .values_list("equipamento_id", flat=True)
+                .first()
+            )
+            if anterior == self.equipamento_id:
+                return
+        raise ValidationError(
+            {"equipamento": "Este equipamento está inativo e não pode ser reservado."}
+        )
+
+    def _validar_estoque(self):
+        """Impede pedir mais unidades do que o estoque permite.
+
+        A quantidade nunca pode exceder ``quantidade_total``. Se a reserva
+        estiver APROVADA, também soma as quantidades do mesmo equipamento em
+        outras reservas APROVADAS com horário sobreposto
+        (``inicio_existente < fim`` e ``fim_existente > inicio``).
+        """
+        if self.quantidade is None:
+            return
+        total = self.equipamento.quantidade_total
+        if self.quantidade > total:
+            raise ValidationError(
+                {
+                    "quantidade": (
+                        f"Quantidade acima do estoque: o equipamento possui "
+                        f"{total} unidade(s)."
+                    )
+                }
+            )
+
+        try:
+            reserva = self.reserva
+        except Reserva.DoesNotExist:
+            return
+        if (
+            reserva.status != ReservaStatus.APROVADA
+            or reserva.inicio is None
+            or reserva.fim is None
+        ):
+            return
+
+        em_uso = (
+            type(self)
+            .objects.filter(
+                equipamento_id=self.equipamento_id,
+                reserva__status=ReservaStatus.APROVADA,
+                reserva__inicio__lt=reserva.fim,
+                reserva__fim__gt=reserva.inicio,
+            )
+            .exclude(reserva_id=reserva.pk)
+            .aggregate(total=models.Sum("quantidade"))["total"]
+            or 0
+        )
+        disponivel = total - em_uso
+        if self.quantidade > disponivel:
+            raise ValidationError(
+                {
+                    "quantidade": (
+                        f"Estoque insuficiente no horário: {em_uso} de {total} "
+                        f"unidade(s) já estão em reservas aprovadas; restam "
+                        f"{max(disponivel, 0)}."
+                    )
+                }
+            )
 
     def __str__(self):
         return f"{self.quantidade} × {self.equipamento} — {self.reserva}"
