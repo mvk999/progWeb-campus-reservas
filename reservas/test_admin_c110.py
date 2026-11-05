@@ -249,6 +249,48 @@ class AdminFiltersSearchAndInlineTests(TestCase):
 
         self.assertEqual(result, {self.reserva_aprovada.pk})
 
+    def test_reservas_sao_filtradas_e_navegadas_pela_data_de_inicio(self):
+        # As três reservas foram criadas no mesmo momento, em dias de uso
+        # diferentes: só a data de início distingue a aprovada (dia + 1).
+        dia = INICIO_BASE.replace(hour=0) + timedelta(days=1)
+
+        # O que a pessoa vê: filtro lateral "Início" e navegação por datas
+        # baseada no início da reserva (antes era a data de criação).
+        response = self.client.get(self.changelist_url(Reserva))
+        changelist = response.context["cl"]
+        self.assertEqual(changelist.date_hierarchy, "inicio")
+        self.assertIn(
+            "inicio",
+            [getattr(spec, "field_path", None) for spec in changelist.filter_specs],
+        )
+
+        por_filtro = self.result_ids(
+            Reserva,
+            {
+                "inicio__gte": dia.isoformat(),
+                "inicio__lt": (dia + timedelta(days=1)).isoformat(),
+            },
+        )
+        por_hierarquia = self.result_ids(
+            Reserva,
+            {
+                "inicio__year": str(dia.year),
+                "inicio__month": str(dia.month),
+                "inicio__day": str(dia.day),
+            },
+        )
+
+        self.assertEqual(por_filtro, {self.reserva_aprovada.pk})
+        self.assertEqual(por_hierarquia, {self.reserva_aprovada.pk})
+        self.assertEqual(
+            self.result_ids(Reserva),
+            {
+                self.reserva_pendente.pk,
+                self.reserva_aprovada.pk,
+                self.reserva_cancelada.pk,
+            },
+        )
+
     def test_filtro_de_bloqueio_aplica_ambiente_responsavel_e_periodo(self):
         inicio = self.bloqueio_lab.inicio.replace(
             hour=0, minute=0, second=0, microsecond=0

@@ -678,6 +678,39 @@ class DjangoAdminHTTPTests(TestCase):
         self.assertFalse(Reserva.objects.filter(pk=reserva_pendente.pk).exists())
         self.assertTrue(Reserva.objects.filter(pk=reserva_concluida.pk).exists())
 
+    def test_admin_de_reserva_nao_oferece_exclusao_em_lote_padrao(self):
+        reserva_concluida = Reserva.objects.create(
+            solicitante=self.solicitante,
+            ambiente=self.ambiente,
+            inicio=INICIO_BASE + timedelta(days=40),
+            fim=INICIO_BASE + timedelta(days=40, hours=1),
+            status=Reserva.Status.CONCLUIDA,
+        )
+        changelist_url = self.admin_url(Reserva, "changelist")
+
+        resposta = self.client.get(changelist_url)
+        acoes = [
+            nome
+            for nome, _ in resposta.context["action_form"]
+            .fields["action"]
+            .choices
+        ]
+        self.assertNotIn("delete_selected", acoes)
+        self.assertIn("delete_selected_reservas", acoes)
+
+        # Antes da correção, este POST gerava HTTP 500 (ProtectedError).
+        resposta = self.client.post(
+            changelist_url,
+            {
+                "action": "delete_selected",
+                "_selected_action": [str(reserva_concluida.pk)],
+                "index": "0",
+                "post": "yes",
+            },
+        )
+        self.assertNotEqual(resposta.status_code, 500)
+        self.assertTrue(Reserva.objects.filter(pk=reserva_concluida.pk).exists())
+
     def test_admin_rejeita_ambiente_com_capacidade_zero_sem_salvar(self):
         dados = {
             "codigo": "HTTP-AMB-CAP-0",
@@ -739,6 +772,388 @@ class DjangoAdminHTTPTests(TestCase):
         self.assert_admin_post_invalid(Reserva, dados_status, "status")
         self.assertFalse(
             Reserva.objects.filter(status="DESCONHECIDO").exists()
+        )
+
+    def test_admin_rejeita_aprovar_reserva_sobreposta_a_outra_aprovada(self):
+        inicio = INICIO_BASE + timedelta(days=20)
+        fim = inicio + timedelta(hours=2)
+        Reserva.objects.create(
+            solicitante=self.solicitante,
+            ambiente=self.ambiente,
+            inicio=inicio,
+            fim=fim,
+            status=Reserva.Status.APROVADA,
+        )
+        dados = {
+            "solicitante": str(self.solicitante.pk),
+            "ambiente": str(self.ambiente.pk),
+            "status": Reserva.Status.APROVADA,
+            "observacoes": "Tentativa de aprovação conflitante.",
+            "avaliado_por": str(self.admin_user.pk),
+            "justificativa": "",
+        }
+        dados.update(self.datetime_post_data("avaliado_em", INICIO_BASE))
+        dados.update(
+            self.datetime_post_data("inicio", inicio + timedelta(hours=1))
+        )
+        dados.update(self.datetime_post_data("fim", fim + timedelta(hours=1)))
+        dados.update(
+            self.inline_management_data(
+                self.client.get(self.admin_url(Reserva, "add"))
+            )
+        )
+
+        resposta = self.assert_admin_post_invalid(Reserva, dados, "status")
+        self.assertContains(resposta, "já possui reserva aprovada")
+
+        # Horário consecutivo (começa quando a outra termina) é aceito.
+        dados.update(self.datetime_post_data("inicio", fim))
+        dados.update(self.datetime_post_data("fim", fim + timedelta(hours=1)))
+        resposta = self.client.post(self.admin_url(Reserva, "add"), dados)
+        self.assertEqual(resposta.status_code, 302, resposta.content.decode())
+
+    def test_admin_rejeita_aprovar_reserva_durante_bloqueio(self):
+        # self.bloqueio ocupa o ambiente de INICIO_BASE+2d a FIM_BASE+2d.
+        dados = {
+            "solicitante": str(self.solicitante.pk),
+            "ambiente": str(self.ambiente.pk),
+            "status": Reserva.Status.APROVADA,
+            "observacoes": "Tentativa durante bloqueio.",
+            "avaliado_por": str(self.admin_user.pk),
+            "justificativa": "",
+        }
+        dados.update(self.datetime_post_data("avaliado_em", INICIO_BASE))
+        dados.update(self.datetime_post_data("inicio", self.bloqueio.inicio))
+        dados.update(self.datetime_post_data("fim", self.bloqueio.fim))
+        dados.update(
+            self.inline_management_data(
+                self.client.get(self.admin_url(Reserva, "add"))
+            )
+        )
+
+        resposta = self.assert_admin_post_invalid(Reserva, dados, "status")
+        self.assertContains(resposta, "o ambiente está bloqueado")
+
+        # Como PENDENTE (ainda sem avaliação) a mesma solicitação é registrada.
+        dados["status"] = Reserva.Status.PENDENTE
+        dados.update(
+            {"avaliado_por": "", "avaliado_em_0": "", "avaliado_em_1": ""}
+        )
+        resposta = self.client.post(self.admin_url(Reserva, "add"), dados)
+        self.assertEqual(resposta.status_code, 302, resposta.content.decode())
+
+    def test_admin_rejeita_aprovar_reserva_sem_estoque_no_horario(self):
+        outro_ambiente = Ambiente.objects.create(
+            codigo="HTTP-AMB-EST",
+            nome="Sala estoque HTTP",
+            localizacao="Bloco HTTP",
+            capacidade=10,
+            categoria=self.categoria_ambiente,
+            responsavel=self.responsavel,
+        )
+        # Outra reserva aprovada no mesmo horário usa 3 dos 4 projetores.
+        concorrente = Reserva.objects.create(
+            solicitante=self.solicitante,
+            ambiente=outro_ambiente,
+            inicio=INICIO_BASE,
+            fim=FIM_BASE,
+            status=Reserva.Status.APROVADA,
+        )
+        ReservaEquipamento.objects.create(
+            reserva=concorrente, equipamento=self.equipamento, quantidade=3
+        )
+        change_url = self.admin_url(Reserva, "change", self.reserva.pk)
+        dados = {
+            "solicitante": str(self.solicitante.pk),
+            "ambiente": str(self.ambiente.pk),
+            "status": Reserva.Status.APROVADA,
+            "observacoes": self.reserva.observacoes,
+            "avaliado_por": str(self.admin_user.pk),
+            "justificativa": "",
+        }
+        dados.update(self.datetime_post_data("avaliado_em", INICIO_BASE))
+        dados.update(self.datetime_post_data("inicio", INICIO_BASE))
+        dados.update(self.datetime_post_data("fim", FIM_BASE))
+        dados.update(self.inline_management_data(self.client.get(change_url)))
+
+        # self.reserva pede 2 projetores; só resta 1 no horário.
+        resposta = self.client.post(change_url, dados)
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "Estoque insuficiente no horário")
+        self.reserva.refresh_from_db()
+        self.assertEqual(self.reserva.status, Reserva.Status.PENDENTE)
+
+        # Reduzindo o pedido para 1 unidade, a aprovação é aceita.
+        prefixo = (
+            resposta.context["inline_admin_formsets"][0].formset.prefix
+        )
+        dados[f"{prefixo}-0-quantidade"] = "1"
+        resposta = self.client.post(change_url, dados)
+        self.assertEqual(resposta.status_code, 302, resposta.content.decode())
+        self.reserva.refresh_from_db()
+        self.assertEqual(self.reserva.status, Reserva.Status.APROVADA)
+
+    def test_admin_inline_rejeita_equipamento_inativo(self):
+        inativo = Equipamento.objects.create(
+            codigo="HTTP-EQP-INATIVO",
+            nome="Projetor inativo HTTP",
+            quantidade_total=2,
+            ativo=False,
+            categoria=self.categoria_equipamento,
+        )
+        change_url = self.admin_url(Reserva, "change", self.reserva.pk)
+        resposta_formulario = self.client.get(change_url)
+        dados = {
+            "solicitante": str(self.solicitante.pk),
+            "ambiente": str(self.ambiente.pk),
+            "status": Reserva.Status.PENDENTE,
+            "observacoes": self.reserva.observacoes,
+            "avaliado_por": "",
+            "avaliado_em_0": "",
+            "avaliado_em_1": "",
+            "justificativa": "",
+        }
+        dados.update(self.datetime_post_data("inicio", INICIO_BASE))
+        dados.update(self.datetime_post_data("fim", FIM_BASE))
+        dados.update(self.inline_management_data(resposta_formulario))
+        prefixo = resposta_formulario.context["inline_admin_formsets"][
+            0
+        ].formset.prefix
+        dados[f"{prefixo}-TOTAL_FORMS"] = "2"
+        dados[f"{prefixo}-1-equipamento"] = str(inativo.pk)
+        dados[f"{prefixo}-1-quantidade"] = "1"
+
+        resposta = self.client.post(change_url, dados)
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "está inativo e não pode ser reservado")
+        self.assertFalse(
+            ReservaEquipamento.objects.filter(equipamento=inativo).exists()
+        )
+
+    def test_admin_rejeita_reserva_em_ambiente_ou_por_usuario_inativo(self):
+        ambiente_inativo = Ambiente.objects.create(
+            codigo="HTTP-AMB-INATIVO",
+            nome="Sala desativada HTTP",
+            localizacao="Bloco HTTP",
+            capacidade=10,
+            ativo=False,
+            categoria=self.categoria_ambiente,
+            responsavel=self.responsavel,
+        )
+        usuario_inativo = User.objects.create_user(
+            username="solicitante-inativo-http", is_active=False
+        )
+        inicio = INICIO_BASE + timedelta(days=25)
+        base = {
+            "status": Reserva.Status.PENDENTE,
+            "observacoes": "",
+            "avaliado_por": "",
+            "avaliado_em_0": "",
+            "avaliado_em_1": "",
+            "justificativa": "",
+        }
+        base.update(self.datetime_post_data("inicio", inicio))
+        base.update(self.datetime_post_data("fim", inicio + timedelta(hours=1)))
+        base.update(
+            self.inline_management_data(
+                self.client.get(self.admin_url(Reserva, "add"))
+            )
+        )
+
+        dados_ambiente = dict(
+            base,
+            solicitante=str(self.solicitante.pk),
+            ambiente=str(ambiente_inativo.pk),
+        )
+        resposta = self.assert_admin_post_invalid(Reserva, dados_ambiente, "ambiente")
+        self.assertContains(resposta, "Este ambiente está inativo")
+
+        dados_usuario = dict(
+            base,
+            solicitante=str(usuario_inativo.pk),
+            ambiente=str(self.ambiente.pk),
+        )
+        resposta = self.assert_admin_post_invalid(
+            Reserva, dados_usuario, "solicitante"
+        )
+        self.assertContains(resposta, "Este usuário está inativo")
+
+    def test_admin_exige_avaliador_data_e_justificativa_ao_rejeitar(self):
+        change_url = self.admin_url(Reserva, "change", self.reserva.pk)
+        dados = {
+            "solicitante": str(self.solicitante.pk),
+            "ambiente": str(self.ambiente.pk),
+            "status": Reserva.Status.REJEITADA,
+            "observacoes": self.reserva.observacoes,
+            "avaliado_por": "",
+            "avaliado_em_0": "",
+            "avaliado_em_1": "",
+            "justificativa": "",
+        }
+        dados.update(self.datetime_post_data("inicio", INICIO_BASE))
+        dados.update(self.datetime_post_data("fim", FIM_BASE))
+        dados.update(self.inline_management_data(self.client.get(change_url)))
+
+        resposta = self.client.post(change_url, dados)
+
+        self.assertEqual(resposta.status_code, 200)
+        form = resposta.context["adminform"].form
+        for campo in ("avaliado_por", "avaliado_em", "justificativa"):
+            self.assertIn(campo, form.errors)
+        self.reserva.refresh_from_db()
+        self.assertEqual(self.reserva.status, Reserva.Status.PENDENTE)
+
+        dados["avaliado_por"] = str(self.admin_user.pk)
+        dados.update(self.datetime_post_data("avaliado_em", FIM_BASE))
+        dados["justificativa"] = "Ambiente reservado para outra atividade."
+        resposta = self.client.post(change_url, dados)
+
+        self.assertEqual(resposta.status_code, 302, resposta.content.decode())
+        self.reserva.refresh_from_db()
+        self.assertEqual(self.reserva.status, Reserva.Status.REJEITADA)
+        self.assertEqual(self.reserva.avaliado_por, self.admin_user)
+
+    def test_admin_preserva_reserva_concluida(self):
+        def dados_da(reserva, **alteracoes):
+            dados = {
+                "solicitante": str(reserva.solicitante_id),
+                "ambiente": str(reserva.ambiente_id),
+                "status": reserva.status,
+                "observacoes": reserva.observacoes,
+                "avaliado_por": "",
+                "avaliado_em_0": "",
+                "avaliado_em_1": "",
+                "justificativa": "",
+            }
+            dados.update(
+                self.datetime_post_data("inicio", timezone.localtime(reserva.inicio))
+            )
+            dados.update(
+                self.datetime_post_data("fim", timezone.localtime(reserva.fim))
+            )
+            url = self.admin_url(Reserva, "change", reserva.pk)
+            dados.update(self.inline_management_data(self.client.get(url)))
+            dados.update(alteracoes)
+            return url, dados
+
+        # Concluir uma reserva futura é recusado.
+        url, dados = dados_da(self.reserva, status=Reserva.Status.CONCLUIDA)
+        resposta = self.client.post(url, dados)
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "cujo período já terminou")
+        self.reserva.refresh_from_db()
+        self.assertEqual(self.reserva.status, Reserva.Status.PENDENTE)
+
+        # Reserva já concluída não volta a outro status...
+        agora = timezone.now().replace(second=0, microsecond=0)
+        concluida = Reserva.objects.create(
+            solicitante=self.solicitante,
+            ambiente=self.ambiente,
+            inicio=agora - timedelta(days=2, hours=2),
+            fim=agora - timedelta(days=2),
+            status=Reserva.Status.CONCLUIDA,
+        )
+        url, dados = dados_da(concluida, status=Reserva.Status.PENDENTE)
+        resposta = self.client.post(url, dados)
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, "registro histórico")
+        concluida.refresh_from_db()
+        self.assertEqual(concluida.status, Reserva.Status.CONCLUIDA)
+
+        # ...mas as observações podem ser atualizadas.
+        url, dados = dados_da(concluida, observacoes="Uso registrado.")
+        resposta = self.client.post(url, dados)
+        self.assertEqual(resposta.status_code, 302, resposta.content.decode())
+        concluida.refresh_from_db()
+        self.assertEqual(concluida.observacoes, "Uso registrado.")
+
+    def test_admin_alerta_reservas_aprovadas_ao_criar_bloqueio(self):
+        dia = INICIO_BASE.replace(hour=8) + timedelta(days=16)
+        fulano = User.objects.create_user(
+            username="fulano-http", first_name="Fulano", last_name="Silva"
+        )
+
+        def reserva(inicio_h, fim_h, status, solicitante):
+            return Reserva.objects.create(
+                solicitante=solicitante,
+                ambiente=self.ambiente,
+                inicio=dia.replace(hour=inicio_h),
+                fim=dia.replace(hour=fim_h),
+                status=status,
+                avaliado_por=self.admin_user,
+                avaliado_em=dia,
+            )
+
+        aprovada_1 = reserva(9, 10, Reserva.Status.APROVADA, fulano)
+        aprovada_2 = reserva(11, 13, Reserva.Status.APROVADA, self.solicitante)
+        consecutiva = reserva(13, 14, Reserva.Status.APROVADA, self.solicitante)
+        pendente = Reserva.objects.create(
+            solicitante=self.solicitante,
+            ambiente=self.ambiente,
+            inicio=dia.replace(hour=10),
+            fim=dia.replace(hour=11),
+        )
+        dados = {
+            "ambiente": str(self.ambiente.pk),
+            "motivo": "Manutenção elétrica",
+            "criado_por": str(self.criador_bloqueio.pk),
+        }
+        # Bloqueio das 8h às 12h.
+        dados.update(self.datetime_post_data("inicio", dia))
+        dados.update(self.datetime_post_data("fim", dia.replace(hour=12)))
+
+        resposta = self.client.post(
+            self.admin_url(BloqueioAmbiente, "add"), dados, follow=True
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertTrue(
+            BloqueioAmbiente.objects.filter(motivo="Manutenção elétrica").exists()
+        )
+        avisos = [
+            str(m) for m in resposta.context["messages"] if m.level_tag == "warning"
+        ]
+        self.assertEqual(len(avisos), 1)
+        data = f"{dia:%d/%m/%Y}"
+        self.assertEqual(
+            avisos[0],
+            "Atenção: este bloqueio coincide com 2 reserva(s) aprovada(s): "
+            f"Fulano Silva — {data} 09:00 a {data} 10:00; "
+            f"{self.solicitante.username} — {data} 11:00 a {data} 13:00. "
+            "Revise-as manualmente.",
+        )
+        # Nenhuma reserva tem o status alterado.
+        for item, status in (
+            (aprovada_1, Reserva.Status.APROVADA),
+            (aprovada_2, Reserva.Status.APROVADA),
+            (consecutiva, Reserva.Status.APROVADA),
+            (pendente, Reserva.Status.PENDENTE),
+        ):
+            item.refresh_from_db()
+            self.assertEqual(item.status, status)
+
+    def test_admin_nao_alerta_bloqueio_sem_reservas_aprovadas(self):
+        dados = {
+            "ambiente": str(self.ambiente.pk),
+            "motivo": "Pintura sem conflitos",
+            "criado_por": str(self.criador_bloqueio.pk),
+        }
+        inicio = INICIO_BASE + timedelta(days=60)
+        dados.update(self.datetime_post_data("inicio", inicio))
+        dados.update(self.datetime_post_data("fim", inicio + timedelta(hours=2)))
+
+        resposta = self.client.post(
+            self.admin_url(BloqueioAmbiente, "add"), dados, follow=True
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertTrue(
+            BloqueioAmbiente.objects.filter(motivo="Pintura sem conflitos").exists()
+        )
+        self.assertFalse(
+            any(m.level_tag == "warning" for m in resposta.context["messages"])
         )
 
     def test_admin_rejeita_quantidade_zero_e_associacao_duplicada(self):

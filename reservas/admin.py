@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.admin.actions import delete_selected
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import (
     RESERVA_CONCLUIDA_DELETE_ERROR,
@@ -60,6 +61,7 @@ class ReservaAdmin(admin.ModelAdmin):
         "status",
         ("ambiente", admin.RelatedOnlyFieldListFilter),
         ("solicitante", admin.RelatedOnlyFieldListFilter),
+        ("inicio", admin.DateFieldListFilter),
     )
     search_fields = (
         "ambiente__codigo",
@@ -70,10 +72,23 @@ class ReservaAdmin(admin.ModelAdmin):
         "solicitante__email",
     )
     ordering = ("-criado_em",)
-    date_hierarchy = "criado_em"
+    # Navegação pela data em que a reserva acontece, não pela de criação.
+    date_hierarchy = "inicio"
     list_select_related = ("solicitante", "ambiente")
     list_per_page = 25
     inlines = (ReservaEquipamentoInline,)
+
+    def get_actions(self, request):
+        """Remove a exclusão em lote padrão do Django.
+
+        A ação padrão não conhece a proteção de reservas concluídas e, ao
+        encontrar uma, deixava o ``ProtectedError`` sem tratamento (HTTP 500).
+        A exclusão em lote fica disponível somente por
+        ``delete_selected_reservas``, que trata esse caso.
+        """
+        actions = super().get_actions(request)
+        actions.pop("delete_selected", None)
+        return actions
 
     def delete_view(self, request, object_id, extra_context=None):
         reserva = self.get_object(request, object_id)
@@ -149,3 +164,26 @@ class BloqueioAmbienteAdmin(admin.ModelAdmin):
     date_hierarchy = "inicio"
     list_select_related = ("ambiente", "criado_por")
     list_per_page = 25
+
+    def save_model(self, request, obj, form, change):
+        """Salva o bloqueio e alerta sobre reservas aprovadas coincidentes.
+
+        Nenhuma reserva é alterada: o administrador decide o que fazer com
+        cada uma (cancelar, mudar o horário ou manter).
+        """
+        super().save_model(request, obj, form, change)
+        reservas = list(obj.reservas_aprovadas_sobrepostas())
+        if not reservas:
+            return
+        descricoes = "; ".join(
+            f"{reserva.solicitante.get_full_name() or reserva.solicitante.get_username()}"
+            f" — {timezone.localtime(reserva.inicio):%d/%m/%Y %H:%M}"
+            f" a {timezone.localtime(reserva.fim):%d/%m/%Y %H:%M}"
+            for reserva in reservas
+        )
+        self.message_user(
+            request,
+            f"Atenção: este bloqueio coincide com {len(reservas)} reserva(s) "
+            f"aprovada(s): {descricoes}. Revise-as manualmente.",
+            level=messages.WARNING,
+        )
