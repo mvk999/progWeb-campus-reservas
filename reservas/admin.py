@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.admin.actions import delete_selected
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import (
     RESERVA_CONCLUIDA_DELETE_ERROR,
@@ -161,3 +162,26 @@ class BloqueioAmbienteAdmin(admin.ModelAdmin):
     date_hierarchy = "inicio"
     list_select_related = ("ambiente", "criado_por")
     list_per_page = 25
+
+    def save_model(self, request, obj, form, change):
+        """Salva o bloqueio e alerta sobre reservas aprovadas coincidentes.
+
+        Nenhuma reserva é alterada: o administrador decide o que fazer com
+        cada uma (cancelar, mudar o horário ou manter).
+        """
+        super().save_model(request, obj, form, change)
+        reservas = list(obj.reservas_aprovadas_sobrepostas())
+        if not reservas:
+            return
+        descricoes = "; ".join(
+            f"{reserva.solicitante.get_full_name() or reserva.solicitante.get_username()}"
+            f" — {timezone.localtime(reserva.inicio):%d/%m/%Y %H:%M}"
+            f" a {timezone.localtime(reserva.fim):%d/%m/%Y %H:%M}"
+            for reserva in reservas
+        )
+        self.message_user(
+            request,
+            f"Atenção: este bloqueio coincide com {len(reservas)} reserva(s) "
+            f"aprovada(s): {descricoes}. Revise-as manualmente.",
+            level=messages.WARNING,
+        )

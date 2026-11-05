@@ -1056,6 +1056,93 @@ class DjangoAdminHTTPTests(TestCase):
         concluida.refresh_from_db()
         self.assertEqual(concluida.observacoes, "Uso registrado.")
 
+    def test_admin_alerta_reservas_aprovadas_ao_criar_bloqueio(self):
+        dia = INICIO_BASE.replace(hour=8) + timedelta(days=16)
+        fulano = User.objects.create_user(
+            username="fulano-http", first_name="Fulano", last_name="Silva"
+        )
+
+        def reserva(inicio_h, fim_h, status, solicitante):
+            return Reserva.objects.create(
+                solicitante=solicitante,
+                ambiente=self.ambiente,
+                inicio=dia.replace(hour=inicio_h),
+                fim=dia.replace(hour=fim_h),
+                status=status,
+                avaliado_por=self.admin_user,
+                avaliado_em=dia,
+            )
+
+        aprovada_1 = reserva(9, 10, Reserva.Status.APROVADA, fulano)
+        aprovada_2 = reserva(11, 13, Reserva.Status.APROVADA, self.solicitante)
+        consecutiva = reserva(13, 14, Reserva.Status.APROVADA, self.solicitante)
+        pendente = Reserva.objects.create(
+            solicitante=self.solicitante,
+            ambiente=self.ambiente,
+            inicio=dia.replace(hour=10),
+            fim=dia.replace(hour=11),
+        )
+        dados = {
+            "ambiente": str(self.ambiente.pk),
+            "motivo": "Manutenção elétrica",
+            "criado_por": str(self.criador_bloqueio.pk),
+        }
+        # Bloqueio das 8h às 12h.
+        dados.update(self.datetime_post_data("inicio", dia))
+        dados.update(self.datetime_post_data("fim", dia.replace(hour=12)))
+
+        resposta = self.client.post(
+            self.admin_url(BloqueioAmbiente, "add"), dados, follow=True
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertTrue(
+            BloqueioAmbiente.objects.filter(motivo="Manutenção elétrica").exists()
+        )
+        avisos = [
+            str(m) for m in resposta.context["messages"] if m.level_tag == "warning"
+        ]
+        self.assertEqual(len(avisos), 1)
+        data = f"{dia:%d/%m/%Y}"
+        self.assertEqual(
+            avisos[0],
+            "Atenção: este bloqueio coincide com 2 reserva(s) aprovada(s): "
+            f"Fulano Silva — {data} 09:00 a {data} 10:00; "
+            f"{self.solicitante.username} — {data} 11:00 a {data} 13:00. "
+            "Revise-as manualmente.",
+        )
+        # Nenhuma reserva tem o status alterado.
+        for item, status in (
+            (aprovada_1, Reserva.Status.APROVADA),
+            (aprovada_2, Reserva.Status.APROVADA),
+            (consecutiva, Reserva.Status.APROVADA),
+            (pendente, Reserva.Status.PENDENTE),
+        ):
+            item.refresh_from_db()
+            self.assertEqual(item.status, status)
+
+    def test_admin_nao_alerta_bloqueio_sem_reservas_aprovadas(self):
+        dados = {
+            "ambiente": str(self.ambiente.pk),
+            "motivo": "Pintura sem conflitos",
+            "criado_por": str(self.criador_bloqueio.pk),
+        }
+        inicio = INICIO_BASE + timedelta(days=60)
+        dados.update(self.datetime_post_data("inicio", inicio))
+        dados.update(self.datetime_post_data("fim", inicio + timedelta(hours=2)))
+
+        resposta = self.client.post(
+            self.admin_url(BloqueioAmbiente, "add"), dados, follow=True
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertTrue(
+            BloqueioAmbiente.objects.filter(motivo="Pintura sem conflitos").exists()
+        )
+        self.assertFalse(
+            any(m.level_tag == "warning" for m in resposta.context["messages"])
+        )
+
     def test_admin_rejeita_quantidade_zero_e_associacao_duplicada(self):
         nova_reserva = Reserva.objects.create(
             solicitante=self.solicitante,

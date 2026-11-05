@@ -472,6 +472,23 @@ class BloqueioAmbiente(models.Model):
                 {"fim": "O fim do bloqueio deve ser posterior ao início."}
             )
 
+    def reservas_aprovadas_sobrepostas(self):
+        """Reservas APROVADAS do mesmo ambiente que coincidem com o bloqueio.
+
+        Usa a mesma regra de sobreposição das reservas
+        (``inicio_existente < fim`` e ``fim_existente > inicio``).
+        """
+        return (
+            Reserva.objects.filter(
+                ambiente_id=self.ambiente_id,
+                status=ReservaStatus.APROVADA,
+                inicio__lt=self.fim,
+                fim__gt=self.inicio,
+            )
+            .select_related("solicitante")
+            .order_by("inicio")
+        )
+
     def __str__(self):
         inicio_local = timezone.localtime(self.inicio)
         fim_local = timezone.localtime(self.fim)
