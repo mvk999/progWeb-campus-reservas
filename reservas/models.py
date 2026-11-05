@@ -95,8 +95,52 @@ class Reserva(models.Model):
                 {"fim": "O fim da reserva deve ser posterior ao início."}
             )
         self._validar_ambiente_e_solicitante_ativos()
+        self._validar_dados_de_avaliacao()
         self._validar_conflito_com_aprovadas()
         self._validar_conflito_com_bloqueios()
+
+    def _validar_dados_de_avaliacao(self):
+        """Mantém coerentes o status e os campos de avaliação.
+
+        - APROVADA e REJEITADA exigem quem avaliou e quando.
+        - REJEITADA exige justificativa.
+        - PENDENTE ainda não foi avaliada: não pode ter avaliador nem data.
+        - O solicitante não pode avaliar a própria reserva.
+        CANCELADA e CONCLUIDA não exigem avaliação (o cancelamento pode
+        partir do próprio solicitante).
+        """
+        erros = {}
+        avaliadas = (ReservaStatus.APROVADA, ReservaStatus.REJEITADA)
+        if self.status in avaliadas:
+            if self.avaliado_por_id is None:
+                erros["avaliado_por"] = (
+                    "Informe quem avaliou a reserva aprovada ou rejeitada."
+                )
+            if self.avaliado_em is None:
+                erros["avaliado_em"] = (
+                    "Informe a data da avaliação da reserva aprovada ou rejeitada."
+                )
+        if self.status == ReservaStatus.REJEITADA and not self.justificativa.strip():
+            erros["justificativa"] = "Informe a justificativa da rejeição."
+        if self.status == ReservaStatus.PENDENTE:
+            if self.avaliado_por_id is not None:
+                erros["avaliado_por"] = (
+                    "Reserva pendente ainda não foi avaliada; deixe o avaliador vazio."
+                )
+            if self.avaliado_em is not None:
+                erros["avaliado_em"] = (
+                    "Reserva pendente ainda não foi avaliada; deixe a data vazia."
+                )
+        if (
+            self.avaliado_por_id is not None
+            and self.avaliado_por_id == self.solicitante_id
+            and "avaliado_por" not in erros
+        ):
+            erros["avaliado_por"] = (
+                "O solicitante não pode avaliar a própria reserva."
+            )
+        if erros:
+            raise ValidationError(erros)
 
     def _validar_ambiente_e_solicitante_ativos(self):
         """Impede reservar ambiente inativo ou em nome de usuário inativo.

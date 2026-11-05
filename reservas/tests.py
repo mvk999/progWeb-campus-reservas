@@ -25,6 +25,18 @@ User = get_user_model()
 SAO_PAULO = ZoneInfo("America/Sao_Paulo")
 INICIO_BASE = datetime(2026, 10, 29, 9, 0, tzinfo=SAO_PAULO)
 FIM_BASE = datetime(2026, 10, 29, 10, 0, tzinfo=SAO_PAULO)
+AVALIADO_EM = datetime(2026, 10, 1, 12, 0, tzinfo=SAO_PAULO)
+
+
+def com_avaliacao(values, avaliador):
+    """Completa os dados de avaliação exigidos por APROVADA/REJEITADA."""
+    status = values.get("status")
+    if status in (Reserva.Status.APROVADA, Reserva.Status.REJEITADA):
+        values.setdefault("avaliado_por", avaliador)
+        values.setdefault("avaliado_em", AVALIADO_EM)
+    if status == Reserva.Status.REJEITADA:
+        values.setdefault("justificativa", "Rejeitada em teste.")
+    return values
 
 
 class ReservaModelTests(TestCase):
@@ -59,7 +71,7 @@ class ReservaModelTests(TestCase):
             "fim": FIM_BASE,
         }
         values.update(overrides)
-        return Reserva(**values)
+        return Reserva(**com_avaliacao(values, self.avaliador))
 
     def test_reserva_persiste_com_relacionamentos_status_default_e_string(self):
         reserva = self.make_reserva()
@@ -314,6 +326,8 @@ class ReservaConflitoAprovadaTests(TestCase):
             inicio=cls.inicio,
             fim=cls.fim,
             status=Reserva.Status.APROVADA,
+            avaliado_por=cls.responsavel,
+            avaliado_em=AVALIADO_EM,
         )
 
     def make_reserva(self, inicio, fim, **overrides):
@@ -325,7 +339,7 @@ class ReservaConflitoAprovadaTests(TestCase):
             "status": Reserva.Status.APROVADA,
         }
         values.update(overrides)
-        return Reserva(**values)
+        return Reserva(**com_avaliacao(values, self.responsavel))
 
     def test_aprovada_sobreposta_no_mesmo_ambiente_e_rejeitada(self):
         hora = timedelta(hours=1)
@@ -387,8 +401,11 @@ class ReservaConflitoAprovadaTests(TestCase):
         pendente.save()
 
         pendente.status = Reserva.Status.APROVADA
-        with self.assertRaises(ValidationError):
+        pendente.avaliado_por = self.responsavel
+        pendente.avaliado_em = AVALIADO_EM
+        with self.assertRaises(ValidationError) as contexto:
             pendente.full_clean()
+        self.assertEqual(list(contexto.exception.message_dict), ["status"])
 
     def test_reeditar_a_propria_reserva_aprovada_nao_gera_conflito(self):
         self.aprovada.observacoes = "Atualizada sem mudar horário."
@@ -440,7 +457,7 @@ class ReservaConflitoBloqueioTests(TestCase):
             "status": Reserva.Status.APROVADA,
         }
         values.update(overrides)
-        return Reserva(**values)
+        return Reserva(**com_avaliacao(values, self.responsavel))
 
     def test_aprovada_durante_bloqueio_e_rejeitada_com_motivo(self):
         hora = timedelta(hours=1)
@@ -475,8 +492,11 @@ class ReservaConflitoBloqueioTests(TestCase):
         pendente.save()
 
         pendente.status = Reserva.Status.APROVADA
-        with self.assertRaises(ValidationError):
+        pendente.avaliado_por = self.responsavel
+        pendente.avaliado_em = AVALIADO_EM
+        with self.assertRaises(ValidationError) as contexto:
             pendente.full_clean()
+        self.assertEqual(list(contexto.exception.message_dict), ["status"])
 
 
 class ReservaEquipamentoModelTests(TestCase):
@@ -669,7 +689,7 @@ class ReservaAmbienteSolicitanteInativoTests(TestCase):
             "fim": FIM_BASE,
         }
         values.update(overrides)
-        return Reserva(**values)
+        return Reserva(**com_avaliacao(values, self.responsavel))
 
     def test_reserva_nova_em_ambiente_inativo_e_rejeitada(self):
         with self.assertRaises(ValidationError) as contexto:
@@ -706,6 +726,101 @@ class ReservaAmbienteSolicitanteInativoTests(TestCase):
         reserva = Reserva.objects.get(pk=reserva.pk)
         reserva.observacoes = "Editada após desativação."
         reserva.full_clean()
+
+
+class ReservaDadosAvaliacaoTests(TestCase):
+    """Status e campos de avaliação devem ser coerentes entre si."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.solicitante = User.objects.create_user(username="solicitante-avaliacao")
+        cls.avaliador = User.objects.create_user(username="avaliador-avaliacao")
+        categoria = CategoriaAmbiente.objects.create(nome="Salas avaliação")
+        cls.ambiente = Ambiente.objects.create(
+            codigo="AVA-AMB-001",
+            nome="Sala avaliação",
+            localizacao="Bloco V",
+            capacidade=10,
+            categoria=categoria,
+            responsavel=cls.avaliador,
+        )
+
+    def make_reserva(self, status, **overrides):
+        values = {
+            "solicitante": self.solicitante,
+            "ambiente": self.ambiente,
+            "inicio": INICIO_BASE,
+            "fim": FIM_BASE,
+            "status": status,
+        }
+        values.update(overrides)
+        return Reserva(**values)
+
+    def erros(self, reserva):
+        with self.assertRaises(ValidationError) as contexto:
+            reserva.full_clean()
+        return contexto.exception.message_dict
+
+    def test_aprovada_e_rejeitada_exigem_avaliador_e_data(self):
+        for status in (Reserva.Status.APROVADA, Reserva.Status.REJEITADA):
+            with self.subTest(status=status):
+                erros = self.erros(
+                    self.make_reserva(status, justificativa="Motivo.")
+                )
+                self.assertIn("avaliado_por", erros)
+                self.assertIn("avaliado_em", erros)
+
+    def test_rejeitada_exige_justificativa(self):
+        reserva = self.make_reserva(
+            Reserva.Status.REJEITADA,
+            avaliado_por=self.avaliador,
+            avaliado_em=AVALIADO_EM,
+            justificativa="   ",
+        )
+
+        self.assertEqual(list(self.erros(reserva)), ["justificativa"])
+
+    def test_pendente_nao_pode_ter_avaliador_nem_data(self):
+        reserva = self.make_reserva(
+            Reserva.Status.PENDENTE,
+            avaliado_por=self.avaliador,
+            avaliado_em=AVALIADO_EM,
+        )
+
+        erros = self.erros(reserva)
+        self.assertIn("avaliado_por", erros)
+        self.assertIn("avaliado_em", erros)
+
+    def test_solicitante_nao_avalia_a_propria_reserva(self):
+        reserva = self.make_reserva(
+            Reserva.Status.APROVADA,
+            avaliado_por=self.solicitante,
+            avaliado_em=AVALIADO_EM,
+        )
+
+        erros = self.erros(reserva)
+        self.assertIn("própria reserva", erros["avaliado_por"][0])
+
+    def test_combinacoes_coerentes_sao_aceitas(self):
+        casos = {
+            "pendente": self.make_reserva(Reserva.Status.PENDENTE),
+            "aprovada": self.make_reserva(
+                Reserva.Status.APROVADA,
+                avaliado_por=self.avaliador,
+                avaliado_em=AVALIADO_EM,
+            ),
+            "rejeitada": self.make_reserva(
+                Reserva.Status.REJEITADA,
+                avaliado_por=self.avaliador,
+                avaliado_em=AVALIADO_EM,
+                justificativa="Sala reservada para evento institucional.",
+            ),
+            "cancelada_sem_avaliacao": self.make_reserva(Reserva.Status.CANCELADA),
+            "concluida_sem_avaliacao": self.make_reserva(Reserva.Status.CONCLUIDA),
+        }
+        for nome, reserva in casos.items():
+            with self.subTest(caso=nome):
+                reserva.full_clean()
 
 
 class ReservaEquipamentoEstoqueTests(TestCase):

@@ -776,11 +776,10 @@ class DjangoAdminHTTPTests(TestCase):
             "ambiente": str(self.ambiente.pk),
             "status": Reserva.Status.APROVADA,
             "observacoes": "Tentativa de aprovação conflitante.",
-            "avaliado_por": "",
-            "avaliado_em_0": "",
-            "avaliado_em_1": "",
+            "avaliado_por": str(self.admin_user.pk),
             "justificativa": "",
         }
+        dados.update(self.datetime_post_data("avaliado_em", INICIO_BASE))
         dados.update(
             self.datetime_post_data("inicio", inicio + timedelta(hours=1))
         )
@@ -807,11 +806,10 @@ class DjangoAdminHTTPTests(TestCase):
             "ambiente": str(self.ambiente.pk),
             "status": Reserva.Status.APROVADA,
             "observacoes": "Tentativa durante bloqueio.",
-            "avaliado_por": "",
-            "avaliado_em_0": "",
-            "avaliado_em_1": "",
+            "avaliado_por": str(self.admin_user.pk),
             "justificativa": "",
         }
+        dados.update(self.datetime_post_data("avaliado_em", INICIO_BASE))
         dados.update(self.datetime_post_data("inicio", self.bloqueio.inicio))
         dados.update(self.datetime_post_data("fim", self.bloqueio.fim))
         dados.update(
@@ -823,8 +821,11 @@ class DjangoAdminHTTPTests(TestCase):
         resposta = self.assert_admin_post_invalid(Reserva, dados, "status")
         self.assertContains(resposta, "o ambiente está bloqueado")
 
-        # Como PENDENTE a mesma solicitação pode ser registrada.
+        # Como PENDENTE (ainda sem avaliação) a mesma solicitação é registrada.
         dados["status"] = Reserva.Status.PENDENTE
+        dados.update(
+            {"avaliado_por": "", "avaliado_em_0": "", "avaliado_em_1": ""}
+        )
         resposta = self.client.post(self.admin_url(Reserva, "add"), dados)
         self.assertEqual(resposta.status_code, 302, resposta.content.decode())
 
@@ -854,11 +855,10 @@ class DjangoAdminHTTPTests(TestCase):
             "ambiente": str(self.ambiente.pk),
             "status": Reserva.Status.APROVADA,
             "observacoes": self.reserva.observacoes,
-            "avaliado_por": "",
-            "avaliado_em_0": "",
-            "avaliado_em_1": "",
+            "avaliado_por": str(self.admin_user.pk),
             "justificativa": "",
         }
+        dados.update(self.datetime_post_data("avaliado_em", INICIO_BASE))
         dados.update(self.datetime_post_data("inicio", INICIO_BASE))
         dados.update(self.datetime_post_data("fim", FIM_BASE))
         dados.update(self.inline_management_data(self.client.get(change_url)))
@@ -966,6 +966,41 @@ class DjangoAdminHTTPTests(TestCase):
             Reserva, dados_usuario, "solicitante"
         )
         self.assertContains(resposta, "Este usuário está inativo")
+
+    def test_admin_exige_avaliador_data_e_justificativa_ao_rejeitar(self):
+        change_url = self.admin_url(Reserva, "change", self.reserva.pk)
+        dados = {
+            "solicitante": str(self.solicitante.pk),
+            "ambiente": str(self.ambiente.pk),
+            "status": Reserva.Status.REJEITADA,
+            "observacoes": self.reserva.observacoes,
+            "avaliado_por": "",
+            "avaliado_em_0": "",
+            "avaliado_em_1": "",
+            "justificativa": "",
+        }
+        dados.update(self.datetime_post_data("inicio", INICIO_BASE))
+        dados.update(self.datetime_post_data("fim", FIM_BASE))
+        dados.update(self.inline_management_data(self.client.get(change_url)))
+
+        resposta = self.client.post(change_url, dados)
+
+        self.assertEqual(resposta.status_code, 200)
+        form = resposta.context["adminform"].form
+        for campo in ("avaliado_por", "avaliado_em", "justificativa"):
+            self.assertIn(campo, form.errors)
+        self.reserva.refresh_from_db()
+        self.assertEqual(self.reserva.status, Reserva.Status.PENDENTE)
+
+        dados["avaliado_por"] = str(self.admin_user.pk)
+        dados.update(self.datetime_post_data("avaliado_em", FIM_BASE))
+        dados["justificativa"] = "Ambiente reservado para outra atividade."
+        resposta = self.client.post(change_url, dados)
+
+        self.assertEqual(resposta.status_code, 302, resposta.content.decode())
+        self.reserva.refresh_from_db()
+        self.assertEqual(self.reserva.status, Reserva.Status.REJEITADA)
+        self.assertEqual(self.reserva.avaliado_por, self.admin_user)
 
     def test_admin_rejeita_quantidade_zero_e_associacao_duplicada(self):
         nova_reserva = Reserva.objects.create(
