@@ -919,6 +919,54 @@ class DjangoAdminHTTPTests(TestCase):
             ReservaEquipamento.objects.filter(equipamento=inativo).exists()
         )
 
+    def test_admin_rejeita_reserva_em_ambiente_ou_por_usuario_inativo(self):
+        ambiente_inativo = Ambiente.objects.create(
+            codigo="HTTP-AMB-INATIVO",
+            nome="Sala desativada HTTP",
+            localizacao="Bloco HTTP",
+            capacidade=10,
+            ativo=False,
+            categoria=self.categoria_ambiente,
+            responsavel=self.responsavel,
+        )
+        usuario_inativo = User.objects.create_user(
+            username="solicitante-inativo-http", is_active=False
+        )
+        inicio = INICIO_BASE + timedelta(days=25)
+        base = {
+            "status": Reserva.Status.PENDENTE,
+            "observacoes": "",
+            "avaliado_por": "",
+            "avaliado_em_0": "",
+            "avaliado_em_1": "",
+            "justificativa": "",
+        }
+        base.update(self.datetime_post_data("inicio", inicio))
+        base.update(self.datetime_post_data("fim", inicio + timedelta(hours=1)))
+        base.update(
+            self.inline_management_data(
+                self.client.get(self.admin_url(Reserva, "add"))
+            )
+        )
+
+        dados_ambiente = dict(
+            base,
+            solicitante=str(self.solicitante.pk),
+            ambiente=str(ambiente_inativo.pk),
+        )
+        resposta = self.assert_admin_post_invalid(Reserva, dados_ambiente, "ambiente")
+        self.assertContains(resposta, "Este ambiente está inativo")
+
+        dados_usuario = dict(
+            base,
+            solicitante=str(usuario_inativo.pk),
+            ambiente=str(self.ambiente.pk),
+        )
+        resposta = self.assert_admin_post_invalid(
+            Reserva, dados_usuario, "solicitante"
+        )
+        self.assertContains(resposta, "Este usuário está inativo")
+
     def test_admin_rejeita_quantidade_zero_e_associacao_duplicada(self):
         nova_reserva = Reserva.objects.create(
             solicitante=self.solicitante,

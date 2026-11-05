@@ -94,8 +94,46 @@ class Reserva(models.Model):
             raise ValidationError(
                 {"fim": "O fim da reserva deve ser posterior ao início."}
             )
+        self._validar_ambiente_e_solicitante_ativos()
         self._validar_conflito_com_aprovadas()
         self._validar_conflito_com_bloqueios()
+
+    def _validar_ambiente_e_solicitante_ativos(self):
+        """Impede reservar ambiente inativo ou em nome de usuário inativo.
+
+        A regra vale para reservas novas e quando o ambiente ou o solicitante
+        é trocado. Reservas antigas continuam editáveis mesmo que o ambiente
+        ou o usuário tenha sido desativado depois.
+        """
+        anterior = None
+        if self.pk is not None:
+            anterior = (
+                type(self)
+                .objects.filter(pk=self.pk)
+                .values("ambiente_id", "solicitante_id")
+                .first()
+            )
+
+        def mudou(campo):
+            return anterior is None or anterior[campo] != getattr(self, campo)
+
+        erros = {}
+        if (
+            self.ambiente_id is not None
+            and mudou("ambiente_id")
+            and not self.ambiente.ativo
+        ):
+            erros["ambiente"] = "Este ambiente está inativo e não pode ser reservado."
+        if (
+            self.solicitante_id is not None
+            and mudou("solicitante_id")
+            and not self.solicitante.is_active
+        ):
+            erros["solicitante"] = (
+                "Este usuário está inativo e não pode solicitar reservas."
+            )
+        if erros:
+            raise ValidationError(erros)
 
     def _validar_conflito_com_bloqueios(self):
         """Impede aprovar reserva durante um bloqueio do mesmo ambiente.

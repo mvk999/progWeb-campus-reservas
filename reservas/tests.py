@@ -632,6 +632,82 @@ class ReservaEquipamentoModelTests(TestCase):
         self.assertTrue(ReservaEquipamento.objects.filter(pk=item.pk).exists())
 
 
+class ReservaAmbienteSolicitanteInativoTests(TestCase):
+    """Ambiente inativo e usuário inativo não podem originar reservas."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.solicitante = User.objects.create_user(username="solicitante-ativo")
+        cls.inativo = User.objects.create_user(
+            username="solicitante-inativo", is_active=False
+        )
+        cls.responsavel = User.objects.create_user(username="responsavel-inativo")
+        categoria = CategoriaAmbiente.objects.create(nome="Salas situação")
+        cls.ambiente = Ambiente.objects.create(
+            codigo="SIT-AMB-001",
+            nome="Sala ativa",
+            localizacao="Bloco I",
+            capacidade=10,
+            categoria=categoria,
+            responsavel=cls.responsavel,
+        )
+        cls.ambiente_inativo = Ambiente.objects.create(
+            codigo="SIT-AMB-002",
+            nome="Sala desativada",
+            localizacao="Bloco I",
+            capacidade=10,
+            ativo=False,
+            categoria=categoria,
+            responsavel=cls.responsavel,
+        )
+
+    def make_reserva(self, **overrides):
+        values = {
+            "solicitante": self.solicitante,
+            "ambiente": self.ambiente,
+            "inicio": INICIO_BASE,
+            "fim": FIM_BASE,
+        }
+        values.update(overrides)
+        return Reserva(**values)
+
+    def test_reserva_nova_em_ambiente_inativo_e_rejeitada(self):
+        with self.assertRaises(ValidationError) as contexto:
+            self.make_reserva(ambiente=self.ambiente_inativo).full_clean()
+        self.assertIn("inativo", contexto.exception.message_dict["ambiente"][0])
+
+    def test_reserva_nova_de_usuario_inativo_e_rejeitada(self):
+        with self.assertRaises(ValidationError) as contexto:
+            self.make_reserva(solicitante=self.inativo).full_clean()
+        self.assertIn("inativo", contexto.exception.message_dict["solicitante"][0])
+
+    def test_reserva_valida_com_ambiente_e_usuario_ativos(self):
+        self.make_reserva().full_clean()
+
+    def test_trocar_para_ambiente_ou_usuario_inativo_e_rejeitado(self):
+        reserva = self.make_reserva()
+        reserva.save()
+
+        reserva.ambiente = self.ambiente_inativo
+        reserva.solicitante = self.inativo
+        with self.assertRaises(ValidationError) as contexto:
+            reserva.full_clean()
+        self.assertIn("ambiente", contexto.exception.message_dict)
+        self.assertIn("solicitante", contexto.exception.message_dict)
+
+    def test_reserva_antiga_continua_editavel_apos_desativacoes(self):
+        reserva = self.make_reserva()
+        reserva.save()
+        self.ambiente.ativo = False
+        self.ambiente.save()
+        self.solicitante.is_active = False
+        self.solicitante.save()
+
+        reserva = Reserva.objects.get(pk=reserva.pk)
+        reserva.observacoes = "Editada após desativação."
+        reserva.full_clean()
+
+
 class ReservaEquipamentoEstoqueTests(TestCase):
     """Estoque e situação do equipamento ao incluí-lo em uma reserva."""
 
