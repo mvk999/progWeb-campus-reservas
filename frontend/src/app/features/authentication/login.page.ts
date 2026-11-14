@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { DemoProfileService } from './demo-profile.service';
 
@@ -13,15 +13,9 @@ import { DemoProfileService } from './demo-profile.service';
 export class LoginPage {
   private readonly profileService = inject(DemoProfileService);
   private readonly router = inject(Router);
-  protected readonly credentialError = signal('');
   protected readonly storageError = this.profileService.storageError;
 
-  protected submitCredentials(event: Event): void {
-    event.preventDefault();
-    this.credentialError.set('O acesso por e-mail e senha não está conectado a uma autenticação. Use o acesso demonstrativo abaixo.');
-  }
-
-  protected continueAsRequester(): void {
-    if (this.profileService.loginAsRequester()) void this.router.navigateByUrl('/mapa');
+  protected enterProfile(id: 'solicitante' | 'responsavel' | 'administrador'): void {
+    if (this.profileService.selectProfile(id)) void this.router.navigateByUrl(this.profileService.optionFor(id).homePath);
   }
 }

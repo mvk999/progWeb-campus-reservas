@@ -14,31 +14,28 @@ describe('LoginPage', () => {
     }).compileComponents();
   });
 
-  it('shows the observed sign-in fields without inventing credential values', () => {
+  it('shows the three local profile options and the demonstration notice', () => {
     const fixture = TestBed.createComponent(LoginPage);
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
-    expect(host.querySelector('#institutional-email')).toBeTruthy();
-    expect(host.querySelector('#password')).toBeTruthy();
-    expect(host.textContent).toContain('Acesso demonstrativo');
-    expect(host.textContent).toContain('nenhum par de credenciais foi inventado');
+    const profiles = [...host.querySelectorAll('[aria-label="Perfis de acesso"] button strong')];
+    expect(profiles.map(profile => profile.textContent?.trim())).toEqual(['Solicitante', 'Responsável', 'Administrador']);
+    expect(host.querySelector('header p')?.textContent).toContain('demonstração');
   });
 
-  it('does not authenticate through the credential form and offers a local requester access', async () => {
+  it.each([
+    ['Solicitante', 'solicitante', '/mapa'],
+    ['Responsável', 'responsavel', '/gestao'],
+    ['Administrador', 'administrador', '/admin'],
+  ])('opens and persists the demonstration profile %s', async (label, id, path) => {
     const fixture = TestBed.createComponent(LoginPage);
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
-    host.querySelector<HTMLFormElement>('form')!.dispatchEvent(
-      new Event('submit', { bubbles: true, cancelable: true }),
-    );
-    fixture.detectChanges();
-    expect(host.querySelector('[role="alert"]')?.textContent).toContain('não está conectado');
-    expect(TestBed.inject(Router).url).not.toBe('/mapa');
-
-    host.querySelector<HTMLButtonElement>('.button--demo')!.click();
+    const buttons = [...host.querySelectorAll<HTMLButtonElement>('[aria-label="Perfis de acesso"] button')];
+    buttons.find(button => button.querySelector('strong')?.textContent === label)!.click();
     await fixture.whenStable();
-    expect(TestBed.inject(Router).url).toBe('/mapa');
-    expect(TestBed.inject(DemoProfileService).profileId()).toBe('solicitante');
-    expect(localStorage.getItem(DEMO_PROFILE_STORAGE_KEY)).toBe('solicitante');
+    expect(TestBed.inject(Router).url).toBe(path);
+    expect(TestBed.inject(DemoProfileService).profileId()).toBe(id);
+    expect(localStorage.getItem(DEMO_PROFILE_STORAGE_KEY)).toBe(id);
   });
 });

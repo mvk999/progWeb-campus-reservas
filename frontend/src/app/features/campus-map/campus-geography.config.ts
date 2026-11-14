@@ -5,5 +5,5 @@ export const CAMPUS_GEOGRAPHY = {
   pitch: 54,
   bearing: -24,
   buildingsUrl: '/data/ufla-buildings.geojson',
-  tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+  tiles: ['https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png'],
 };

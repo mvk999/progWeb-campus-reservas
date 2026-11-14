@@ -121,6 +121,14 @@ export class RoomsPage {
   protected updateSearch(event: Event): void { this.searchTerm.set((event.target as HTMLInputElement).value); }
   protected setSort(event: Event): void { this.sortOrder.set((event.target as HTMLSelectElement).value as 'nome' | 'capacidade'); }
 
+  protected quickFind(category: string): void {
+    this.clearFilters();
+    const filters = { ...this.draftFilters(), category };
+    this.draftFilters.set(filters);
+    this.appliedFilters.set(filters);
+    this.filterFeedback.set(`Tipo de ambiente aplicado: ${category}.`);
+  }
+
   protected applyFilters(event: Event): void {
     event.preventDefault();
     if (!this.queryDate() || !this.searchStart() || !this.searchEnd() || this.searchStart() >= this.searchEnd()) {

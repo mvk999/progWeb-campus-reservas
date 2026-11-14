@@ -1,27 +1,36 @@
 <section class="login-page" aria-labelledby="page-title">
-  <nav class="breadcrumb" aria-label="Caminho de navegação"><a routerLink="/mapa">Início</a><span aria-hidden="true">/</span><span>Acesso</span></nav>
-  <div class="login-layout">
-    <main class="login-card">
-      <p class="page-eyebrow">Campus Reservas · UFLA</p>
-      <h1 id="page-title">Acessar sistema</h1>
-      <p class="intro">Entre para consultar suas solicitações e os ambientes do campus.</p>
-      <form class="credentials-form" (submit)="submitCredentials($event)" novalidate>
-        <label class="field" for="institutional-email"><span>E-mail institucional</span><input id="institutional-email" type="email" autocomplete="username" /></label>
-        <label class="field" for="password"><span>Senha</span><input id="password" type="password" autocomplete="current-password" /></label>
-        @if (credentialError()) {<p class="error-message" role="alert">{{ credentialError() }}</p>}
-        <button class="button button--primary" type="submit">Entrar</button>
-      </form>
-      <div class="demo-access">
-        <span class="section-label">Acesso demonstrativo</span>
-        <p>A autenticação é simulada e esta tela não envia dados. Os valores exatos de usuário e senha citados pela referência não foram registrados; nenhum par de credenciais foi inventado.</p>
-        @if (storageError()) {<p class="error-message" role="alert">{{ storageError() }}</p>}
-        <button class="button button--demo" type="button" (click)="continueAsRequester()">Acessar como Solicitante (demonstração)</button>
-      </div>
-    </main>
-    <aside class="login-note">
-      <h2>Perfis de demonstração</h2>
-      <p>Depois de entrar, use “Alternar perfil de demonstração” no cabeçalho para selecionar Solicitante, Responsável ou Administrador.</p>
-      <a routerLink="/mapa">Voltar ao mapa do campus</a>
-    </aside>
+  <header class="login-heading">
+    <h1 id="page-title">Acessar o Campus Reservas</h1>
+    <p>Escolha um perfil para usar a demonstração.</p>
+  </header>
+
+  <div class="profile-list" role="group" aria-label="Perfis de acesso">
+    <button type="button" (click)="enterProfile('solicitante')">
+      <span>
+        <strong>Solicitante</strong>
+        <small>Consulte salas e registre solicitações de reserva.</small>
+      </span>
+      <span class="profile-arrow" aria-hidden="true">›</span>
+    </button>
+    <button type="button" (click)="enterProfile('responsavel')">
+      <span>
+        <strong>Responsável</strong>
+        <small>Analise solicitações e consulte o calendário de ocupação.</small>
+      </span>
+      <span class="profile-arrow" aria-hidden="true">›</span>
+    </button>
+    <button type="button" (click)="enterProfile('administrador')">
+      <span>
+        <strong>Administrador</strong>
+        <small>Consulte o cadastro dos ambientes.</small>
+      </span>
+      <span class="profile-arrow" aria-hidden="true">›</span>
+    </button>
   </div>
+
+  @if (storageError()) {
+    <p class="error-message" role="alert">{{ storageError() }}</p>
+  }
+
+  <a class="map-link" routerLink="/mapa">Voltar ao mapa</a>
 </section>

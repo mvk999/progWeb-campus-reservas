@@ -53,8 +53,7 @@ describe('Campus Reservas shell', () => {
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('h1')?.textContent?.trim()).toBe('Salas');
     expect(host.querySelector('.primary-nav a.is-active')?.textContent?.trim()).toBe('Salas');
-    expect(host.querySelector('.room-card')).toBeTruthy();
-    expect(host.textContent).toContain('24 ambientes');
+    expect(host.querySelectorAll('.room-card').length).toBeGreaterThan(0);
   });
 
   it('shows role-specific navigation after selecting a demonstrative profile', async () => {

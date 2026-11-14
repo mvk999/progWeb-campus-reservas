@@ -111,7 +111,7 @@ describe('ReservationRequestPage', () => {
     );
     fixture.detectChanges();
 
-    expect(host.querySelector('.success-message')?.textContent).toContain('Nenhum pedido real foi enviado.');
+    expect(host.querySelector('.success-message')?.textContent).toContain('Os dados foram salvos neste navegador.');
     expect(TestBed.inject(DemoReservationStore).getAll()).toHaveLength(1);
     expect(JSON.parse(localStorage.getItem(RESERVATION_STORAGE_KEY) ?? '[]')[0].source).toBe('demo-local');
     host.querySelector<HTMLFormElement>('.request-form')!.dispatchEvent(

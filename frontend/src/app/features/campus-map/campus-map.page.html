@@ -6,20 +6,15 @@
         <span aria-hidden="true">/</span>
         <span>Campus sede · Lavras, MG</span>
       </nav>
-      <h1 id="page-title">Seu próximo espaço começa aqui</h1>
-      <p>Explore o campus real e encontre o ambiente ideal para sua próxima atividade.</p>
+      <h1 id="page-title">Mapa do campus</h1>
+      <p>Selecione um prédio para consultar as salas e os horários de demonstração.</p>
     </div>
     <a class="all-rooms-link" routerLink="/salas">
       Consultar todas as salas <span aria-hidden="true">→</span>
     </a>
   </div>
 
-  <form class="period-query" (submit)="updatePeriod($event)" novalidate>
-    <div class="period-query__title">
-      <span class="section-label">Período da consulta</span>
-      <span class="demo-label">Salas e horários demonstrativos</span>
-    </div>
-
+  <form class="period-query" aria-label="Período da consulta" (submit)="updatePeriod($event)" novalidate>
     <div class="period-query__fields">
       <label class="field field--date">
         <span>Data</span>
@@ -68,7 +63,6 @@
     <aside class="building-sidebar" aria-label="Prédios e salas">
       <div class="building-sidebar__list">
         <div class="building-sidebar__heading">
-          <span class="section-label">Campus sede</span>
           <h2>Prédios no mapa</h2>
         </div>
 
@@ -122,13 +116,12 @@
           <p class="building-detail__code">{{ building.code }} · {{ data.campusName }}</p>
           <h2>{{ building.name }}</h2>
           <p class="building-detail__full-name">{{ building.fullName }}</p>
-          <p class="building-detail__location">{{ data.location.replace(' · Lavras, MG', ' · Lavras') }}</p>
           <p class="building-detail__period">
-            <span aria-hidden="true">▢</span> {{ displayDate }} · {{ displayPeriod }}
+            {{ displayDate }} · {{ displayPeriod }}
           </p>
 
           <div class="room-list-heading">
-            <span>Salas de demonstração</span>
+            <span>Salas</span>
             <strong>{{ filteredRooms().length }}</strong>
           </div>
 
@@ -154,10 +147,9 @@
 
           @if (!filteredRooms().length) { <p class="empty-search">Nenhum ambiente deste prédio corresponde aos filtros.</p> }
 
-          <p class="demo-disclaimer">Dados demonstrativos locais. Horários e disponibilidade não são reais.</p>
         </section>
       } @else {
-        <p class="building-placeholder">Selecione um prédio no mapa para ver os detalhes desta demonstração.</p>
+        <p class="building-placeholder">Selecione um prédio no mapa para ver os detalhes.</p>
       }
     </aside>
   </div>

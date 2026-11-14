@@ -1,6 +1,7 @@
 <div class="app-shell" [class.app-shell--legacy]="legacyRoute()">
   @if (!legacyRoute()) {
-  <a class="skip-link" href="#main">Ir para o conte&#250;do</a><header class="app-header">
+  <a class="skip-link" href="#main">Ir para o conte&#250;do</a>
+  <header class="app-header">
     <div class="app-header__top shell-container">
       <a class="brand" routerLink="/mapa" aria-label="Campus Reservas — UFLA">
         <span class="brand__word">campus</span>
@@ -32,7 +33,7 @@
         } @else {
           <a routerLink="/admin" routerLinkActive="is-active" ariaCurrentWhenActive="page">Administração</a>
         }
-        <a class="primary-nav__external" routerLink="/versao-anterior">Versão anterior <span aria-hidden="true">↗</span></a>
+        <a class="primary-nav__external" routerLink="/versao-anterior">Versão anterior</a>
       </div>
     </nav>
   </header>
@@ -62,7 +63,6 @@
     <div class="reset-backdrop">
       <section #resetDialog class="reset-dialog" role="dialog" aria-modal="true" aria-labelledby="reset-title"
         aria-describedby="reset-description" tabindex="-1" (keydown)="onResetDialogKeydown($event)">
-        <p class="reset-eyebrow">Campus Reservas · demonstração local</p>
         <h2 id="reset-title">Restaurar demonstração?</h2>
         <p id="reset-description">Isso remove somente o perfil, as solicitações e as decisões demonstrativas salvas neste navegador. Outros dados não serão alterados.</p>
         @if (resetError()) {<p class="reset-error" role="alert">{{ resetError() }}</p>}

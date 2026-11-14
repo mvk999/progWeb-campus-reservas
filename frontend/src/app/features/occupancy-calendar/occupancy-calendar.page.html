@@ -5,9 +5,8 @@
 
   <header class="page-heading">
     <div>
-      <p class="page-eyebrow">Área do responsável · Demonstração local</p>
       <h1 id="page-title">Calendário de ocupação</h1>
-      <p>Visualize solicitações e bloqueios dos recursos sob sua responsabilidade.</p>
+      <p>Solicitações e bloqueios de {{ managedResourceCount }} recursos na demonstração.</p>
     </div>
     <a class="manager-link" routerLink="/gestao">Painel do responsável <span aria-hidden="true">→</span></a>
   </header>
@@ -16,7 +15,6 @@
     <div class="calendar-toolbar">
       <div>
         <h2 id="week-title">{{ weekLabel() }}</h2>
-        <p>Semana de {{ week().startDate }} a {{ week().endDate }}</p>
       </div>
       <div class="week-controls" role="group" aria-label="Navegação semanal">
         <button type="button" aria-label="Semana anterior" (click)="moveWeek(-1)">‹ <span>Semana anterior</span></button>
@@ -31,7 +29,7 @@
       <span><i class="legend-dot legend-dot--blocked" aria-hidden="true"></i>Bloqueado</span>
     </div>
 
-    <div class="calendar-scroll" role="region" aria-label="Grade semanal de ocupação demonstrativa" tabindex="0">
+    <div class="calendar-scroll" role="region" aria-label="Grade semanal de ocupação" tabindex="0">
       <table class="calendar-grid">
         <caption class="visually-hidden">Solicitações e bloqueios sintéticos por dia útil e período aproximado</caption>
         <thead>
@@ -58,7 +56,5 @@
       </table>
     </div>
 
-    <p class="grid-note">Esta grade mostra exemplos sintéticos com horários aproximados para representar os estados observados.</p>
-    <p class="managed-note">A grade apresenta solicitações e bloqueios dos {{ managedResourceCount }} recursos gerenciados. Os dados são locais e demonstrativos; não representam ocupação real.</p>
   </section>
 </section>

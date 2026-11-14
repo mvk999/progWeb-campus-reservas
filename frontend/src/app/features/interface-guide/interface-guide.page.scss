@@ -3,7 +3,6 @@
 .breadcrumb { display: flex; gap: .5rem; margin-bottom: .85rem; color: var(--text-muted); font-size: .76rem; }
 .breadcrumb a { color: var(--accent); text-decoration: none; }
 .guide-heading { margin-bottom: 1.5rem; }
-.guide-eyebrow { margin: 0 0 .3rem; color: var(--accent-muted); font-size: .76rem; }
 .guide-heading h1 { margin: 0 0 .35rem; color: var(--text); font-size: clamp(1.8rem,3vw,2.25rem); font-weight: 500; letter-spacing: -.035em; }
 .guide-heading > p:last-child, .section-heading p { margin: 0; color: var(--text-muted); font-size: .82rem; }
 .guide-section { margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--border); background: var(--surface); }

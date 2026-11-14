@@ -15,7 +15,7 @@ describe('InterfaceGuidePage', () => {
     const fixture = TestBed.createComponent(InterfaceGuidePage);
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
-    expect(host.querySelector('.guide-eyebrow')?.textContent).toContain('Campus Reservas · Fundamentos');
+    expect(host.querySelector('.breadcrumb a')?.textContent).toContain('Campus Reservas');
     expect(host.querySelector('#page-title')?.textContent).toContain('Guia de interface');
     expect([...host.querySelectorAll('.color-card code')].map((item) => item.textContent?.trim())).toEqual([
       '#2C4E70', '#58748F', '#263340', '#516171',

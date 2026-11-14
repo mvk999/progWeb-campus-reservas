@@ -4,14 +4,12 @@
 .breadcrumb a, .manager-link { color: var(--accent); text-decoration: none; }
 .page-heading, .calendar-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
 .page-heading { margin-bottom: 1.45rem; }
-.page-eyebrow { margin: 0 0 .25rem; color: var(--muted); font-size: .75rem; }
 .page-heading h1 { margin: 0 0 .4rem; font-size: clamp(1.8rem,3vw,2.25rem); font-weight: 500; letter-spacing: -.035em; }
 .page-heading p:last-child { margin: 0; color: var(--muted); font-size: .86rem; }
 .manager-link { flex: none; font-size: .8rem; }
 .calendar-panel { padding: 1rem; border: 1px solid var(--line); background: var(--surface); }
 .calendar-toolbar { align-items: center; padding-bottom: .9rem; border-bottom: 1px solid #e7ebee; }
 .calendar-toolbar h2 { margin: 0; color: var(--ink); font-size: 1.12rem; font-weight: 500; text-transform: capitalize; }
-.calendar-toolbar p { margin: .25rem 0 0; color: var(--muted); font-size: .72rem; }
 .week-controls { display: flex; align-items: center; gap: .4rem; }
 .week-controls button { min-height: 2.35rem; padding: .4rem .65rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-size: .72rem; cursor: pointer; }
 .week-controls button:disabled { color: #9aa4aa; cursor: default; }
@@ -34,8 +32,6 @@
 .event--pendente { border-left-color: #d4aa4e; background: #fff5df; color: #816224; }
 .event--bloqueado { border-left-color: #bd796a; background: #f8e9e5; color: #8f4335; }
 .consult-link { display: inline-flex; min-height: 3.4rem; align-items: center; justify-content: center; color: var(--accent); font-size: .68rem; text-align: center; }
-.grid-note, .managed-note { margin: .65rem 0 0; color: var(--muted); font-size: .7rem; line-height: 1.45; }
-.managed-note { margin-top: .35rem; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; clip-path: inset(50%); }
 :is(a, button):focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 @media (max-width: 1150px) { .calendar-grid { min-width: 57rem; }.calendar-panel { padding: .8rem; } }

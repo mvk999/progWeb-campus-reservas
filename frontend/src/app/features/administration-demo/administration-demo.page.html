@@ -5,16 +5,15 @@
 
   <header class="page-heading">
     <div>
-      <p class="page-eyebrow">Demonstração local · somente leitura</p>
       <h1 id="page-title">Administração do campus</h1>
-      <p>Cadastros e bloqueios de salas da demonstração.</p>
+      <p>Demonstração do cadastro de ambientes. Consulta em modo de leitura.</p>
     </div>
     <a class="manager-link" routerLink="/gestao">Painel do responsável <span aria-hidden="true">→</span></a>
   </header>
 
   <div class="admin-layout">
     <nav class="admin-menu" aria-label="Seções de administração">
-      <h2>Menu</h2>
+      <h2>Seções</h2>
       <ul>
         @for (item of menu; track trackMenu($index, item)) {
           <li>
@@ -22,7 +21,7 @@
               <span class="menu-item menu-item--active" aria-current="page">{{ item.label }}</span>
             } @else {
               <span class="menu-item menu-item--disabled" aria-disabled="true">
-                <span>{{ item.label }}</span><small>Sem detalhe observado</small>
+                <span>{{ item.label }}</span><small>Indisponível</small>
               </span>
             }
           </li>
@@ -32,8 +31,7 @@
 
     <section class="environment-section" aria-labelledby="environments-title">
       <div class="section-heading">
-        <div><h2 id="environments-title">Ambientes</h2><p>{{ environments.length }} registros sintéticos derivados da demonstração do mapa.</p></div>
-        <span class="readonly-badge">Somente leitura</span>
+        <div><h2 id="environments-title">Ambientes</h2><p>{{ environments.length }} ambientes cadastrados na demonstração.</p></div>
       </div>
 
       <div class="table-scroll" role="region" aria-label="Tabela de ambientes sintéticos" tabindex="0">
@@ -52,7 +50,6 @@
           </tbody>
         </table>
       </div>
-      <p class="demo-note" role="note">Os registros usam os ambientes locais do mapa. Responsáveis não estão informados nesta demonstração, e a ação Visualizar permanece indisponível porque seu destino não foi observado.</p>
     </section>
   </div>
 </section>

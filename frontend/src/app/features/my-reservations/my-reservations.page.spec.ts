@@ -41,7 +41,7 @@ describe('MyReservationsPage', () => {
     expect(host.querySelectorAll('.indicator strong')[1].textContent).toBe('0');
     expect(host.querySelectorAll('.indicator strong')[2].textContent).toBe('0');
     expect(host.textContent).toContain('Nenhuma solicitação encontrada');
-    expect(host.querySelector('.demo-disclaimer')?.textContent).toContain('Dados locais demonstrativos');
+    expect(host.querySelector('.page-heading p')?.textContent).toContain('Solicitações de demonstração salvas neste navegador');
     host.querySelector<HTMLButtonElement>('.tabs button:nth-child(3)')!.click();
     fixture.detectChanges();
     expect(host.querySelector('.empty-state')).not.toBeNull();

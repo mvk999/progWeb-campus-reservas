@@ -10,11 +10,11 @@
     <header class="request-heading">
       <p class="page-eyebrow">{{ room.category }} · {{ room.code }}</p>
       <h1 id="page-title">Solicitar reserva</h1>
-      <p>Preencha as informações para registrar uma solicitação demonstrativa.</p>
+      <p>A solicitação de demonstração será salva neste navegador.</p>
     </header>
 
     <div class="request-layout">
-      <main class="request-main">
+      <div class="request-main">
         <a class="change-period" [routerLink]="changePeriodRoute()" [queryParams]="changePeriodQueryParams()">
           <span aria-hidden="true">←</span> Alterar período
         </a>
@@ -22,7 +22,7 @@
         @if (success()) {
           <section class="success-message" role="status" aria-live="polite">
             <span class="success-mark" aria-hidden="true">✓</span>
-            <div><h2>Solicitação demonstrativa registrada</h2><p>Os dados foram salvos localmente neste navegador. Nenhum pedido real foi enviado.</p></div>
+            <div><h2>Solicitação registrada</h2><p>Os dados foram salvos neste navegador.</p></div>
           </section>
         }
         @if (storageError()) {<p class="storage-error" role="alert" aria-live="assertive">{{ storageError() }}</p>}
@@ -68,10 +68,10 @@
             <button class="button button--primary" type="submit" [disabled]="success()">Enviar solicitação</button>
           </div>
         </form>
-      </main>
+      </div>
 
       <aside class="request-summary" aria-labelledby="summary-title">
-        <div class="summary-title"><span class="section-label">Resumo da solicitação</span><h2 id="summary-title">{{ room.name }}</h2></div>
+        <div class="summary-title"><h2 id="summary-title">{{ room.name }}</h2></div>
         <p class="summary-location">{{ room.buildingName }} · {{ room.location }}</p>
         <dl class="summary-list">
           <div><dt>Data</dt><dd>{{ formattedDate() }}</dd></div>
@@ -80,8 +80,7 @@
           <div><dt>Responsável</dt><dd>{{ summary().responsible }}</dd></div>
           <div><dt>Previsão de aprovação</dt><dd>{{ summary().approvalForecast }}</dd></div>
         </dl>
-        <p class="demo-disclaimer">Fluxo local demonstrativo. O envio não cria uma reserva real nem solicita autorização ao campus.</p>
-        @if (requestCount() > 0) {<p class="local-count">Solicitações demonstrativas neste navegador: {{ requestCount() }}</p>}
+        @if (requestCount() > 0) {<p class="local-count">Solicitações neste navegador: {{ requestCount() }}</p>}
       </aside>
     </div>
   </section>
@@ -89,7 +88,7 @@
   <section class="not-found" aria-labelledby="not-found-title">
     <nav class="breadcrumb" aria-label="Caminho de navegação"><a routerLink="/mapa">Início</a><span aria-hidden="true">/</span><a routerLink="/salas">Salas</a></nav>
     <h1 id="not-found-title">Ambiente não encontrado</h1>
-    <p>Não há dados demonstrativos para o código solicitado.</p>
+    <p>Não há dados para o código solicitado.</p>
     <a routerLink="/salas">Voltar às salas</a>
   </section>
 }

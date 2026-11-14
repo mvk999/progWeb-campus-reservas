@@ -25,8 +25,8 @@ export const CAMPUS_MAP_FIXTURE: CampusMapData = {
   buildings: [
     {
       code: 'PV1',
-      name: 'Pavilhão 1',
-      fullName: 'Pavilhão de Aulas 1',
+      name: 'Centro de Eventos',
+      fullName: 'PV1 - Centro de Eventos',
       position: { x: 61, y: 19 },
       rooms: [
         freeRoom('AMB-003', 'Sala 101', 40, 'Sala de aula'),
@@ -105,17 +105,6 @@ export const CAMPUS_MAP_FIXTURE: CampusMapData = {
         },
         freeRoom('AMB-006', 'Sala 102', 60),
         freeRoom('AMB-022', 'Sala 103', 16, 'Sala de reunião'),
-      ],
-    },
-    {
-      code: 'BU',
-      name: 'Biblioteca',
-      fullName: 'Biblioteca Universitária',
-      position: { x: 80, y: 47 },
-      rooms: [
-        freeRoom('AMB-005', 'Sala 101', 12, 'Sala de estudo'),
-        freeRoom('AMB-023', 'Sala 102', 16),
-        freeRoom('AMB-024', 'Sala 103', 20),
       ],
     },
   ],

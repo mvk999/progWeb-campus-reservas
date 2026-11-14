@@ -1,13 +1,16 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { routes } from '../../app.routes';
+import { CAMPUS_MAP_FIXTURE } from '../campus-map/campus-map.fixtures';
 import { RoomsPage } from './rooms.page';
+
+const demoRoomCount = CAMPUS_MAP_FIXTURE.buildings.reduce((count, building) => count + building.rooms.length, 0);
 
 describe('RoomsPage', () => {
   it('starts with cards and keeps details and building map links available', () => {
     const fixture = createPage('cards');
     const host = fixture.nativeElement as HTMLElement;
-    expect(host.querySelectorAll('.room-card').length).toBe(24);
+    expect(host.querySelectorAll('.room-card').length).toBe(demoRoomCount);
     expect(host.querySelector('.room-card h3 a')?.getAttribute('href')).toMatch(/^\/ambientes\//);
     expect(host.querySelector('.room-card__actions a')?.getAttribute('href')).toContain('/mapa?predio=');
   });
@@ -28,10 +31,10 @@ describe('RoomsPage', () => {
     return fixture;
   }
 
-  it('shows all 24 local demo rooms, the observed week and hourly agenda', () => {
+  it('shows all local demo rooms, the observed week and hourly agenda', () => {
     const fixture = createPage();
     const host = fixture.nativeElement as HTMLElement;
-    expect(host.querySelectorAll('.agenda-table tbody tr').length).toBe(24);
+    expect(host.querySelectorAll('.agenda-table tbody tr').length).toBe(demoRoomCount);
     expect(host.querySelectorAll('.agenda-table thead th').length).toBe(16);
     expect(host.textContent).toContain('19–25 de outubro de 2026');
     expect(host.querySelector('.demo-disclaimer')?.textContent).toContain('disponibilidade não são reais');
@@ -121,7 +124,7 @@ describe('RoomsPage', () => {
     fixture.detectChanges();
     expect(host.textContent).toContain('30/10/2026');
     expect(host.querySelector('.week-day--selected strong')?.textContent).toBe('30');
-    expect(host.querySelectorAll('.agenda-table tbody tr').length).toBe(24);
+    expect(host.querySelectorAll('.agenda-table tbody tr').length).toBe(demoRoomCount);
   });
 
   it('clears every filter and restores one coherent date and period', () => {
@@ -148,7 +151,7 @@ describe('RoomsPage', () => {
     host.querySelector<HTMLButtonElement>('.query-actions .button--quiet')!.click();
     fixture.detectChanges();
 
-    expect(host.querySelectorAll('.agenda-table tbody tr').length).toBe(24);
+    expect(host.querySelectorAll('.agenda-table tbody tr').length).toBe(demoRoomCount);
     expect(host.querySelector('.availability-heading')?.textContent).toContain('23/10/2026');
     expect(host.querySelector('.week-day--selected strong')?.textContent).toBe('23');
     expect(host.querySelector<HTMLSelectElement>('.results-heading select')?.value).toBe('nome');

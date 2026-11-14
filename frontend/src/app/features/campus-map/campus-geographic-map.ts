@@ -57,7 +57,7 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
       try {
         const response = await fetch(CONFIG.buildingsUrl, { signal: this.abort.signal });
         if (response.ok && !this.destroyed) {
-          this.features = await response.json();
+          this.features = await response.json(); this.features.features = this.features.features.filter(feature => ['DCC', 'PV1', 'PV2', 'PV3', 'PV4', 'PV5', 'PV6'].includes(feature.properties?.['code']));
           this.features.features.forEach((feature, index) => { feature.id = index; });
           this.prepareFlatMap();
           this.message.set('Vista 2D com contornos oficiais NUP/UFLA. WebGL indisponível neste dispositivo.');
@@ -74,7 +74,7 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
         import('maplibre-gl'), fetch(CONFIG.buildingsUrl, { signal: this.abort.signal }),
       ]);
       if (!response.ok) throw new Error('Geometria indisponível');
-      this.features = await response.json();
+      this.features = await response.json(); this.features.features = this.features.features.filter(feature => ['DCC', 'PV1', 'PV2', 'PV3', 'PV4', 'PV5', 'PV6'].includes(feature.properties?.['code']));
       if (this.destroyed) return;
       if (!this.features.features?.length) throw new Error('Geometria vazia');
       this.features.features.forEach((feature, index) => { feature.id = index; });
@@ -85,11 +85,9 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
         pitch: this.reducedMotion ? 0 : CONFIG.pitch, bearing: CONFIG.bearing,
         maxZoom: 19, minZoom: 12, attributionControl: false,
         style: { version: 8, sources: {
-          campusBase: { type: 'raster', tiles: CONFIG.tiles, tileSize: 256, maxzoom: 19,
-            attribution: '© OpenStreetMap contributors' },
+
         }, layers: [
           { id: 'background', type: 'background', paint: { 'background-color': '#e8eddf' } },
-          { id: 'campus-base', type: 'raster', source: 'campusBase', paint: { 'raster-saturation': -0.65, 'raster-opacity': 0.78 } },
         ] },
       });
       this.threeDimensional.set(!this.reducedMotion);

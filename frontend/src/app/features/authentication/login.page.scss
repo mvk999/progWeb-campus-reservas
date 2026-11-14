@@ -1,17 +1,95 @@
-:host { display: block; }
-.login-card, .login-note { border-radius: var(--radius); box-shadow: var(--shadow-soft); }
-.demo-access, .button { border-radius: .65rem; }
-.login-page { --line: #dce5de; --ink: #20372e; --muted: #586b61; --accent: #236447; color: var(--text); }
-.breadcrumb { display: flex; gap: .5rem; margin-bottom: 1rem; color: var(--muted); font-size: .78rem; }.breadcrumb a { color: var(--accent); text-decoration: none; }
-.login-layout { display: grid; max-width: 58rem; grid-template-columns: minmax(0,1.1fr) minmax(15rem,.7fr); align-items: start; gap: 1.25rem; margin: 1rem auto; }
-.login-card, .login-note { padding: 1.25rem; border: 1px solid var(--line); background: var(--surface); }
-.page-eyebrow { margin: 0 0 .35rem; color: var(--muted); font-size: .76rem; }.login-card h1 { margin: 0 0 .45rem; font-size: clamp(1.8rem,3vw,2.2rem); font-weight: 500; letter-spacing: -.035em; }.intro { margin: 0 0 1.15rem; color: var(--muted); font-size: .84rem; }
-.credentials-form { display: grid; gap: .9rem; }.field { display: grid; gap: .35rem; color: var(--ink); font-size: .78rem; }.field input { width: 100%; min-height: 2.55rem; padding: .55rem .65rem; border: 1px solid var(--line); border-radius: .55rem; background: #fff; color: var(--ink); font: inherit; font-size: .84rem; }
-.button { display: inline-flex; min-height: 2.5rem; align-items: center; justify-content: center; padding: .5rem .8rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-size: .78rem; text-decoration: none; cursor: pointer; }.button--primary { border-color: var(--accent); background: var(--accent); color: #fff; }.button--demo { width: 100%; border-color: #9eac8c; background: #f6f8f1; color: #4c5d3e; }
-.demo-access { display: grid; gap: .55rem; margin-top: 1.1rem; padding: .9rem; border: 1px solid #e0e5d8; background: #f8f9f5; }.section-label { color: var(--muted); font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }.demo-access p { margin: 0; color: var(--muted); font-size: .75rem; line-height: 1.5; }
-.error-message { margin: 0; padding: .6rem .7rem; border-left: 3px solid #a23d35; background: #fbefed; color: #873c35; font-size: .76rem; line-height: 1.45; }
-.login-note h2 { margin: 0 0 .5rem; font-size: .95rem; font-weight: 500; }.login-note p { margin: 0 0 .8rem; color: var(--muted); font-size: .78rem; line-height: 1.5; }.login-note a { color: var(--accent); font-size: .78rem; }
-:is(a,button,input):focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-@media (max-width: 1150px) { .login-layout { max-width: 54rem; } }
-@media (max-width: 780px) { .login-layout { grid-template-columns: 1fr; } }
-@media (max-width: 480px) { .login-layout { margin: 0; gap: .75rem; }.login-card, .login-note { padding: .85rem; } }
+:host {
+  display: block;
+}
+
+.login-page {
+  max-width: 34rem;
+  margin: clamp(1rem, 5vw, 4rem) auto;
+}
+
+.login-heading {
+  margin-bottom: 1.5rem;
+}
+
+.login-heading h1 {
+  margin: 0 0 .4rem;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  line-height: 1.2;
+}
+
+.login-heading p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.profile-list {
+  display: grid;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, .75rem);
+  background: var(--surface);
+}
+
+.profile-list button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: .95rem clamp(.9rem, 3vw, 1.25rem);
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-list button + button {
+  border-top: 1px solid var(--border);
+}
+
+.profile-list button:first-child {
+  border-radius: var(--radius, .75rem) var(--radius, .75rem) 0 0;
+}
+
+.profile-list button:last-child {
+  border-radius: 0 0 var(--radius, .75rem) var(--radius, .75rem);
+}
+
+.profile-list button:hover {
+  background: var(--page-background);
+}
+
+.profile-list button:focus-visible {
+  outline-offset: -3px;
+}
+
+.profile-list strong,
+.profile-list small {
+  display: block;
+}
+
+.profile-list small {
+  margin-top: .25rem;
+  color: var(--text-muted);
+  font-size: .875rem;
+}
+
+.profile-arrow {
+  color: var(--accent);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.error-message {
+  padding: .65rem .8rem;
+  border-left: 3px solid #a23d35;
+  background: #fbefed;
+  color: #873c35;
+}
+
+.map-link {
+  display: inline-block;
+  margin-top: 1.25rem;
+  color: var(--accent);
+  text-underline-offset: .2em;
+}

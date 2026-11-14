@@ -1,8 +1,7 @@
 <div class="profile-menu">
   <button #profileTrigger class="profile-trigger" type="button" aria-label="Alternar perfil de demonstração"
     aria-controls="profile-dialog" [attr.aria-expanded]="dialogOpen()" (click)="openDialog()">
-    <span class="profile-avatar" aria-hidden="true">{{ profiles.profile().label.slice(0, 1) }}</span>
-    <span class="profile-trigger__text"><strong>{{ profiles.profile().label }}</strong><small>Demonstração</small></span>
+    <span>{{ profiles.profile().label }}</span>
     <span aria-hidden="true">⌄</span>
   </button>
 
@@ -15,8 +14,8 @@
       <section #profileDialog id="profile-dialog" class="profile-dialog" role="dialog" aria-modal="true"
         aria-labelledby="profile-dialog-title" aria-describedby="profile-dialog-description" tabindex="-1"
         (keydown)="onDialogKeydown($event)" (click)="$event.stopPropagation()">
-        <header class="profile-dialog__header"><div><span class="dialog-eyebrow">Campus Reservas</span><h2 id="profile-dialog-title">Selecionar perfil</h2></div><button type="button" aria-label="Fechar diálogo" (click)="closeDialog()">×</button></header>
-        <p id="profile-dialog-description">Os perfis e os dados desta demonstração ficam salvos somente neste navegador. Eles não representam permissões reais.</p>
+        <header class="profile-dialog__header"><h2 id="profile-dialog-title">Selecionar perfil</h2><button type="button" aria-label="Fechar diálogo" (click)="closeDialog()">×</button></header>
+        <p id="profile-dialog-description">Os perfis e os dados ficam salvos somente neste navegador. Eles não representam permissões reais.</p>
         @if (profiles.storageError()) {<p class="storage-error" role="alert">{{ profiles.storageError() }}</p>}
         <div class="profile-options">
           @for (profile of profiles.options; track profile.id) {

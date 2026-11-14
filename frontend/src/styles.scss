@@ -3,14 +3,16 @@
 
 :root {
   color-scheme: light;
-  --page-background: #f5f7f4;
-  --surface: #ffffff;
+  --page-background: #f6f8f6;
+  --surface: #fff;
   --text: #20372e;
-  --text-muted: #586b61;
+  --text-muted: #52645a;
   --border: #dce5de;
   --accent: #236447;
-  --accent-muted: #58816b;
-  --focus-ring: #236447;
+  --accent-muted: #4c735e;
+  --focus-ring: var(--accent);
+  --radius: 10px;
+  --shadow-soft: 0 1px 2px #20372e0a;
   --font-brand: 'Segoe UI', Arial, sans-serif;
   --font-sans: 'Segoe UI', Arial, sans-serif;
 
@@ -18,7 +20,6 @@
   color: var(--text);
   background: var(--page-background);
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -31,14 +32,12 @@
 
 html {
   min-width: 320px;
-  min-height: 100%;
-  background: var(--page-background);
 }
 
 body {
-  min-width: 320px;
   min-height: 100dvh;
   margin: 0;
+  line-height: 1.5;
 }
 
 button,
@@ -46,56 +45,54 @@ input,
 select,
 textarea {
   font: inherit;
+  accent-color: var(--accent);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: #d7eadf;
+  color: #153e2a;
 }
 
 .app-shell--legacy {
   @include legacy.styles;
 }
 
-/* Shared interaction and surface vocabulary. Component layouts remain independent. */
-:root { --radius: 14px; --shadow-soft: 0 6px 24px #20372e08; }
-body { line-height: 1.5; }
-::selection { background: #cce5d5; color: #153e2a; }
-:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
-button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
-button, input, select, textarea { accent-color: var(--accent); }
-button, a { touch-action: manipulation; }
-@media (prefers-reduced-motion: no-preference) {
-  button, a, input, select, textarea { transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
+/* MapLibre cria estes elementos fora da árvore de componentes do Angular. */
+.campus-pin {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .4rem .6rem;
+  border: 2px solid #fff;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 1px 5px #153d2440;
+  cursor: pointer;
 }
 
-app-rooms-page {
-.room-cards { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; }
-.room-card { display: flex; flex-direction: column; min-width: 0; padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow-soft); }
-.room-card__top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; color: var(--text-muted); font-size: .72rem; }
-.room-card h3 { margin: 1rem 0 .35rem; font-size: 1.1rem; line-height: 1.4; }
-.room-card h3 a { color: var(--text); text-decoration: none; }
-.room-card h3 a:hover { color: var(--accent); text-decoration: underline; }
-.room-card > p { margin: 0 0 1rem; color: var(--text-muted); font-size: .8rem; }
-.room-card__capacity { color: var(--accent); font-size: .85rem; font-weight: 600; }
-.room-card ul { display: flex; flex-wrap: wrap; gap: .4rem; margin: .75rem 0 1.25rem; padding: 0; list-style: none; }
-.room-card li { padding: .25rem .5rem; border-radius: .4rem; background: #edf4ee; color: var(--text-muted); font-size: .7rem; }
-.room-card__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .65rem; margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
-.room-card__actions > a:first-child { color: var(--accent); font-size: .75rem; text-underline-offset: 3px; }
-@media (max-width: 1100px) { .room-cards { grid-template-columns: repeat(2,minmax(0,1fr)); } }
-@media (max-width: 600px) { .room-cards { grid-template-columns: 1fr; } }
+.campus-pin__code {
+  font-size: .75rem;
+  font-weight: 700;
 }
 
-app-rooms-page {
-.query-panel { border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; background: var(--surface); box-shadow: var(--shadow-soft); }
-.advanced-panel, .agenda-scroll, .list-scroll, .empty-state { border-radius: .75rem; }
-.search, .view-toggle { border-radius: .55rem; overflow: hidden; }
-.search:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-
+.campus-pin__name {
+  display: none;
+  max-width: 140px;
+  font-size: .75rem;
+  text-align: left;
 }
 
-app-rooms-page .query-panel { padding: 1.25rem; }
+.campus-pin:is(:hover, :focus-visible, .campus-pin--selected) {
+  z-index: 2;
+  background: #744c1b;
+}
 
-/* DOM markers are created by MapLibre outside Angular view encapsulation. */
-.campus-pin { display:flex; align-items:center; gap:.4rem; padding:.45rem .65rem; border:2px solid #fff; border-radius:12px; background:#236447; color:white; box-shadow:0 4px 14px #153d2440; cursor:pointer; font-family:var(--font-sans); transform-origin:bottom center; }
-.campus-pin__code { font-size:.72rem; font-weight:750; letter-spacing:.02em; }
-.campus-pin__name { display:none; max-width:140px; font-size:.7rem; text-align:left; }
-.campus-pin:hover,.campus-pin:focus-visible,.campus-pin--selected { background:#a96c20; z-index:2; outline:3px solid #edd4a566; outline-offset:2px; }
-.campus-pin:hover .campus-pin__name,.campus-pin:focus-visible .campus-pin__name,.campus-pin--selected .campus-pin__name { display:block; }
-.campus-pin:focus-visible { outline:3px solid #153d24; }
-@media(prefers-reduced-motion:no-preference) { .campus-pin { transition:background-color .2s ease,box-shadow .2s ease; }.campus-pin--selected { animation:campus-pin-arrive .4s ease-out; } @keyframes campus-pin-arrive { from { opacity:.3; margin-top:8px; } to { opacity:1; margin-top:0; } } }
+.campus-pin:is(:hover, :focus-visible, .campus-pin--selected) .campus-pin__name {
+  display: block;
+}

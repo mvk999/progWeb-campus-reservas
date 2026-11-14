@@ -28,8 +28,7 @@ describe('OccupancyCalendarPage', () => {
     expect(host.querySelector('.event--bloqueado')).not.toBeNull();
     expect(host.querySelectorAll('.consult-link').length).toBe(21);
     expect(host.querySelectorAll('.consult-link[routerLink="/salas"]').length).toBe(21);
-    expect(host.textContent).toContain('horários aproximados');
-    expect(host.textContent).toContain('12 recursos gerenciados');
+    expect(host.querySelector('.page-heading p')?.textContent).toContain('12 recursos na demonstração');
     expect(host.querySelector('.manager-link')?.textContent).toContain('Painel do responsável');
   });
 

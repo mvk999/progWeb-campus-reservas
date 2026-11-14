@@ -44,20 +44,19 @@ describe('CampusMapPage', () => {
     capacity.dispatchEvent(new Event('change', { bubbles: true }));
     fixture.detectChanges();
     expect(host.querySelectorAll('.building-list__item').length).toBe(7);
-    expect(host.querySelector('.building-list__item[data-code="BU"]')).toBeNull();
   });
 
-  it('renders eight selectable buildings and the three observed PV4 rooms', () => {
+  it('renders seven selectable buildings and the three PV4 rooms', () => {
     const fixture = createPage();
     const host = fixture.nativeElement as HTMLElement;
 
-    expect(host.querySelectorAll('.building-marker').length).toBe(8);
-    expect(host.querySelectorAll('.building-list__item').length).toBe(8);
+    expect(host.querySelectorAll('.building-marker').length).toBe(7);
+    expect(host.querySelectorAll('.building-list__item').length).toBe(7);
     expect(host.querySelectorAll('.room-card').length).toBe(3);
     expect(host.textContent).toContain('Sala 101');
     expect(host.textContent).toContain('40 pessoas · Sala de aula');
     expect(host.querySelector<HTMLAnchorElement>('.room-card a')?.getAttribute('href')).toBe('/ambientes/AMB-001');
-    expect(host.textContent).toContain('Dados demonstrativos locais. Horários e disponibilidade não são reais.');
+    expect(host.querySelector('.page-heading p')?.textContent).toContain('horários de demonstração');
   });
 
   it('selects a building and shows its fixture-specific availability', () => {
@@ -77,7 +76,7 @@ describe('CampusMapPage', () => {
     const fixture = createPage();
     const host = fixture.nativeElement as HTMLElement;
 
-    for (const code of ['PV1', 'PV2', 'PV3', 'PV4', 'PV5', 'PV6', 'DCC', 'BU']) {
+    for (const code of ['PV1', 'PV2', 'PV3', 'PV4', 'PV5', 'PV6', 'DCC']) {
       host.querySelector<HTMLButtonElement>(`.building-marker[data-code="${code}"]`)!.click();
       fixture.detectChanges();
       expect(host.querySelectorAll('.room-card').length).toBe(3);
@@ -94,15 +93,15 @@ describe('CampusMapPage', () => {
     fixture.detectChanges();
 
     expect(host.querySelectorAll('.building-list__item').length).toBe(1);
-    expect(host.querySelectorAll('.building-marker').length).toBe(8);
+    expect(host.querySelectorAll('.building-marker').length).toBe(7);
 
-    search.value = 'abcxyzBU';
+    search.value = 'prédio inexistente';
     search.dispatchEvent(new Event('input', { bubbles: true }));
     fixture.detectChanges();
 
     expect(host.querySelector('.empty-search')?.textContent?.trim()).toBe('Nenhum prédio encontrado.');
     expect(host.querySelectorAll('.building-list__item').length).toBe(0);
-    expect(host.querySelectorAll('.building-marker').length).toBe(8);
+    expect(host.querySelectorAll('.building-marker').length).toBe(7);
   });
 
   it('validates a period and applies a valid query to the detail panel', () => {

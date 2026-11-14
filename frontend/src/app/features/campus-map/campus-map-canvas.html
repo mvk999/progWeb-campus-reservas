@@ -62,7 +62,7 @@
           [style.left.%]="building.position.x"
           [style.top.%]="building.position.y"
           [attr.aria-pressed]="selectedCode === building.code"
-          [attr.aria-label]="'Selecionar ' + building.code + ' — ' + building.fullName + '. ' + building.rooms.length + ' salas demonstrativas.'"
+          [attr.aria-label]="'Selecionar ' + building.code + ' — ' + building.fullName + '. ' + building.rooms.length + ' salas.'"
           [attr.data-code]="building.code"
           (click)="chooseBuilding(building)"
         >

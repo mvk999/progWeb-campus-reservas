@@ -28,7 +28,7 @@ describe('ReservationManagementPage', () => {
     expect(host.querySelectorAll('.metric strong')[0].textContent).toBe('2');
     expect(host.querySelectorAll('.metric strong')[1].textContent).toBe('2');
     expect(host.querySelectorAll('.metric strong')[2].textContent).toBe('12');
-    expect(host.textContent).toContain('dados sintéticos locais');
+    expect(host.querySelector('.page-heading p')?.textContent).toContain('Solicitações de demonstração');
     expect(host.textContent).toContain('Solicitante demo 01');
     expect(host.textContent).not.toContain('Ana Ribeiro');
   });

@@ -18,18 +18,17 @@ describe('EnvironmentDetailPage', () => {
     return fixture;
   }
 
-  it('renders the observed AMB-001 details and labels the local illustration', () => {
+  it('renders the AMB-001 details and identifies demonstration availability', () => {
     const fixture = createPage();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('h1')?.textContent?.trim()).toBe('Sala 101');
     expect(host.textContent).toContain('Sala de aula · AMB-001');
     expect(host.textContent).toContain('Pavilhão 4');
-    expect(host.textContent).toContain('capacidade máxima de 40 pessoas');
+    expect(host.textContent).toContain('Capacidade máxima de 40 pessoas');
     expect(host.textContent).toContain('Quadro branco');
     expect(host.textContent).toContain('Projetor');
     expect(host.textContent).toContain('Wi-Fi');
-    expect(host.querySelector('[aria-label="Imagem ilustrativa do ambiente"]')).toBeTruthy();
-    expect(host.querySelector('.demo-disclaimer')?.textContent).toContain('Disponibilidade demonstrativa local');
+    expect(host.querySelector('.availability-heading p')?.textContent).toContain('Disponibilidade demonstrativa local');
   });
 
   it('shows October 2026 with 1–18 disabled and the two unavailable periods', () => {

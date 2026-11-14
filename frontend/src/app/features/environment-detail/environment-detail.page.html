@@ -10,21 +10,16 @@
       <div>
         <p class="room-type">{{ room.category }} · {{ room.code }}</p>
         <h1 id="page-title">{{ room.name }}</h1>
-        <p class="room-location">{{ room.buildingName }} · {{ room.location }}</p><a class="map-location-link" routerLink="/mapa" [queryParams]="{ predio: room.buildingCode }">Explorar no mapa &#8599;</a>
+        <p class="room-location">{{ room.buildingName }} · {{ room.location }}</p>
+        <a class="map-location-link" routerLink="/mapa" [queryParams]="{ predio: room.buildingCode }">Localizar no mapa</a>
       </div>
-      <span class="demo-tag">Dados demonstrativos locais</span>
     </header>
 
     <div class="detail-layout">
-      <main class="room-information">
-        <figure class="illustration" role="img" aria-label="Imagem ilustrativa do ambiente">
-          <div class="illustration__room" aria-hidden="true"><span></span><span></span><span></span><i></i></div>
-          <figcaption>Imagem ilustrativa</figcaption>
-        </figure>
-
+      <div class="room-information">
         <section class="info-section" aria-labelledby="about-title">
           <h2 id="about-title">Sobre o ambiente</h2>
-          <p>{{ room.category }} · capacidade máxima de {{ room.capacity }} pessoas.</p>
+          <p>Capacidade máxima de {{ room.capacity }} pessoas.</p>
         </section>
 
         <section class="info-section" aria-labelledby="features-title">
@@ -36,18 +31,19 @@
           <h2 id="rules-title">Regras de utilização</h2>
           <p>Consulte as orientações de uso do ambiente antes de solicitar uma reserva.</p>
           <p class="responsible-label">Responsável pelo ambiente</p>
-          <p class="responsible-value">Informação demonstrativa</p>
+          <p>Não informado na demonstração.</p>
         </section>
 
         <aside class="accessibility-note">
-          <strong>Acessibilidade · informação demonstrativa</strong>
+          <strong>Acessibilidade</strong>
           <p>Confirme as condições do ambiente com o responsável antes da utilização.</p>
         </aside>
-      </main>
+      </div>
 
       <aside class="availability-panel" aria-labelledby="availability-title">
         <div class="availability-heading">
-          <div><span class="section-label">Disponibilidade</span><h2 id="availability-title">Consultar horários</h2></div>
+          <h2 id="availability-title">Consultar horários</h2>
+          <p>Disponibilidade demonstrativa local.</p>
         </div>
         <div class="month-navigation">
           <button type="button" aria-label="Mês anterior" (click)="changeMonth(-1)">‹</button>
@@ -107,7 +103,6 @@
         } @else {
           <button type="button" class="request-button" disabled>Solicitar reserva</button>
         }
-        <p class="demo-disclaimer">Disponibilidade demonstrativa local; confirme horários antes de qualquer solicitação.</p>
       </aside>
     </div>
   </section>
@@ -115,7 +110,7 @@
   <section class="not-found" aria-labelledby="not-found-title">
     <nav class="breadcrumb" aria-label="Caminho de navegação"><a routerLink="/mapa">Início</a><span aria-hidden="true">/</span><a routerLink="/salas">Salas</a></nav>
     <h1 id="not-found-title">Ambiente não encontrado</h1>
-    <p>Não há detalhes demonstrativos para o código {{ code }}.</p>
+    <p>Não há detalhes para o código {{ code }}.</p>
     <a routerLink="/salas">Voltar às salas</a>
   </section>
 }

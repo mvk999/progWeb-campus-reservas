@@ -20,21 +20,21 @@ describe('AdministrationDemoPage', () => {
   it('shows the administration heading, demo copy and responsible dashboard link', () => {
     const host = createPage().nativeElement as HTMLElement;
     expect(host.querySelector('#page-title')?.textContent).toContain('Administração do campus');
-    expect(host.textContent).toContain('Cadastros e bloqueios de salas da demonstração');
+    expect(host.textContent).toContain('Demonstração do cadastro de ambientes');
+    expect(host.textContent).toContain('Consulta em modo de leitura');
     expect(host.querySelector('.manager-link')?.getAttribute('href')).toBe('/gestao');
     expect(host.querySelector('.manager-link')?.textContent).toContain('Painel do responsável');
   });
 
-  it('lists the 24 local map environments and keeps unobserved actions read-only', () => {
+  it('lists the 21 local map environments and keeps unobserved actions read-only', () => {
     const host = createPage().nativeElement as HTMLElement;
-    expect(host.querySelectorAll('.environment-table tbody tr').length).toBe(24);
+    expect(host.querySelectorAll('.environment-table tbody tr').length).toBe(21);
     expect(host.querySelector('.environment-table tbody')?.textContent).toContain('AMB-001');
     expect(host.querySelector('.environment-table tbody')?.textContent).toContain('Sala 101');
     expect(host.querySelector('.environment-table tbody')?.textContent).toContain('PV4 · Pavilhão 4');
     expect(host.querySelector('.environment-table tbody')?.textContent).toContain('Não informado na demonstração');
-    expect(host.querySelectorAll('.view-button').length).toBe(24);
+    expect(host.querySelectorAll('.view-button').length).toBe(21);
     expect([...host.querySelectorAll<HTMLButtonElement>('.view-button')].every((button) => button.disabled)).toBe(true);
-    expect(host.textContent).toContain('destino não foi observado');
   });
 
   it('renders the observed menu while disabling sections without observed detail', () => {
