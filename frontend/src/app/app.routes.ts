@@ -7,6 +7,7 @@ import { ReservationRequestPage } from './features/reservation-request/reservati
 import { MyReservationsPage } from './features/my-reservations/my-reservations.page';
 import { LoginPage } from './features/authentication/login.page';
 import { ReservationManagementPage } from './features/reservation-management/reservation-management.page';
+import { OccupancyCalendarPage } from './features/occupancy-calendar/occupancy-calendar.page';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'mapa' },
@@ -26,7 +27,7 @@ export const routes: Routes = [
     component: ReservationRequestPage,
   },
   { path: 'gestao', component: ReservationManagementPage },
-  { path: 'calendario', component: RoutePlaceholder, data: { title: 'Calendário de ocupação · demonstração' } },
+  { path: 'calendario', component: OccupancyCalendarPage },
   { path: 'admin', component: RoutePlaceholder, data: { title: 'Administração · demonstração' } },
   { path: '**', redirectTo: 'mapa' },
 ];
