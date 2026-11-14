@@ -3,7 +3,7 @@
     <h2>Edificações</h2>
     @if (status() === 'ready') {
       <div class="explore-options">
-        <button type="button" (click)="toggleLabels()" [attr.aria-pressed]="labelsVisible()">{{ labelsVisible() ? 'Ocultar nomes' : 'Mostrar nomes' }}</button>
+        <button type="button" (click)="toggleLabels()" [attr.aria-pressed]="labelsVisible()">Nomes ao passar o mouse</button>
         <button type="button" (click)="toggleExpanded()" [attr.aria-expanded]="expanded()">{{ expanded() ? 'Recolher mapa' : 'Ampliar mapa' }}</button>
       </div>
     }
@@ -20,18 +20,25 @@
     </div>
     @if (hoverInfo(); as hover) { <div class="map-tooltip" [style.left.px]="hover.x" [style.top.px]="hover.y" role="tooltip">{{ hover.name }}<small>Clique para explorar</small></div> }
     @if (tourActive()) { <aside class="campus-tour" aria-label="Exploração guiada"><div><span>EXPLORAÇÃO GUIADA · {{ tourIndex() + 1 }}/{{ tourStops().length }}</span><strong>{{ tourStops()[tourIndex()]?.name }}</strong></div><div class="campus-tour__actions"><button type="button" aria-label="Pavilhão anterior" (click)="previousTour()">←</button><button type="button" aria-label="Próximo pavilhão" (click)="nextTour()">→</button><button type="button" aria-label="Encerrar exploração guiada" (click)="stopTour()">×</button></div></aside> }
-    @if (selectedName()) { <div class="geographic-selection" aria-live="polite"><strong>{{ selectedName() }}</strong><p>{{ selectedDescription() }}</p></div> }
   </div>
 
   <p class="geographic-status" role="status">{{ message() }}</p>
 
   @if (status() === 'fallback') {
     @if (geographicPaths().length) {
-      <svg class="geographic-flat" viewBox="0 0 960 620" role="img" aria-label="Contornos oficiais NUP das edificações, vista 2D">@for (path of geographicPaths(); track path.id) { <path [attr.d]="path.path"><title>{{ path.name }}</title></path> }</svg>
-      <p class="geographic-status">Vista geográfica 2D · selecione uma edificação no menu acima.</p>
-      @if (selectedName()) { <p class="geographic-status" aria-live="polite"><strong>{{ selectedName() }}</strong> · {{ selectedDescription() }}</p> }
+      <svg class="geographic-flat" viewBox="0 0 960 620" role="img" aria-label="Contornos oficiais NUP das edificações, vista 2D">
+        @for (path of geographicPaths(); track path.id) {
+          <path [attr.d]="path.path" [class.flat--selected]="selectedCode === path.code"
+            [class.flat--free]="(availabilityCounts[path.code] ?? 0) > 0"
+            [class.flat--full]="availabilityCounts[path.code] === 0" (click)="selectFlatBuilding(path.code)">
+            <title>{{ path.name }} · {{ availabilityCounts[path.code] == null ? 'sem dados' : availabilityCounts[path.code] + ' salas livres' }}</title>
+          </path>
+        }
+      </svg>
+      <p class="geographic-status">Selecione uma edificação no mapa ou na lista de prédios.</p>
     } @else {
-      <app-campus-map-canvas [campusName]="campusName" [buildings]="buildings" [selectedCode]="selectedCode" (buildingSelected)="buildingSelected.emit($event)" />
+      <app-campus-map-canvas [campusName]="campusName" [buildings]="buildings" [selectedCode]="selectedCode"
+        [availabilityCounts]="availabilityCounts" (buildingSelected)="buildingSelected.emit($event)" />
     }
   }
   <footer class="geographic-footer"><a href="https://nup.ufla.br/banco-de-projeto" target="_blank" rel="noopener">Edificações: NUP/UFLA</a><span>Arraste para explorar · Ctrl + arraste para inclinar</span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap · © CARTO</a></footer>

@@ -1,10 +1,14 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, ViewChild, signal } from '@angular/core';
-import type { Map as LibreMap, MapGeoJSONFeature, Marker } from 'maplibre-gl';
+import type { CameraOptions, ExpressionSpecification, Map as LibreMap, MapGeoJSONFeature, Marker } from 'maplibre-gl';
 import type { FeatureCollection, Geometry } from 'geojson';
 import { CampusMapCanvas } from './campus-map-canvas';
 import { CampusBuilding } from './campus-map.models';
 import { CAMPUS_GEOGRAPHY as CONFIG } from './campus-geography.config';
 import { buildingHeight, clampVisualScale, footprintCenter } from './campus-building-model';
+
+const availabilityColor: ExpressionSpecification = [
+  'step', ['number', ['feature-state', 'available'], -1], '#a5b3aa', 0, '#cb886d', 1, '#65a083', 3, '#347a58',
+];
 
 @Component({
   selector: 'app-campus-geographic-map', standalone: true, imports: [CampusMapCanvas],
@@ -15,14 +19,14 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
   @Input() campusName = 'UFLA';
   @Input() buildings: readonly CampusBuilding[] = [];
   @Input() selectedCode: string | null = null;
+  @Input() selectionVersion = 0;
   @Input() matchingCodes: readonly string[] = [];
+  @Input() availabilityCounts: Readonly<Record<string, number | null>> = {};
   @Output() buildingSelected = new EventEmitter<CampusBuilding>();
   @ViewChild('mapHost', { static: true }) private host!: ElementRef<HTMLElement>;
   protected readonly status = signal<'loading' | 'ready' | 'fallback'>('loading');
   protected readonly message = signal('Preparando a exploração do campus…');
   protected readonly threeDimensional = signal(true);
-  protected readonly selectedName = signal('');
-  protected readonly selectedDescription = signal('');
   protected readonly heightScale = signal(1.6);
   protected readonly pitch = signal(CONFIG.pitch);
   protected readonly labelsVisible = signal(true);
@@ -33,7 +37,9 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
   protected readonly expanded = signal(false);
   protected readonly motionReduced = signal(false);
   protected readonly hoverInfo = signal<{ name: string; x: number; y: number } | null>(null);
-  private markers: { marker: Marker; button: HTMLButtonElement; code: string }[] = [];
+  private markers: { marker: Marker; button: HTMLButtonElement; counter: HTMLElement; building: CampusBuilding }[] = [];
+  private overviewCamera?: CameraOptions;
+  private focusedVersion = 0;
   private orbitFrame?: number;
   private selectionFrame?: number;
   private lastOrbitTime?: number;
@@ -48,7 +54,7 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
   private reducedMotion = false;
   private selectedId?: string | number;
   private loadTimeout?: ReturnType<typeof setTimeout>;
-  protected readonly geographicPaths = signal<readonly { id: string; name: string; path: string }[]>([]);
+  protected readonly geographicPaths = signal<readonly { id: string; code: string; name: string; path: string }[]>([]);
 
   async ngAfterViewInit(): Promise<void> {
     // jsdom and devices without WebGL retain the keyboard-accessible schematic.
@@ -111,18 +117,18 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
         this.map.addLayer({ id: 'campus-roads-edge', type: 'line', source: 'campus-context', filter: ['has', 'highway'], paint: { 'line-color': '#bac3ad', 'line-width': ['interpolate', ['linear'], ['zoom'], 14, 3, 18, 14] } });
         this.map.addLayer({ id: 'campus-roads', type: 'line', source: 'campus-context', filter: ['has', 'highway'], paint: { 'line-color': '#fffdf3', 'line-width': ['interpolate', ['linear'], ['zoom'], 14, 1.5, 18, 10] } });
         this.map.addLayer({ id: 'ufla-footprints', type: 'fill', source: 'ufla', paint: {
-          'fill-color': ['case', ['boolean', ['feature-state', 'selected'], false], '#d19b46', '#91a797'], 'fill-opacity': 0.7,
+          'fill-color': availabilityColor, 'fill-opacity': 0.86,
         } });
         this.map.addLayer({ id: 'ufla-foundations', type: 'fill-extrusion', source: 'ufla', paint: {
           'fill-extrusion-color': '#526353', 'fill-extrusion-height': 1.4, 'fill-extrusion-opacity': 1,
         } });
         this.map.addLayer({ id: 'ufla-buildings', type: 'fill-extrusion', source: 'ufla', paint: {
-          'fill-extrusion-color': ['case', ['boolean', ['feature-state', 'selected'], false], '#d19b46', ['!=', ['coalesce', ['get', 'code'], ''], ''], '#edebd5', '#a2b29c'],
+          'fill-extrusion-color': availabilityColor,
           'fill-extrusion-height': buildingHeight(this.heightScale()),
           'fill-extrusion-base': 1.4, 'fill-extrusion-opacity': 1,
         } });
         this.map.addLayer({ id: 'ufla-roofs', type: 'fill-extrusion', source: 'ufla', paint: {
-          'fill-extrusion-color': ['case', ['boolean', ['feature-state', 'selected'], false], '#e6b963', ['match', ['get', 'code'], 'PV4', '#b58152', 'PV5', '#a57348', 'DCC', '#426d65', 'BU', '#627c8b', '#6b846c']],
+          'fill-extrusion-color': availabilityColor,
           'fill-extrusion-base': buildingHeight(this.heightScale()),
           'fill-extrusion-height': ['+', buildingHeight(this.heightScale()), 0.9], 'fill-extrusion-opacity': 1,
         } });
@@ -165,28 +171,36 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
 
   ngOnChanges(): void {
     if (!this.map?.getSource('ufla')) return;
-    const matches = this.features.features.filter(feature => {
+    for (const feature of this.features.features) {
       const building = this.associatedBuilding(feature.properties);
-      return building && this.matchingCodes.includes(building.code);
-    }).map(feature => feature.id!);
-    this.map.setPaintProperty('ufla-buildings', 'fill-extrusion-color', [
-      'case', ['boolean', ['feature-state', 'selected'], false], '#d19b46',
-      ['boolean', ['feature-state', 'hover'], false], '#6b9c85',
-      this.matchingCodes.length < this.buildings.length ? ['case', ['in', ['id'], ['literal', matches]], '#edebd5', '#b6c1b5'] : ['case', ['!=', ['coalesce', ['get', 'code'], ''], ''], '#edebd5', '#a2b29c'],
-    ]);
-    this.markers.forEach(({ button, code }) => {
+      const count = building ? this.availabilityCounts[building.code] : null;
+      this.map.setFeatureState({ source: 'ufla', id: feature.id! }, { available: count ?? -1 });
+    }
+    this.markers.forEach(({ button, counter, building }) => {
+      const { code } = building;
+      const count = this.availabilityCounts[code];
       button.classList.toggle('campus-pin--selected', code === this.selectedCode);
       button.setAttribute('aria-pressed', String(code === this.selectedCode));
-      button.hidden = !this.labelsVisible() || !this.matchingCodes.includes(code);
+      button.dataset['availability'] = count == null ? 'unknown' : count === 0 ? 'full' : 'free';
+      button.setAttribute('aria-label', `${building.name}, ${count == null ? 'disponibilidade sem dados' : count === 1 ? '1 sala livre' : count + ' salas livres'}`);
+      counter.textContent = count == null ? '—' : String(count);
+      button.hidden = !this.matchingCodes.includes(code);
+      button.classList.toggle('campus-pin--hide-name', !this.labelsVisible());
     });
     const building = this.buildings.find(item => item.code === this.selectedCode);
     const feature = building && this.matchingCodes.includes(building.code) && this.features.features.find(item => this.associatedBuilding(item.properties)?.code === building.code);
-    if (feature) this.chooseFeature(feature as MapGeoJSONFeature, false);
+    if (feature) {
+      const focus = this.selectionVersion !== this.focusedVersion;
+      this.focusedVersion = this.selectionVersion;
+      this.chooseFeature(feature as MapGeoJSONFeature, false, focus);
+    }
     else {
-      if (this.selectedId !== undefined) this.map.setFeatureState({ source: 'ufla', id: this.selectedId }, { selected: false });
+      if (this.selectedId !== undefined) this.map.setFeatureState({ source: 'ufla', id: this.selectedId }, { selected: false, lift: 0 });
       this.selectedId = undefined;
-      this.selectedName.set(building?.name ?? '');
-      this.selectedDescription.set(building ? 'Catálogo demonstrativo. Localização deste ambiente ainda não vinculada a uma geometria verificada.' : '');
+      if (!this.selectedCode && this.overviewCamera) {
+        this.map.easeTo({ ...this.overviewCamera, duration: this.duration });
+        this.overviewCamera = undefined;
+      }
     }
   }
 
@@ -203,28 +217,35 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
     });
   }
 
-  private chooseFeature(feature: MapGeoJSONFeature, emit = true): void {
+  private chooseFeature(feature: MapGeoJSONFeature, emit = true, focus = true): void {
     if (!this.map) return;
     const changed = feature.id !== this.selectedId;
     if (changed && this.selectionFrame !== undefined) cancelAnimationFrame(this.selectionFrame);
     if (changed && this.selectedId !== undefined) this.map.setFeatureState({ source: 'ufla', id: this.selectedId }, { selected: false, lift: 0 });
     this.selectedId = feature.id;
     if (feature.id !== undefined) this.map.setFeatureState({ source: 'ufla', id: feature.id }, { selected: true });
-    this.markers.forEach(({ button, code }) => {
-      button.classList.toggle('campus-pin--selected', code === feature.properties?.['code']);
-      button.setAttribute('aria-pressed', String(code === feature.properties?.['code']));
+    this.markers.forEach(({ button, building }) => {
+      button.classList.toggle('campus-pin--selected', building.code === feature.properties?.['code']);
+      button.setAttribute('aria-pressed', String(building.code === feature.properties?.['code']));
     });
-    const name = feature.properties?.['name'] || 'Edificação do campus';
-    this.selectedName.set(name);
     const building = this.associatedBuilding(feature.properties);
-    this.selectedDescription.set(building ? `${building.rooms.length} ambientes demonstrativos no catálogo. Consulte os detalhes ao lado.` : 'Contorno oficial NUP/UFLA. Sem ambientes associados no catálogo demonstrativo.');
     const center = footprintCenter(feature);
-    if (center && (changed || emit)) {
+    if (center && focus) {
       this.stopOrbit();
-      this.map.flyTo({ center, zoom: 17.8, pitch: this.threeDimensional() ? this.pitch() : 0, duration: this.duration, essential: false });
+      this.overviewCamera ??= {
+        center: this.map.getCenter(), zoom: this.map.getZoom(),
+        pitch: this.map.getPitch(), bearing: this.map.getBearing(),
+      };
+      const offset: [number, number] = emit && matchMedia('(max-width: 48rem)').matches && !this.expanded()
+        ? [0, -Math.min(110, this.host.nativeElement.clientHeight / 4)] : [0, 0];
+      this.map.flyTo({ center, zoom: 17.8, pitch: this.threeDimensional() ? this.pitch() : 0, offset, duration: this.duration, essential: false });
       this.animateSelection(feature.id);
     }
-    if (building && emit) this.buildingSelected.emit(building);
+    if (building && emit) {
+      if (this.expanded()) this.toggleExpanded();
+      this.focusedVersion = this.selectionVersion + 1;
+      this.buildingSelected.emit(building);
+    }
   }
 
   protected zoomIn(): void { this.stopOrbit(); this.map?.zoomIn({ duration: this.duration }); }
@@ -239,6 +260,7 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
   }
   protected reset(): void {
     this.stopTour(); this.stopOrbit();
+    this.overviewCamera = undefined;
     this.map?.flyTo({ center: CONFIG.center, zoom: CONFIG.zoom, bearing: CONFIG.bearing, pitch: this.threeDimensional() ? this.pitch() : 0, duration: this.duration });
   }
   protected setHeightScale(event: Event): void {
@@ -319,15 +341,15 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
       if (!building || !center) continue;
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'campus-pin'; button.dataset['code'] = building.code;
-      button.setAttribute('aria-label', `Explorar ${building.name}, ${building.rooms.length} ambientes demonstrativos`);
       const code = document.createElement('span'); code.className = 'campus-pin__code'; code.textContent = building.code;
+      const counter = document.createElement('span'); counter.className = 'campus-pin__count';
       const name = document.createElement('span'); name.className = 'campus-pin__name'; name.textContent = building.name;
-      button.append(code, name);
+      button.append(code, counter, name);
       button.addEventListener('click', event => { event.stopPropagation(); this.chooseFeature(feature as MapGeoJSONFeature); }, { signal: this.abort.signal });
       button.addEventListener('mouseenter', () => this.map?.setFeatureState({ source: 'ufla', id: feature.id! }, { hover: true }), { signal: this.abort.signal });
       button.addEventListener('mouseleave', () => this.map?.setFeatureState({ source: 'ufla', id: feature.id! }, { hover: false }), { signal: this.abort.signal });
       const marker = new MarkerConstructor({ element: button, anchor: 'bottom', offset: [0, -12] }).setLngLat(center).addTo(this.map!);
-      this.markers.push({ marker, button, code: building.code }); stops.push({ code: building.code, name: building.name });
+      this.markers.push({ marker, button, counter, building }); stops.push({ code: building.code, name: building.name });
     }
     this.tourStops.set(stops.sort((a, b) => a.code.localeCompare(b.code)));
   }
@@ -378,22 +400,14 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
     const scale = Math.min(920 / (maxX - minX), 580 / (maxY - minY));
     if (this.status() === 'fallback') this.message.set('Vista 2D dos contornos NUP/UFLA. WebGL indisponível neste dispositivo.');
     this.geographicPaths.set(polygons.map(feature => ({
-      id: String(feature.id), name: feature.properties?.['name'] || 'Edificação do campus',
+      id: String(feature.id), code: this.associatedBuilding(feature.properties)?.code ?? '',
+      name: feature.properties?.['name'] || 'Edificação do campus',
       path: feature.geometry.type === 'Polygon' ? feature.geometry.coordinates.map(ring => ring.map((p, index) => `${index ? 'L' : 'M'}${20 + (p[0] - minX) * scale},${600 - (p[1] - minY) * scale}`).join(' ') + 'Z').join(' ') : '',
     })));
   }
-  protected chooseFlatFeature(event: Event): void {
-    const id = (event.target as HTMLSelectElement).value;
-    const feature = this.features.features.find(item => String(item.id) === id);
-    if (feature) {
-      this.selectedName.set(feature.properties?.['name'] || 'Edificação do campus');
-      this.selectedDescription.set('Contorno NUP/UFLA. Alturas ilustrativas e disponibilidade demonstrativa.');
-      if (this.map) this.chooseFeature(feature as MapGeoJSONFeature);
-      else {
-        const building = this.associatedBuilding(feature.properties);
-        if (building) this.buildingSelected.emit(building);
-      }
-    }
+  protected selectFlatBuilding(code: string): void {
+    const building = this.buildings.find(item => item.code === code);
+    if (building) this.buildingSelected.emit(building);
   }
   private fallback(): void {
     this.stopOrbit();

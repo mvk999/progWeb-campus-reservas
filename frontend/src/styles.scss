@@ -88,11 +88,28 @@ textarea {
   text-align: left;
 }
 
-.campus-pin:is(:hover, :focus-visible, .campus-pin--selected) {
-  z-index: 2;
-  background: #744c1b;
+.campus-pin[hidden] {
+  display: none;
 }
 
-.campus-pin:is(:hover, :focus-visible, .campus-pin--selected) .campus-pin__name {
+.campus-pin__count {
+  min-width: 1.25rem;
+  padding-inline: .2rem;
+  border-radius: 4px;
+  background: #fff;
+  color: #234639;
+  font-weight: 700;
+  text-align: center;
+}
+
+.campus-pin[data-availability='full'] { background: #924b37; }
+.campus-pin[data-availability='unknown'] { background: #46564e; }
+
+.campus-pin:is(:hover, :focus-visible, .campus-pin--selected) {
+  z-index: 2;
+  box-shadow: 0 0 0 2px #224839;
+}
+
+.campus-pin:not(.campus-pin--hide-name):is(:hover, :focus-visible) .campus-pin__name {
   display: block;
 }

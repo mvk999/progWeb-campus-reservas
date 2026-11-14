@@ -31,15 +31,51 @@ export class EnvironmentDetailService {
     if (fixture) return fixture.periods;
     // Only the explicitly modeled demo dates have availability. AMB-001 keeps
     // its observed detailed fixture; arbitrary dates remain unverified.
-    const modeledDate = date === CAMPUS_MAP_FIXTURE.initialDate || AVAILABILITY_EXAMPLES.some(slot => slot.date === date);
+    const modeledDate = this.hasModeledDate(date);
     const modeledEnvironment = code !== 'AMB-001' && !!this.getEnvironment(code);
+    if (modeledDate && modeledEnvironment) {
+      const occupied = AVAILABILITY_EXAMPLES.filter(slot => slot.roomCode === code && slot.date === date);
+      const boundaries = [...new Set([
+        '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00',
+        ...occupied.flatMap(slot => [slot.startTime, slot.endTime]),
+      ])].sort();
+      return boundaries.slice(0, -1).map((startTime, index) => {
+        const endTime = boundaries[index + 1];
+        return {
+          startTime, endTime,
+          availability: this.rooms.getStatusForPeriod(code, date, startTime, endTime) === 'Livre'
+            ? 'available' : 'unavailable',
+        };
+      });
+    }
     return Array.from({ length: 6 }, (_, index) => ({
       startTime: `${`${8 + index * 2}`.padStart(2, '0')}:00`,
       endTime: `${`${10 + index * 2}`.padStart(2, '0')}:00`,
-      availability: modeledDate && modeledEnvironment
-        ? this.rooms.getStatusForPeriod(code, date, `${`${8 + index * 2}`.padStart(2, '0')}:00`, `${`${10 + index * 2}`.padStart(2, '0')}:00`) === 'Livre' ? 'available' : 'unavailable'
-        : 'unknown' as PeriodAvailability,
+      availability: 'unknown' as PeriodAvailability,
     }));
+  }
+
+  hasModeledDate(date: string): boolean {
+    return date === CAMPUS_MAP_FIXTURE.initialDate || AVAILABILITY_EXAMPLES.some(slot => slot.date === date);
+  }
+
+  getFreeWindows(periods: readonly DemonstrationPeriod[]): readonly DemonstrationPeriod[] {
+    const windows: DemonstrationPeriod[] = [];
+    for (const period of periods) {
+      if (period.availability !== 'available') continue;
+      const previous = windows.at(-1);
+      if (previous?.endTime === period.startTime) {
+        windows[windows.length - 1] = { ...previous, endTime: period.endTime };
+      } else {
+        windows.push(period);
+      }
+    }
+    return windows;
+  }
+
+  isPeriodAvailable(code: string, date: string, startTime: string, endTime: string): boolean {
+    return startTime < endTime && this.getFreeWindows(this.getPeriods(code, date))
+      .some(window => window.startTime <= startTime && window.endTime >= endTime);
   }
 
   isObservedInitialDayDisabled(date: string): boolean {

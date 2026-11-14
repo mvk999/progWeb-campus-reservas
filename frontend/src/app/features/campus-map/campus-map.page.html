@@ -6,26 +6,52 @@
         <span aria-hidden="true">/</span>
         <span>Campus sede · Lavras, MG</span>
       </nav>
-      <h1 id="page-title">Mapa do campus</h1>
-      <p>Selecione um prédio para consultar as salas e os horários de demonstração.</p>
+      <h1 id="page-title">Mapa vivo da UFLA</h1>
+      <p>Explore a disponibilidade por prédio nos horários de demonstração.</p>
     </div>
     <a class="all-rooms-link" routerLink="/salas">
       Consultar todas as salas <span aria-hidden="true">→</span>
     </a>
   </div>
 
-  <form class="period-query" aria-label="Período da consulta" (submit)="updatePeriod($event)" novalidate>
+  <section class="timeline" aria-labelledby="timeline-title">
+    <div class="timeline__heading">
+      <div>
+        <h2 id="timeline-title">Disponibilidade no campus</h2>
+        <strong class="timeline__time">{{ displayPeriod }}</strong>
+        <span class="timeline__total">{{ availabilityLabel() }}</span>
+      </div>
+      <div class="timeline__options">
+        <label class="field">
+          <span>Data</span>
+          <input type="date" [value]="queryDate()" (change)="changeTimelineDate($event)"
+            [attr.aria-describedby]="periodError() ? 'period-error' : null" />
+        </label>
+        <div class="timeline__durations" role="group" aria-label="Duração da reserva">
+          @for (option of durations; track option) {
+            <button type="button" [attr.aria-pressed]="duration() === option" (click)="selectTime(startMinute(), option)">
+              {{ option < 60 ? option + ' min' : option / 60 + ' h' }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+    <div class="timeline__rail">
+      <span class="timeline__window" aria-hidden="true" [style.left.%]="percent()" [style.width.%]="durationPercent()"></span>
+      @for (mark of openingMarks(); track mark) {
+        <span class="timeline__mark" aria-hidden="true" [style.left.%]="(mark - dayStart) / (dayEnd - dayStart) * 100"></span>
+      }
+      <input class="timeline__range" type="range" [min]="dayStart" [max]="latestStart()" [value]="startMinute()"
+        [disabled]="latestStart() === dayStart" [style.width.%]="100 - durationPercent()"
+        aria-label="Início na linha do tempo" [attr.aria-valuetext]="displayPeriod" (input)="scrub($event)" />
+    </div>
+    <div class="timeline__scale" aria-hidden="true">
+      @for (mark of clockMarks; track mark) { <span>{{ mark }}</span> }
+    </div>
+    <details class="timeline__exact">
+      <summary>Informar horário exato</summary>
+      <form class="period-query" aria-label="Período da consulta" (submit)="updatePeriod($event)" novalidate>
     <div class="period-query__fields">
-      <label class="field field--date">
-        <span>Data</span>
-        <input
-          type="date"
-          [value]="queryDate()"
-          (input)="updateDate($event)"
-          [attr.aria-invalid]="periodError() ? 'true' : null"
-          [attr.aria-describedby]="periodError() ? 'period-error' : null"
-        />
-      </label>
       <label class="field field--time">
         <span>Das</span>
         <input type="time" [value]="startTime()" (input)="updateStartTime($event)" />
@@ -43,24 +69,85 @@
       <button class="period-query__submit" type="submit">Atualizar horários</button>
     </div>
 
-    @if (periodError()) {
-      <p class="period-error" id="period-error" role="alert">{{ periodError() }}</p>
-    }
-  </form>
-
-  @if (periodFeedback()) {
-    <p class="period-feedback" role="status">{{ periodFeedback() }}</p>
-  }
+      </form>
+    </details>
+    @if (periodError()) { <p class="period-error" id="period-error" role="alert">{{ periodError() }}</p> }
+    @if (periodFeedback()) { <p class="period-feedback" role="status">{{ periodFeedback() }}</p> }
+  </section>
 
   <div class="map-layout">
     <app-campus-geographic-map
       [campusName]="data.campusName"
       [buildings]="data.buildings" [matchingCodes]="matchingCodes()"
       [selectedCode]="selectedCode()"
+      [selectionVersion]="selectionVersion()"
+      [availabilityCounts]="buildingCounts()"
       (buildingSelected)="selectBuilding($event)"
     />
 
     <aside class="building-sidebar" aria-label="Prédios e salas">
+      @if (selectedBuilding(); as building) {
+        <section #buildingPanel class="building-detail" [class.building-detail--sheet]="mobileDetails()"
+          aria-labelledby="building-title" tabindex="-1" (keydown.escape)="clearSelection()">
+          <button class="building-detail__back" type="button" (click)="clearSelection()">
+            <span aria-hidden="true">‹</span> Todos os prédios
+          </button>
+          <p class="building-detail__code">{{ building.code }} · {{ data.campusName }}</p>
+          <h2 id="building-title">{{ building.name }}</h2>
+          <p class="building-detail__full-name">{{ building.fullName }}</p>
+          <p class="building-detail__period">
+            {{ displayDate }} · {{ displayPeriod }}
+          </p>
+
+          <div class="room-list-heading">
+            @if (buildingCounts()[building.code] == null) {
+              <span>Disponibilidade sem dados</span>
+            } @else {
+              <span>{{ buildingCounts()[building.code] }} de {{ filteredRooms().length }} salas livres</span>
+            }
+          </div>
+          @if (nextOpening(); as next) {
+            <button class="next-opening" type="button" (click)="selectTime(next)">
+              Próxima abertura · {{ clockTime(next) }} <span aria-hidden="true">→</span>
+            </button>
+          }
+
+          <ul class="room-list">
+            @for (room of roomsByAvailability(); track room.code) {
+              @let slot = roomAvailability().get(room.code);
+              <li class="room-card">
+                <div class="room-card__heading">
+                  <h3>{{ room.name }}</h3>
+                  <span class="availability" [class.availability--occupied]="!slot?.current">
+                    @if (slot?.current; as current) { Livre até {{ current.endTime }} }
+                    @else if (slot?.known) { Ocupada no período }
+                    @else { Sem dados }
+                  </span>
+                </div>
+                <p>{{ room.capacity }} pessoas{{ room.category ? ' · ' + room.category : '' }}</p>
+                @if (room.features?.length) {
+                  <p>{{ room.features?.join(' · ') }}</p>
+                }
+                @if (!slot?.current && slot?.next; as next) {
+                  <p>Próxima janela · {{ clockTime(next.start) }}–{{ next.until }}</p>
+                }
+                <a [routerLink]="['/ambientes', room.code]">
+                  Ver sala e horários <span aria-hidden="true">›</span>
+                </a>
+                @if (slot?.current) {
+                  <a class="room-card__reserve" [routerLink]="['/solicitar', room.code]"
+                    [queryParams]="{ data: appliedPeriod().date, inicio: appliedPeriod().startTime, fim: appliedPeriod().endTime }">Reservar</a>
+                }
+              </li>
+            }
+          </ul>
+
+          @if (!filteredRooms().length) { <p class="empty-search">Nenhum ambiente deste prédio corresponde aos filtros.</p> }
+
+        </section>
+      } @else {
+        <p class="building-placeholder">Selecione um prédio no mapa para ver os detalhes.</p>
+      }
       <div class="building-sidebar__list">
         <div class="building-sidebar__heading">
           <h2>Prédios no mapa</h2>
@@ -98,7 +185,11 @@
                 >
                   <span class="building-list__badge">{{ building.code }}</span>
                   <span class="building-list__name">{{ building.name }}</span>
-                  <span class="building-list__arrow" aria-hidden="true">›</span>
+                  @let count = buildingCounts()[building.code];
+                  <span class="building-list__count" [class.building-list__count--free]="(count ?? 0) > 0">
+                    <span aria-hidden="true">{{ count ?? '—' }}</span>
+                    <span class="sr-only">{{ count == null ? 'Disponibilidade sem dados' : count === 1 ? '1 sala livre' : count + ' salas livres' }}</span>
+                  </span>
                 </button>
               </li>
             }
@@ -108,49 +199,6 @@
         }
       </div>
 
-      @if (selectedBuilding(); as building) {
-        <section class="building-detail" aria-live="polite">
-          <button class="building-detail__back" type="button" (click)="clearSelection()">
-            <span aria-hidden="true">‹</span> Todos os prédios
-          </button>
-          <p class="building-detail__code">{{ building.code }} · {{ data.campusName }}</p>
-          <h2>{{ building.name }}</h2>
-          <p class="building-detail__full-name">{{ building.fullName }}</p>
-          <p class="building-detail__period">
-            {{ displayDate }} · {{ displayPeriod }}
-          </p>
-
-          <div class="room-list-heading">
-            <span>Salas</span>
-            <strong>{{ filteredRooms().length }}</strong>
-          </div>
-
-          <ul class="room-list">
-            @for (room of filteredRooms(); track room.code) {
-              <li class="room-card">
-                <div class="room-card__heading">
-                  <h3>{{ room.name }}</h3>
-                  <span class="availability" [class.availability--occupied]="room.availability === 'Ocupada'">
-                    <span aria-hidden="true">●</span> {{ room.availability }}
-                  </span>
-                </div>
-                <p>{{ room.capacity }} pessoas{{ room.category ? ' · ' + room.category : '' }}</p>
-                @if (room.features?.length) {
-                  <p>{{ room.features?.join(' · ') }}</p>
-                }
-                <a [routerLink]="['/ambientes', room.code]">
-                  Ver sala e horários <span aria-hidden="true">›</span>
-                </a>
-              </li>
-            }
-          </ul>
-
-          @if (!filteredRooms().length) { <p class="empty-search">Nenhum ambiente deste prédio corresponde aos filtros.</p> }
-
-        </section>
-      } @else {
-        <p class="building-placeholder">Selecione um prédio no mapa para ver os detalhes.</p>
-      }
     </aside>
   </div>
 </section>

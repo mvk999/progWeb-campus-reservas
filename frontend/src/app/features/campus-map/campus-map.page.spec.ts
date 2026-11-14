@@ -64,11 +64,18 @@ describe('CampusMapPage', () => {
     const host = fixture.nativeElement as HTMLElement;
 
     host.querySelector<HTMLButtonElement>('.building-marker[data-code="DCC"]')!.click();
+    const date = host.querySelector<HTMLInputElement>('input[type="date"]')!;
+    date.value = '2026-10-23';
+    date.dispatchEvent(new Event('change', { bubbles: true }));
+    const range = host.querySelector<HTMLInputElement>('.timeline__range')!;
+    range.value = '600';
+    range.dispatchEvent(new Event('input', { bubbles: true }));
     fixture.detectChanges();
 
     expect(host.querySelector('.building-detail h2')?.textContent?.trim()).toBe('Ciência da Computação');
-    expect(host.querySelector('.room-card h3')?.textContent?.trim()).toBe('Laboratório 101');
-    expect(host.querySelector('.room-card')?.textContent).toContain('Ocupada');
+    const lab = [...host.querySelectorAll('.room-card')]
+      .find(card => card.querySelector('h3')?.textContent?.trim() === 'Laboratório 101');
+    expect(lab?.textContent).toContain('Ocupada');
     expect(host.querySelectorAll('.room-card').length).toBe(3);
   });
 
@@ -99,7 +106,7 @@ describe('CampusMapPage', () => {
     search.dispatchEvent(new Event('input', { bubbles: true }));
     fixture.detectChanges();
 
-    expect(host.querySelector('.empty-search')?.textContent?.trim()).toBe('Nenhum prédio encontrado.');
+    expect(host.querySelector('.building-sidebar__list .empty-search')?.textContent?.trim()).toBe('Nenhum prédio encontrado.');
     expect(host.querySelectorAll('.building-list__item').length).toBe(0);
     expect(host.querySelectorAll('.building-marker').length).toBe(7);
   });
@@ -122,7 +129,7 @@ describe('CampusMapPage', () => {
     expect(host.querySelector('.period-feedback')).toBeNull();
 
     dateField.value = '2026-10-23';
-    dateField.dispatchEvent(new Event('input', { bubbles: true }));
+    dateField.dispatchEvent(new Event('change', { bubbles: true }));
     endTime.value = '10:00';
     endTime.dispatchEvent(new Event('input', { bubbles: true }));
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
@@ -131,6 +138,35 @@ describe('CampusMapPage', () => {
     expect(host.querySelector('[role="alert"]')).toBeNull();
     expect(host.querySelector('.building-detail__period')?.textContent).toContain('23/10/2026 · 08:00–10:00');
     expect(host.querySelector('.period-feedback')?.textContent).toBe('Horários da demonstração atualizados.');
+  });
+
+  it('updates building counts while scrubbing and prefills the selected room and period', () => {
+    const fixture = createPage();
+    const host = fixture.nativeElement as HTMLElement;
+    const range = host.querySelector<HTMLInputElement>('.timeline__range')!;
+    const duration = host.querySelector<HTMLButtonElement>('.timeline__durations button')!;
+    const count = host.querySelector('.building-list__item[data-code="PV4"] .building-list__count');
+    duration.click();
+    fixture.detectChanges();
+
+    range.value = '840';
+    range.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+    expect(count?.textContent).toContain('2');
+    expect(host.querySelector('.next-opening')?.textContent).toContain('16:00');
+
+    range.value = '870';
+    range.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+    expect(count?.textContent).toContain('1');
+    expect(host.querySelectorAll('.room-card__reserve')).toHaveLength(1);
+    expect(host.querySelector('.room-card__reserve')?.getAttribute('href'))
+      .toBe('/solicitar/AMB-014?data=2026-10-22&inicio=14:30&fim=15:00');
+
+    host.querySelector<HTMLButtonElement>('.next-opening')!.click();
+    fixture.detectChanges();
+    expect(count?.textContent).toContain('3');
+    expect(range.getAttribute('aria-valuetext')).toBe('16:00–16:30');
   });
 
   it('updates zoom in and out, rotation, display mode, and restores the initial map state', () => {

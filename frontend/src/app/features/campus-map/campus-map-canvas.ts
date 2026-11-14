@@ -13,6 +13,7 @@ export class CampusMapCanvas {
   @Input({ required: true }) campusName = 'UFLA';
   @Input({ required: true }) buildings: readonly CampusBuilding[] = [];
   @Input() selectedCode: string | null = null;
+  @Input() availabilityCounts: Readonly<Record<string, number | null>> = {};
   @Output() buildingSelected = new EventEmitter<CampusBuilding>();
 
   protected readonly zoom = signal(1);

@@ -3,6 +3,13 @@ import { AvailabilityExample, RoomFeatureExample } from './rooms.models';
 /** Representative local demo states; these are not production availability. */
 export const AVAILABILITY_EXAMPLES: readonly AvailabilityExample[] = [
   {
+    roomCode: 'AMB-015',
+    date: '2026-10-22',
+    startTime: '14:30',
+    endTime: '16:00',
+    status: 'Aprovado',
+  },
+  {
     roomCode: 'AMB-002',
     date: '2026-10-23',
     startTime: '10:00',

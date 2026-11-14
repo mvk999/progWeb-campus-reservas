@@ -70,8 +70,8 @@ export class ReservationRequestPage {
     this.attempted.set(true);
     const room = this.environment();
     const count = Number(this.participants());
-    const periodAvailable = this.detailService.getPeriods(this.code(), this.date()).some((period) =>
-      period.startTime === this.startTime() && period.endTime === this.endTime() && period.availability === 'available',
+    const periodAvailable = this.detailService.isPeriodAvailable(
+      this.code(), this.date(), this.startTime(), this.endTime(),
     );
     const errors: ReservationFormErrors = {
       purpose: this.purpose().trim() ? '' : 'Informe a finalidade da reserva.',

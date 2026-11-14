@@ -62,12 +62,12 @@
           [style.left.%]="building.position.x"
           [style.top.%]="building.position.y"
           [attr.aria-pressed]="selectedCode === building.code"
-          [attr.aria-label]="'Selecionar ' + building.code + ' — ' + building.fullName + '. ' + building.rooms.length + ' salas.'"
+          [attr.aria-label]="building.fullName + ': ' + (availabilityCounts[building.code] != null ? availabilityCounts[building.code] + ' salas livres' : 'disponibilidade sem dados')"
           [attr.data-code]="building.code"
           (click)="chooseBuilding(building)"
         >
           <span class="building-marker__name">{{ building.name }}</span>
-          <span class="building-marker__code">{{ building.code }} · {{ building.rooms.length }} salas</span>
+          <span class="building-marker__code">{{ building.code }} · {{ availabilityCounts[building.code] ?? '—' }}</span>
         </button>
       }
     </div>
