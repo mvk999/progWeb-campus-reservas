@@ -20,6 +20,17 @@ export class ProfileMenu {
   @ViewChildren('profileOption') private profileOptions?: QueryList<ElementRef<HTMLButtonElement>>;
 
   protected openDialog(): void {
+    this.showDialog();
+  }
+
+  openFromExternalTrigger(trigger: HTMLElement): void {
+    this.externalReturnFocus = trigger;
+    this.showDialog();
+  }
+
+  private externalReturnFocus?: HTMLElement;
+
+  private showDialog(): void {
     this.dialogOpen.set(true);
     this.changeDetector.detectChanges();
     this.profileOptions?.first.nativeElement.focus();
@@ -28,7 +39,9 @@ export class ProfileMenu {
   protected closeDialog(): void {
     this.dialogOpen.set(false);
     this.changeDetector.detectChanges();
-    this.profileTrigger?.nativeElement.focus();
+    const target = this.externalReturnFocus?.isConnected ? this.externalReturnFocus : this.profileTrigger?.nativeElement;
+    this.externalReturnFocus = undefined;
+    target?.focus();
   }
 
   protected onBackdropClick(event: MouseEvent): void {

@@ -52,7 +52,28 @@
   <footer class="app-footer">
     <div class="app-footer__inner shell-container">
       <span>Campus Reservas · UFLA</span>
-      <ng-content select="[footerContent]" />
+      <span class="footer-demo-note">Dados fictícios para demonstração</span>
+      <nav class="footer-actions" aria-label="Informações e demonstração">
+        <a routerLink="/design">Sobre o protótipo</a>
+        <button type="button" (click)="openFooterProfileMenu($event)">Trocar perfil</button>
+        <button #resetTrigger type="button" (click)="requestDemoReset()">Restaurar demonstração</button>
+      </nav>
     </div>
   </footer>
+
+  @if (resetDialogOpen()) {
+    <div class="reset-backdrop">
+      <section #resetDialog class="reset-dialog" role="dialog" aria-modal="true" aria-labelledby="reset-title"
+        aria-describedby="reset-description" tabindex="-1" (keydown)="onResetDialogKeydown($event)">
+        <p class="reset-eyebrow">Campus Reservas · demonstração local</p>
+        <h2 id="reset-title">Restaurar demonstração?</h2>
+        <p id="reset-description">Isso remove somente o perfil, as solicitações e as decisões demonstrativas salvas neste navegador. Outros dados não serão alterados.</p>
+        @if (resetError()) {<p class="reset-error" role="alert">{{ resetError() }}</p>}
+        <div class="reset-actions">
+          <button #resetCancel type="button" (click)="cancelDemoReset()">Cancelar</button>
+          <button type="button" class="reset-confirm" (click)="confirmDemoReset()">Restaurar demonstração</button>
+        </div>
+      </section>
+    </div>
+  }
 </div>

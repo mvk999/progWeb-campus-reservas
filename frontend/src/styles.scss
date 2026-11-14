@@ -1,18 +1,15 @@
 :root {
-  /*
-   * Valores iniciais estimados a partir das capturas desktop do protótipo.
-   * Família exata, amostras de cor e breakpoints não foram aferidos.
-   */
   color-scheme: light;
   --page-background: #f4f5f7;
   --surface: #ffffff;
-  --text: #343a40;
-  --text-muted: #69747e;
+  --text: #263340;
+  --text-muted: #516171;
   --border: #d8dde2;
-  --accent: #455d6d;
-  --focus-ring: #386a8a;
-  --font-sans: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial,
-    sans-serif;
+  --accent: #2C4E70;
+  --accent-muted: #58748F;
+  --focus-ring: #2C4E70;
+  --font-brand: Georgia, 'Times New Roman', serif;
+  --font-sans: Arial, Helvetica, sans-serif;
 
   font-family: var(--font-sans);
   color: var(--text);

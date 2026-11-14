@@ -32,6 +32,12 @@ export class DemoProfileService {
 
   clearNotice(): void { this.notice.set(''); }
 
+  resetToDefault(): void {
+    this.profileId.set('solicitante');
+    this.storageError.set('');
+    this.notice.set('');
+  }
+
   optionFor(id: DemoProfileId): DemoProfileOption {
     return DEMO_PROFILE_OPTIONS.find((option) => option.id === id) ?? DEMO_PROFILE_OPTIONS[0];
   }

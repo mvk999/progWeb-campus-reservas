@@ -8,6 +8,7 @@ import { LoginPage } from './features/authentication/login.page';
 import { ReservationManagementPage } from './features/reservation-management/reservation-management.page';
 import { OccupancyCalendarPage } from './features/occupancy-calendar/occupancy-calendar.page';
 import { AdministrationDemoPage } from './features/administration-demo/administration-demo.page';
+import { InterfaceGuidePage } from './features/interface-guide/interface-guide.page';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'mapa' },
@@ -29,5 +30,6 @@ export const routes: Routes = [
   { path: 'gestao', component: ReservationManagementPage },
   { path: 'calendario', component: OccupancyCalendarPage },
   { path: 'admin', component: AdministrationDemoPage },
+  { path: 'design', component: InterfaceGuidePage },
   { path: '**', redirectTo: 'mapa' },
 ];

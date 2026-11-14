@@ -1,0 +1,63 @@
+<section class="interface-guide" aria-labelledby="page-title">
+  <nav class="breadcrumb" aria-label="Caminho de navegação">
+    <a routerLink="/mapa">Campus Reservas</a><span aria-hidden="true">/</span><span>Fundamentos</span>
+  </nav>
+  <header class="guide-heading">
+    <p class="guide-eyebrow">Campus Reservas · Fundamentos</p>
+    <h1 id="page-title">Guia de interface</h1>
+    <p>Tokens visuais e exemplos de componentes usados na demonstração.</p>
+  </header>
+
+  <section class="guide-section" aria-labelledby="colors-title">
+    <div class="section-heading"><div><h2 id="colors-title">Cores</h2><p>Paleta base da interface</p></div></div>
+    <div class="color-grid">
+      @for (token of colors; track trackColor($index, token)) {
+        <article class="color-card">
+          <span class="swatch" [style.backgroundColor]="token.value" [attr.aria-label]="token.value"></span>
+          <div><h3>{{ token.name }}</h3><code>{{ token.value }}</code><p>{{ token.use }}</p></div>
+        </article>
+      }
+    </div>
+  </section>
+
+  <div class="guide-columns">
+    <section class="guide-section" aria-labelledby="type-title">
+      <div class="section-heading"><div><h2 id="type-title">Tipografia</h2><p>Famílias do sistema</p></div></div>
+      <div class="type-sample"><span>Marca · Georgia</span><strong class="brand-sample">Campus Reservas</strong><code>Georgia, serif</code></div>
+      <div class="type-sample"><span>Interface · Arial</span><strong class="ui-sample">Campus Reservas</strong><code>Arial, sans-serif</code></div>
+    </section>
+
+    <section class="guide-section" aria-labelledby="spacing-title">
+      <div class="section-heading"><div><h2 id="spacing-title">Espaçamento</h2><p>Escala em múltiplos de 4 e 8</p></div></div>
+      <div class="spacing-scale" aria-label="Escala de espaçamento">
+        @for (step of [4, 8, 12, 16, 24, 32]; track step) {<div><span>{{ step }} px</span><i [style.width.px]="step" aria-hidden="true"></i></div>}
+      </div>
+      <p class="measure-note">Largura máxima do conteúdo: <strong>1340 px</strong></p>
+    </section>
+  </div>
+
+  <section class="guide-section" aria-labelledby="components-title">
+    <div class="section-heading"><div><h2 id="components-title">Componentes</h2><p>Estados de ação e disponibilidade</p></div></div>
+    <div class="component-grid">
+      <div class="example-group"><h3>Botões</h3><div class="button-examples" aria-label="Exemplos visuais de botões"><span class="sample-button sample-button--primary">Ação principal</span><span class="sample-button sample-button--secondary">Ação secundária</span><span class="sample-button">Ação neutra</span><span class="sample-button sample-button--disabled">Indisponível</span></div></div>
+      <div class="example-group"><h3>Situações</h3><div class="status-examples"><span class="status status--pending">Aguardando</span><span class="status status--approved">Aprovada</span><span class="status status--rejected">Rejeitada</span><span class="status status--cancelled">Cancelada</span></div></div>
+    </div>
+  </section>
+
+  <section class="guide-section" aria-labelledby="form-title">
+    <div class="section-heading"><div><h2 id="form-title">Campos e validação</h2><p>Amostra textual do período; não é um formulário operacional</p></div></div>
+    <div class="form-examples" role="group" aria-label="Amostra textual de validação de período">
+      <label class="sample-field"><span>Atividade</span><input type="text" value="Exemplo demonstrativo" readonly /></label>
+      <label class="sample-field"><span>Data</span><input type="date" value="2026-10-23" readonly /></label>
+      <label class="sample-field"><span>Início</span><input type="time" value="08:00" readonly /></label>
+      <label class="sample-field"><span>Término</span><input type="time" value="07:00" readonly aria-invalid="true" aria-describedby="sample-error" /></label>
+      <small id="sample-error" class="sample-error" role="note">O término precisa ser posterior ao início.</small>
+      <button class="sample-button focus-example" type="button">Exemplo com foco visível</button>
+    </div>
+  </section>
+
+  <section class="guide-section breakpoint-section" aria-labelledby="breakpoints-title">
+    <div class="section-heading"><div><h2 id="breakpoints-title">Adaptação responsiva</h2><p>Pontos de mudança da composição</p></div></div>
+    <ul>@for (item of breakpoints; track trackBreakpoint($index, item)) {<li><strong>{{ item.width }}</strong><span>{{ item.use }}</span></li>}</ul>
+  </section>
+</section>
