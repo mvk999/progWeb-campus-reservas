@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CalendarDay, DemonstrationPeriod } from './environment-detail.models';
 import { EnvironmentDetailService } from './environment-detail.service';
@@ -16,15 +17,34 @@ export class EnvironmentDetailPage {
   private readonly detailService = inject(EnvironmentDetailService);
   protected readonly code = this.route.snapshot.paramMap.get('codigo') ?? 'AMB-001';
   protected readonly environment = this.detailService.getEnvironment(this.code);
-  protected readonly month = signal(new Date(2026, 9, 1, 12));
-  protected readonly selectedDate = signal('2026-10-22');
-  protected readonly selectedPeriod = signal('08:00');
+  private readonly queryParams = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
+  private readonly hasEditedSelection = signal(false);
+  private readonly initialDate = this.initialDateFromRoute();
+  protected readonly month = signal(new Date(`${this.initialDate}T12:00:00`));
+  protected readonly selectedDate = signal(this.initialDate);
+  protected readonly selectedPeriod = signal(this.route.snapshot.queryParamMap.get('inicio') ?? '08:00');
+  protected readonly selectedEndTime = signal(this.route.snapshot.queryParamMap.get('fim') ?? '10:00');
   protected readonly days = computed(() => this.buildCalendarDays());
   protected readonly periods = computed(() => this.detailService.getPeriods(this.code, this.selectedDate()));
   protected readonly currentPeriod = computed(() =>
-    this.periods().find((period) => period.startTime === this.selectedPeriod()) ?? null,
+    this.periods().find((period) => period.startTime === this.selectedPeriod() && period.endTime === this.selectedEndTime()) ?? null,
   );
-  protected readonly canRequest = computed(() => this.currentPeriod()?.availability === 'available');
+  protected readonly routeContextError = computed(() => {
+    if (this.hasEditedSelection()) return '';
+    const query = this.queryParams();
+    const date = query.get('data');
+    const start = query.get('inicio');
+    const end = query.get('fim');
+    if (!date && !start && !end) return '';
+    if (!date || !this.isValidDate(date)) return 'A data recebida não é válida. Selecione outra data.';
+    const period = this.detailService.getPeriods(this.code, date).find((item) => item.startTime === start && item.endTime === end);
+    if (!period) return 'O período recebido não corresponde a um intervalo válido para esta demonstração.';
+    if (period.availability === 'unknown') return 'Não há disponibilidade demonstrativa para esta data.';
+    return '';
+  });
+  protected readonly canRequest = computed(() =>
+    !this.routeContextError() && this.currentPeriod()?.availability === 'available',
+  );
   protected readonly monthLabel = computed(() => new Intl.DateTimeFormat('pt-BR', {
     month: 'long', year: 'numeric',
   }).format(this.month()));
@@ -44,16 +64,24 @@ export class EnvironmentDetailPage {
     selectedDate.setFullYear(next.getFullYear(), next.getMonth(), Math.min(selectedDate.getDate(), lastDay));
     this.selectedDate.set(this.toIsoDate(selectedDate));
     this.selectedPeriod.set('08:00');
+    this.selectedEndTime.set('10:00');
+    this.hasEditedSelection.set(true);
   }
 
   protected selectDate(day: CalendarDay): void {
     if (day.disabled) return;
     this.selectedDate.set(day.date);
     this.selectedPeriod.set('08:00');
+    this.selectedEndTime.set('10:00');
+    this.hasEditedSelection.set(true);
   }
 
   protected selectPeriod(period: DemonstrationPeriod): void {
-    if (period.availability !== 'unavailable') this.selectedPeriod.set(period.startTime);
+    if (period.availability !== 'unavailable') {
+      this.selectedPeriod.set(period.startTime);
+      this.selectedEndTime.set(period.endTime);
+      this.hasEditedSelection.set(true);
+    }
   }
 
   protected periodLabel(period: DemonstrationPeriod): string {
@@ -97,5 +125,16 @@ export class EnvironmentDetailPage {
   private formatDate(value: string): string {
     return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
       .format(new Date(`${value}T12:00:00`));
+  }
+
+  private initialDateFromRoute(): string {
+    const date = this.route.snapshot.queryParamMap.get('data');
+    return date && this.isValidDate(date) ? date : '2026-10-22';
+  }
+
+  private isValidDate(value: string): boolean {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const parsed = new Date(`${value}T12:00:00`);
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
   }
 }

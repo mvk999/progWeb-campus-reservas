@@ -73,18 +73,18 @@
 
         <p class="selected-date">Data selecionada: <strong>{{ selectedDateLabel() }}</strong></p>
         <div class="period-fields" aria-label="Período selecionado">
-          <div><span>Início</span><strong>{{ currentPeriod()?.startTime ?? '—' }}</strong></div>
+          <div><span>Início</span><strong>{{ selectedPeriod() }}</strong></div>
           <span aria-hidden="true">–</span>
-          <div><span>Término</span><strong>{{ currentPeriod()?.endTime ?? '—' }}</strong></div>
+          <div><span>Término</span><strong>{{ selectedEndTime() }}</strong></div>
         </div>
 
         <div class="period-options" role="group" aria-label="Períodos de duas horas">
           @for (period of periods(); track period.startTime) {
-            <button type="button" class="period-option" [class.period-option--selected]="selectedPeriod() === period.startTime"
+            <button type="button" class="period-option" [class.period-option--selected]="selectedPeriod() === period.startTime && selectedEndTime() === period.endTime"
               [class.period-option--unavailable]="period.availability === 'unavailable'"
               [class.period-option--unknown]="period.availability === 'unknown'"
               [disabled]="period.availability === 'unavailable'"
-              [attr.aria-pressed]="selectedPeriod() === period.startTime"
+              [attr.aria-pressed]="selectedPeriod() === period.startTime && selectedEndTime() === period.endTime"
               [attr.aria-label]="periodLabel(period) + ', ' + periodStatusLabel(period)"
               (click)="selectPeriod(period)">
               {{ periodLabel(period) }}
@@ -92,7 +92,9 @@
           }
         </div>
 
-        @if (currentPeriod()?.availability === 'available') {
+        @if (routeContextError()) {
+          <p class="period-feedback" role="alert">{{ routeContextError() }}</p>
+        } @else if (currentPeriod()?.availability === 'available') {
           <p class="period-feedback period-feedback--available" role="status">Período disponível na demonstração local.</p>
         } @else if (currentPeriod()?.availability === 'unavailable') {
           <p class="period-feedback" role="status">Este período não está disponível na demonstração.</p>
