@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { RoutePlaceholder } from './shared/route-placeholder/route-placeholder';
 import { CampusMapPage } from './features/campus-map/campus-map.page';
 import { RoomsPage } from './features/rooms/rooms.page';
 import { EnvironmentDetailPage } from './features/environment-detail/environment-detail.page';
@@ -8,6 +7,7 @@ import { MyReservationsPage } from './features/my-reservations/my-reservations.p
 import { LoginPage } from './features/authentication/login.page';
 import { ReservationManagementPage } from './features/reservation-management/reservation-management.page';
 import { OccupancyCalendarPage } from './features/occupancy-calendar/occupancy-calendar.page';
+import { AdministrationDemoPage } from './features/administration-demo/administration-demo.page';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'mapa' },
@@ -28,6 +28,6 @@ export const routes: Routes = [
   },
   { path: 'gestao', component: ReservationManagementPage },
   { path: 'calendario', component: OccupancyCalendarPage },
-  { path: 'admin', component: RoutePlaceholder, data: { title: 'Administração · demonstração' } },
+  { path: 'admin', component: AdministrationDemoPage },
   { path: '**', redirectTo: 'mapa' },
 ];
