@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { RoutePlaceholder } from './shared/route-placeholder/route-placeholder';
 import { CampusMapPage } from './features/campus-map/campus-map.page';
 import { RoomsPage } from './features/rooms/rooms.page';
+import { EnvironmentDetailPage } from './features/environment-detail/environment-detail.page';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'mapa' },
@@ -14,8 +15,12 @@ export const routes: Routes = [
   },
   {
     path: 'ambientes/:codigo',
+    component: EnvironmentDetailPage,
+  },
+  {
+    path: 'solicitar/:codigo',
     component: RoutePlaceholder,
-    data: { title: 'Detalhes do ambiente' },
+    data: { title: 'Solicitar reserva' },
   },
   { path: '**', redirectTo: 'mapa' },
 ];
