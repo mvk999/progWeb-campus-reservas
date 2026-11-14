@@ -4,6 +4,7 @@ import { CampusMapPage } from './features/campus-map/campus-map.page';
 import { RoomsPage } from './features/rooms/rooms.page';
 import { EnvironmentDetailPage } from './features/environment-detail/environment-detail.page';
 import { ReservationRequestPage } from './features/reservation-request/reservation-request.page';
+import { MyReservationsPage } from './features/my-reservations/my-reservations.page';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'mapa' },
@@ -11,8 +12,7 @@ export const routes: Routes = [
   { path: 'salas', component: RoomsPage },
   {
     path: 'minhas-reservas',
-    component: RoutePlaceholder,
-    data: { title: 'Minhas reservas' },
+    component: MyReservationsPage,
   },
   {
     path: 'ambientes/:codigo',

@@ -1,0 +1,77 @@
+<section class="my-reservations" aria-labelledby="page-title">
+  <nav class="breadcrumb" aria-label="Caminho de navegação">
+    <a routerLink="/mapa">UFLA</a><span aria-hidden="true">/</span><span>Minhas reservas</span>
+  </nav>
+
+  <header class="page-heading">
+    <div><p class="page-eyebrow">Área do solicitante</p><h1 id="page-title">Minhas reservas</h1>
+      <p>Acompanhe as solicitações demonstrativas criadas neste navegador.</p></div>
+    <a class="button button--primary" routerLink="/salas">Nova solicitação</a>
+  </header>
+
+  <section class="indicators" aria-label="Resumo das solicitações">
+    <article class="indicator"><span>Aguardando aprovação</span><strong>{{ pendingCount() }}</strong></article>
+    <article class="indicator"><span>Aprovadas</span><strong>{{ approvedCount() }}</strong></article>
+    <article class="indicator"><span>Solicitações registradas</span><strong>{{ totalRegistered() }}</strong></article>
+  </section>
+
+  <div class="list-heading"><h2>Solicitações</h2><a routerLink="/salas">Consultar ambientes <span aria-hidden="true">→</span></a></div>
+
+  <div class="reservation-controls">
+    <div class="tabs" role="group" aria-label="Visualização de solicitações">
+      <button type="button" [attr.aria-pressed]="tab() === 'upcoming'" [class.is-active]="tab() === 'upcoming'" (click)="selectTab('upcoming')">Próximas</button>
+      <button type="button" [attr.aria-pressed]="tab() === 'history'" [class.is-active]="tab() === 'history'" (click)="selectTab('history')">Histórico</button>
+      <button type="button" [attr.aria-pressed]="tab() === 'calendar'" [class.is-active]="tab() === 'calendar'" (click)="selectTab('calendar')">Calendário</button>
+    </div>
+    <label class="situation-filter"><span>Situação</span><select [value]="situationFilter()" (change)="setSituation($event)"><option value="all">Todas as situações</option></select></label>
+  </div>
+
+  @if (storageError()) {
+    <section class="storage-error" role="alert" aria-live="assertive">
+      <h2>Não foi possível carregar as solicitações locais</h2>
+      <p>{{ storageError() }}</p>
+      <button type="button" class="button button--quiet" (click)="retryRead()">Tentar novamente</button>
+    </section>
+  } @else if (isEmpty()) {
+    <section class="empty-state" aria-live="polite">
+      <span class="empty-icon" aria-hidden="true">▤</span>
+      <h2>Nenhuma solicitação encontrada</h2>
+      <p>Consulte os ambientes para escolher uma sala e iniciar uma solicitação demonstrativa.</p>
+      <a class="button button--quiet" routerLink="/salas">Consultar ambientes</a>
+    </section>
+  } @else if (tab() === 'calendar') {
+    <section class="calendar-panel" aria-labelledby="calendar-title">
+      <div class="calendar-heading"><h2 id="calendar-title">{{ monthLabel() }}</h2>
+        <div><button type="button" aria-label="Mês anterior" (click)="moveMonth(-1)">‹</button><button type="button" aria-label="Próximo mês" (click)="moveMonth(1)">›</button></div>
+      </div>
+      <div class="calendar-grid" aria-label="Calendário de solicitações locais">
+        @for (weekday of ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']; track weekday) {<span class="weekday">{{ weekday }}</span>}
+        @for (day of calendarDays(); track $index) {
+          @if (day; as calendarDay) {
+            <div class="calendar-day" [attr.aria-label]="calendarDay.dayNumber + ' de ' + monthLabel() + (calendarDay.hasReservation ? ', com solicitação demonstrativa' : '')">
+              <time [attr.datetime]="calendarDay.date">{{ calendarDay.dayNumber }}</time>
+              @for (reservation of calendarDay.reservations; track trackReservation($index, reservation)) {
+                <a class="calendar-event" [routerLink]="roomRoute(reservation)">{{ reservation.startTime }} · {{ reservation.environmentName }}</a>
+              }
+            </div>
+          } @else {<span class="calendar-day calendar-day--blank" aria-hidden="true"></span>}
+        }
+      </div>
+      <p class="calendar-note">O calendário mostra somente solicitações demonstrativas salvas localmente.</p>
+    </section>
+  } @else {
+    <section class="reservation-list" [attr.aria-label]="tab() === 'upcoming' ? 'Solicitações próximas' : 'Histórico de solicitações'">
+      @for (reservation of visibleReservations(); track trackReservation($index, reservation)) {
+        <article class="reservation-card">
+          <div class="reservation-card__top"><div><p>{{ reservation.environmentCode }} · {{ reservation.buildingName }}</p><h3>{{ reservation.environmentName }}</h3></div><span class="demo-status">Demonstrativa</span></div>
+          <dl><div><dt>Data</dt><dd>{{ formatDate(reservation.date) }}</dd></div><div><dt>Horário</dt><dd>{{ reservation.startTime }}–{{ reservation.endTime }}</dd></div><div><dt>Participantes</dt><dd>{{ reservation.participants }}</dd></div><div><dt>Situação</dt><dd>Não informada</dd></div></dl>
+          <p class="reservation-purpose">{{ reservation.purpose }}</p>
+          @if (reservation.observations) {<p class="reservation-observation">{{ reservation.observations }}</p>}
+          <footer><span>Salva localmente em {{ formatCreatedAt(reservation.createdAt) }}</span><a [routerLink]="roomRoute(reservation)">Ver ambiente</a></footer>
+        </article>
+      }
+    </section>
+  }
+
+  <p class="demo-disclaimer">Dados locais demonstrativos. Nenhuma reserva real, aprovação ou cancelamento é realizado nesta tela.</p>
+</section>

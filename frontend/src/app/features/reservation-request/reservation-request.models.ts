@@ -15,6 +15,10 @@ export interface DemonstrationReservation extends ReservationDraft {
   readonly source: 'demo-local';
 }
 
+export type ReservationStoreReadResult =
+  | { readonly ok: true; readonly reservations: readonly DemonstrationReservation[] }
+  | { readonly ok: false; readonly reason: 'storage' | 'invalid-data'; readonly message: string };
+
 export interface ReservationSummaryFixture {
   readonly environmentCode: string;
   readonly responsible: string;
