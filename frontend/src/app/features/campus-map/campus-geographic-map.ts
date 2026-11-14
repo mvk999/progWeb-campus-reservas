@@ -1,9 +1,10 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, ViewChild, signal } from '@angular/core';
-import type { Map as LibreMap, MapGeoJSONFeature } from 'maplibre-gl';
+import type { Map as LibreMap, MapGeoJSONFeature, Marker } from 'maplibre-gl';
 import type { FeatureCollection, Geometry } from 'geojson';
 import { CampusMapCanvas } from './campus-map-canvas';
 import { CampusBuilding } from './campus-map.models';
 import { CAMPUS_GEOGRAPHY as CONFIG } from './campus-geography.config';
+import { buildingHeight, clampVisualScale, footprintCenter } from './campus-building-model';
 
 @Component({
   selector: 'app-campus-geographic-map', standalone: true, imports: [CampusMapCanvas],
@@ -22,6 +23,23 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
   protected readonly threeDimensional = signal(true);
   protected readonly selectedName = signal('');
   protected readonly selectedDescription = signal('');
+  protected readonly heightScale = signal(1.6);
+  protected readonly pitch = signal(CONFIG.pitch);
+  protected readonly labelsVisible = signal(true);
+  protected readonly orbiting = signal(false);
+  protected readonly tourActive = signal(false);
+  protected readonly tourIndex = signal(0);
+  protected readonly tourStops = signal<readonly { code: string; name: string }[]>([]);
+  protected readonly expanded = signal(false);
+  protected readonly motionReduced = signal(false);
+  protected readonly hoverInfo = signal<{ name: string; x: number; y: number } | null>(null);
+  private markers: { marker: Marker; button: HTMLButtonElement; code: string }[] = [];
+  private orbitFrame?: number;
+  private selectionFrame?: number;
+  private lastOrbitTime?: number;
+  private motionPreference?: MediaQueryList;
+  private previousFocus?: HTMLElement;
+  private previousBodyOverflow = '';
   private map?: LibreMap;
   private resize?: ResizeObserver;
   private abort = new AbortController();
@@ -48,6 +66,9 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
       return;
     }
     this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.motionReduced.set(this.reducedMotion);
+    this.motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    this.motionPreference.addEventListener('change', this.updateMotionPreference);
     try {
       const [libre, response] = await Promise.all([
         import('maplibre-gl'), fetch(CONFIG.buildingsUrl, { signal: this.abort.signal }),
@@ -72,10 +93,15 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
         ] },
       });
       this.threeDimensional.set(!this.reducedMotion);
+      this.pitch.set(this.reducedMotion ? 0 : CONFIG.pitch);
+      this.host.nativeElement.addEventListener('pointerdown', () => this.stopOrbit(), { signal: this.abort.signal, capture: true });
+      this.host.nativeElement.addEventListener('keydown', () => this.stopOrbit(), { signal: this.abort.signal });
+      document.addEventListener('keydown', this.handleExpandedKeyboard, { signal: this.abort.signal, capture: true });
       this.map.addControl(new libre.AttributionControl({ compact: true }));
       this.map.addControl(new libre.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-left');
       this.map.on('error', () => this.message.set('Parte do fundo cartográfico não carregou. Os edifícios locais continuam disponíveis.'));
       this.map.on('webglcontextlost', () => this.fallback());
+      this.map.on('pitchend', () => { if (!this.map) return; this.pitch.set(Math.round(this.map.getPitch())); this.threeDimensional.set(this.pitch() > 0); this.applyMode(); });
       this.map.on('style.load', () => {
         clearTimeout(this.loadTimeout);
         if (!this.map) return;
@@ -87,29 +113,48 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
         this.map.addLayer({ id: 'campus-roads-edge', type: 'line', source: 'campus-context', filter: ['has', 'highway'], paint: { 'line-color': '#bac3ad', 'line-width': ['interpolate', ['linear'], ['zoom'], 14, 3, 18, 14] } });
         this.map.addLayer({ id: 'campus-roads', type: 'line', source: 'campus-context', filter: ['has', 'highway'], paint: { 'line-color': '#fffdf3', 'line-width': ['interpolate', ['linear'], ['zoom'], 14, 1.5, 18, 10] } });
         this.map.addLayer({ id: 'ufla-footprints', type: 'fill', source: 'ufla', paint: {
-          'fill-color': '#91a797', 'fill-opacity': 0.7,
+          'fill-color': ['case', ['boolean', ['feature-state', 'selected'], false], '#d19b46', '#91a797'], 'fill-opacity': 0.7,
+        } });
+        this.map.addLayer({ id: 'ufla-foundations', type: 'fill-extrusion', source: 'ufla', paint: {
+          'fill-extrusion-color': '#526353', 'fill-extrusion-height': 1.4, 'fill-extrusion-opacity': 1,
         } });
         this.map.addLayer({ id: 'ufla-buildings', type: 'fill-extrusion', source: 'ufla', paint: {
-          'fill-extrusion-color': ['case', ['boolean', ['feature-state', 'selected'], false], '#d19b46', ['boolean', ['feature-state', 'hover'], false], '#6b9c85', '#527763'],
-          'fill-extrusion-height': ['coalesce', ['to-number', ['get', 'height']], 8],
-          'fill-extrusion-base': 0, 'fill-extrusion-opacity': 0.95,
+          'fill-extrusion-color': ['case', ['boolean', ['feature-state', 'selected'], false], '#d19b46', ['!=', ['coalesce', ['get', 'code'], ''], ''], '#edebd5', '#a2b29c'],
+          'fill-extrusion-height': buildingHeight(this.heightScale()),
+          'fill-extrusion-base': 1.4, 'fill-extrusion-opacity': 1,
+        } });
+        this.map.addLayer({ id: 'ufla-roofs', type: 'fill-extrusion', source: 'ufla', paint: {
+          'fill-extrusion-color': ['case', ['boolean', ['feature-state', 'selected'], false], '#e6b963', ['match', ['get', 'code'], 'PV4', '#b58152', 'PV5', '#a57348', 'DCC', '#426d65', 'BU', '#627c8b', '#6b846c']],
+          'fill-extrusion-base': buildingHeight(this.heightScale()),
+          'fill-extrusion-height': ['+', buildingHeight(this.heightScale()), 0.9], 'fill-extrusion-opacity': 1,
+        } });
+        this.map.addLayer({ id: 'ufla-outline', type: 'line', source: 'ufla', paint: {
+          'line-color': ['case', ['boolean', ['feature-state', 'selected'], false], '#d19b46', '#60745c'],
+          'line-width': ['case', ['boolean', ['feature-state', 'selected'], false], 3, 0.6],
         } });
         this.map.setLight({ anchor: 'viewport', color: '#fff5e4', intensity: 0.45, position: [1.5, 190, 40] });
         let hovered: string | number | undefined;
-        this.map.on('mousemove', 'ufla-buildings', event => {
+        this.map.on('mousemove', ['ufla-buildings', 'ufla-roofs'], event => {
           if (hovered !== undefined) this.map?.setFeatureState({ source: 'ufla', id: hovered }, { hover: false });
           hovered = event.features?.[0]?.id;
           if (hovered !== undefined) this.map?.setFeatureState({ source: 'ufla', id: hovered }, { hover: true });
+          this.hoverInfo.set({ name: event.features?.[0]?.properties?.['name'] ?? 'Edificação do campus', x: Math.max(8, Math.min(event.point.x, this.host.nativeElement.clientWidth - 260)), y: Math.max(80, Math.min(event.point.y, this.host.nativeElement.clientHeight - 100)) });
           this.map!.getCanvas().style.cursor = 'pointer';
         });
-        this.map.on('mouseleave', 'ufla-buildings', () => {
+        this.map.on('mouseleave', ['ufla-buildings', 'ufla-roofs'], () => {
           if (hovered !== undefined) this.map?.setFeatureState({ source: 'ufla', id: hovered }, { hover: false });
           this.map!.getCanvas().style.cursor = '';
+          this.hoverInfo.set(null);
         });
-        this.map.on('click', 'ufla-buildings', event => {
+        this.map.on('click', ['ufla-buildings', 'ufla-roofs'], event => {
           const feature = event.features?.[0];
           if (feature) this.chooseFeature(feature);
         });
+        this.map.on('click', 'ufla-footprints', event => {
+          if (!this.threeDimensional() && event.features?.[0]) this.chooseFeature(event.features[0]);
+        });
+        this.createMarkers(libre.Marker);
+        this.applyMode();
         this.status.set('ready');
         this.message.set('Campus real · contornos NUP/UFLA · alturas ilustrativas, sem medição oficial');
         this.ngOnChanges();
@@ -129,8 +174,13 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
     this.map.setPaintProperty('ufla-buildings', 'fill-extrusion-color', [
       'case', ['boolean', ['feature-state', 'selected'], false], '#d19b46',
       ['boolean', ['feature-state', 'hover'], false], '#6b9c85',
-      this.matchingCodes.length < this.buildings.length ? ['case', ['in', ['id'], ['literal', matches]], '#236447', '#b6c1b5'] : '#527763',
+      this.matchingCodes.length < this.buildings.length ? ['case', ['in', ['id'], ['literal', matches]], '#edebd5', '#b6c1b5'] : ['case', ['!=', ['coalesce', ['get', 'code'], ''], ''], '#edebd5', '#a2b29c'],
     ]);
+    this.markers.forEach(({ button, code }) => {
+      button.classList.toggle('campus-pin--selected', code === this.selectedCode);
+      button.setAttribute('aria-pressed', String(code === this.selectedCode));
+      button.hidden = !this.labelsVisible() || !this.matchingCodes.includes(code);
+    });
     const building = this.buildings.find(item => item.code === this.selectedCode);
     const feature = building && this.matchingCodes.includes(building.code) && this.features.features.find(item => this.associatedBuilding(item.properties)?.code === building.code);
     if (feature) this.chooseFeature(feature as MapGeoJSONFeature, false);
@@ -157,31 +207,169 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
 
   private chooseFeature(feature: MapGeoJSONFeature, emit = true): void {
     if (!this.map) return;
-    if (this.selectedId !== undefined) this.map.setFeatureState({ source: 'ufla', id: this.selectedId }, { selected: false });
+    const changed = feature.id !== this.selectedId;
+    if (changed && this.selectionFrame !== undefined) cancelAnimationFrame(this.selectionFrame);
+    if (changed && this.selectedId !== undefined) this.map.setFeatureState({ source: 'ufla', id: this.selectedId }, { selected: false, lift: 0 });
     this.selectedId = feature.id;
     if (feature.id !== undefined) this.map.setFeatureState({ source: 'ufla', id: feature.id }, { selected: true });
+    this.markers.forEach(({ button, code }) => {
+      button.classList.toggle('campus-pin--selected', code === feature.properties?.['code']);
+      button.setAttribute('aria-pressed', String(code === feature.properties?.['code']));
+    });
     const name = feature.properties?.['name'] || 'Edificação do campus';
     this.selectedName.set(name);
     const building = this.associatedBuilding(feature.properties);
     this.selectedDescription.set(building ? `${building.rooms.length} ambientes demonstrativos no catálogo. Consulte os detalhes ao lado.` : 'Contorno oficial NUP/UFLA. Sem ambientes associados no catálogo demonstrativo.');
-    if (feature.geometry.type === 'Polygon') {
-      const points = feature.geometry.coordinates[0];
-      const center: [number, number] = [points.reduce((sum, p) => sum + p[0], 0) / points.length, points.reduce((sum, p) => sum + p[1], 0) / points.length];
-      this.map.flyTo({ center, zoom: 17.8, duration: this.duration, essential: false });
+    const center = footprintCenter(feature);
+    if (center && (changed || emit)) {
+      this.stopOrbit();
+      this.map.flyTo({ center, zoom: 17.8, pitch: this.threeDimensional() ? this.pitch() : 0, duration: this.duration, essential: false });
+      this.animateSelection(feature.id);
     }
     if (building && emit) this.buildingSelected.emit(building);
   }
 
-  protected zoomIn(): void { this.map?.zoomIn({ duration: this.duration }); }
-  protected zoomOut(): void { this.map?.zoomOut({ duration: this.duration }); }
-  protected rotate(): void { this.map?.easeTo({ bearing: this.map.getBearing() + 30, duration: this.duration }); }
+  protected zoomIn(): void { this.stopOrbit(); this.map?.zoomIn({ duration: this.duration }); }
+  protected zoomOut(): void { this.stopOrbit(); this.map?.zoomOut({ duration: this.duration }); }
+  protected rotate(): void { this.stopOrbit(); this.map?.easeTo({ bearing: this.map.getBearing() + 30, duration: this.duration }); }
   protected toggleMode(): void {
+    this.stopOrbit();
     this.threeDimensional.update(value => !value);
-    this.map?.easeTo({ pitch: this.threeDimensional() ? CONFIG.pitch : 0, duration: this.duration });
+    if (this.threeDimensional() && !this.pitch()) this.pitch.set(CONFIG.pitch);
+    this.applyMode();
+    this.map?.easeTo({ pitch: this.threeDimensional() ? this.pitch() : 0, duration: this.duration });
   }
   protected reset(): void {
-    this.map?.flyTo({ center: CONFIG.center, zoom: CONFIG.zoom, bearing: CONFIG.bearing, pitch: this.threeDimensional() ? CONFIG.pitch : 0, duration: this.duration });
+    this.stopTour(); this.stopOrbit();
+    this.map?.flyTo({ center: CONFIG.center, zoom: CONFIG.zoom, bearing: CONFIG.bearing, pitch: this.threeDimensional() ? this.pitch() : 0, duration: this.duration });
   }
+  protected setHeightScale(event: Event): void {
+    this.stopOrbit();
+    this.heightScale.set(clampVisualScale(Number((event.target as HTMLInputElement).value)));
+    if (!this.map?.getLayer('ufla-buildings')) return;
+    this.map.setPaintProperty('ufla-buildings', 'fill-extrusion-height', buildingHeight(this.heightScale()));
+    this.map.setPaintProperty('ufla-roofs', 'fill-extrusion-base', buildingHeight(this.heightScale()));
+    this.map.setPaintProperty('ufla-roofs', 'fill-extrusion-height', ['+', buildingHeight(this.heightScale()), 0.9]);
+  }
+  protected setPitch(event: Event): void {
+    this.stopOrbit();
+    const value = Number((event.target as HTMLInputElement).value);
+    if (!Number.isFinite(value)) return;
+    this.pitch.set(Math.max(0, Math.min(70, value)));
+    this.threeDimensional.set(this.pitch() > 0);
+    this.applyMode();
+    this.map?.easeTo({ pitch: this.pitch(), duration: this.reducedMotion ? 0 : 100 });
+  }
+  protected toggleLabels(): void { this.stopOrbit(); this.labelsVisible.update(value => !value); this.ngOnChanges(); }
+  protected toggleExpanded(): void {
+    this.stopOrbit();
+    this.expanded.update(value => !value);
+    if (this.expanded()) {
+      this.previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+      this.previousBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      queueMicrotask(() => this.host.nativeElement.closest('section')?.querySelector<HTMLElement>('button')?.focus());
+    } else {
+      document.body.style.overflow = this.previousBodyOverflow;
+      this.previousFocus?.focus();
+    }
+    requestAnimationFrame(() => { if (!this.destroyed) this.map?.resize(); });
+  }
+  protected toggleOrbit(): void {
+    if (this.orbiting()) { this.stopOrbit(); return; }
+    if (!this.map || this.reducedMotion) return;
+    this.map.stop(); this.orbiting.set(true); this.lastOrbitTime = undefined;
+    const frame = (time: number) => {
+      if (!this.orbiting() || !this.map || this.destroyed) return;
+      const delta = this.lastOrbitTime === undefined ? 0 : Math.min(time - this.lastOrbitTime, 100);
+      this.lastOrbitTime = time;
+      this.map.jumpTo({ bearing: this.map.getBearing() + delta * 0.006 });
+      this.orbitFrame = requestAnimationFrame(frame);
+    };
+    this.orbitFrame = requestAnimationFrame(frame);
+  }
+  protected stopOrbit(): void {
+    if (this.orbitFrame !== undefined) cancelAnimationFrame(this.orbitFrame);
+    this.orbitFrame = undefined; this.lastOrbitTime = undefined; this.orbiting.set(false);
+  }
+  protected startTour(): void {
+    if (!this.tourStops().length) return;
+    this.tourActive.set(true); this.tourIndex.set(0); this.visitTourStop();
+  }
+  protected nextTour(): void {
+    this.tourIndex.update(value => (value + 1) % Math.max(1, this.tourStops().length)); this.visitTourStop();
+  }
+  protected previousTour(): void {
+    this.tourIndex.update(value => (value - 1 + this.tourStops().length) % Math.max(1, this.tourStops().length)); this.visitTourStop();
+  }
+  protected stopTour(): void { this.tourActive.set(false); this.stopOrbit(); }
+  private visitTourStop(): void {
+    const code = this.tourStops()[this.tourIndex()]?.code;
+    const feature = this.features.features.find(item => item.properties?.['code'] === code);
+    if (feature) this.chooseFeature(feature as MapGeoJSONFeature);
+  }
+  private applyMode(): void {
+    for (const layer of ['ufla-foundations', 'ufla-buildings', 'ufla-roofs']) {
+      if (this.map?.getLayer(layer)) this.map.setLayoutProperty(layer, 'visibility', this.threeDimensional() ? 'visible' : 'none');
+    }
+  }
+  private createMarkers(MarkerConstructor: typeof Marker): void {
+    const stops: { code: string; name: string }[] = [];
+    for (const feature of this.features.features) {
+      const building = this.associatedBuilding(feature.properties);
+      const center = footprintCenter(feature);
+      if (!building || !center) continue;
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'campus-pin'; button.dataset['code'] = building.code;
+      button.setAttribute('aria-label', `Explorar ${building.name}, ${building.rooms.length} ambientes demonstrativos`);
+      const code = document.createElement('span'); code.className = 'campus-pin__code'; code.textContent = building.code;
+      const name = document.createElement('span'); name.className = 'campus-pin__name'; name.textContent = building.name;
+      button.append(code, name);
+      button.addEventListener('click', event => { event.stopPropagation(); this.chooseFeature(feature as MapGeoJSONFeature); }, { signal: this.abort.signal });
+      button.addEventListener('mouseenter', () => this.map?.setFeatureState({ source: 'ufla', id: feature.id! }, { hover: true }), { signal: this.abort.signal });
+      button.addEventListener('mouseleave', () => this.map?.setFeatureState({ source: 'ufla', id: feature.id! }, { hover: false }), { signal: this.abort.signal });
+      const marker = new MarkerConstructor({ element: button, anchor: 'bottom', offset: [0, -12] }).setLngLat(center).addTo(this.map!);
+      this.markers.push({ marker, button, code: building.code }); stops.push({ code: building.code, name: building.name });
+    }
+    this.tourStops.set(stops.sort((a, b) => a.code.localeCompare(b.code)));
+  }
+  private animateSelection(id: string | number | undefined): void {
+    if (id === undefined || this.reducedMotion) return;
+    const start = performance.now();
+    const frame = (time: number) => {
+      if (this.destroyed || this.selectedId !== id || !this.map) return;
+      const progress = Math.min(1, (time - start) / 450);
+      this.map.setFeatureState({ source: 'ufla', id }, { lift: Math.sin(progress * Math.PI) * 3 });
+      if (progress < 1) this.selectionFrame = requestAnimationFrame(frame);
+      else this.selectionFrame = undefined;
+    };
+    this.selectionFrame = requestAnimationFrame(frame);
+  }
+  private readonly updateMotionPreference = (event: MediaQueryListEvent): void => {
+    this.reducedMotion = event.matches;
+    this.motionReduced.set(event.matches);
+    if (event.matches) {
+      this.stopOrbit(); this.map?.stop();
+      if (this.selectionFrame !== undefined) cancelAnimationFrame(this.selectionFrame);
+      this.selectionFrame = undefined;
+      if (this.selectedId !== undefined) this.map?.setFeatureState({ source: 'ufla', id: this.selectedId }, { lift: 0 });
+    }
+  };
+  private readonly handleExpandedKeyboard = (event: KeyboardEvent): void => {
+    if (!this.expanded()) return;
+    if (event.key === 'Escape') { event.preventDefault(); this.toggleExpanded(); return; }
+    if (event.key !== 'Tab') return;
+    const card = this.host.nativeElement.closest('section');
+    const focusables = [...card?.querySelectorAll<HTMLElement>('button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),[tabindex="0"]') ?? []]
+      .filter(element => !element.hidden && element.getClientRects().length > 0);
+    const first = focusables[0], last = focusables.at(-1);
+    if (!first) return;
+    if (event.shiftKey && (document.activeElement === first || !card?.contains(document.activeElement))) {
+      event.preventDefault(); last?.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || !card?.contains(document.activeElement))) {
+      event.preventDefault(); first.focus();
+    }
+  };
   private get duration(): number { return this.reducedMotion ? 0 : 700; }
   private prepareFlatMap(): void {
     const polygons = this.features.features.filter(feature => feature.geometry.type === 'Polygon');
@@ -210,12 +398,19 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
     }
   }
   private fallback(): void {
+    this.stopOrbit();
+    this.markers.forEach(item => item.marker.remove()); this.markers = [];
     this.status.set('fallback');
     this.message.set('Modo esquemático 2D: WebGL ou dados geográficos indisponíveis. As posições abaixo são ilustrativas, sem precisão geográfica.');
     if (this.geographicPaths().length) this.message.set('Vista 2D dos contornos NUP/UFLA. WebGL indisponível neste dispositivo.');
     this.map?.remove(); this.map = undefined;
   }
   ngOnDestroy(): void {
+    if (this.expanded()) document.body.style.overflow = this.previousBodyOverflow;
+    this.stopOrbit();
+    if (this.selectionFrame !== undefined) cancelAnimationFrame(this.selectionFrame);
+    this.motionPreference?.removeEventListener('change', this.updateMotionPreference);
+    this.markers.forEach(item => item.marker.remove()); this.markers = [];
     this.destroyed = true; clearTimeout(this.loadTimeout); this.abort.abort(); this.resize?.disconnect(); this.map?.remove();
   }
 }

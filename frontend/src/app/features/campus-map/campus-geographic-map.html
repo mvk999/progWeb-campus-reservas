@@ -1,5 +1,11 @@
-<section class="geographic-card" aria-label="Exploração geográfica da UFLA">
+<section class="geographic-card" [class.geographic-card--expanded]="expanded()" [attr.role]="expanded() ? 'dialog' : null" [attr.aria-modal]="expanded() ? 'true' : null" aria-label="Exploração geográfica da UFLA">
   <header class="geographic-heading"><div><span class="geographic-eyebrow">EXPLORE O CAMPUS</span><h2>UFLA, por outra perspectiva</h2></div><span class="geographic-badge">{{ status() === 'ready' ? (threeDimensional() ? '3D' : '2D') : 'MAPA' }}</span></header>
+  @if (status() === 'ready') {
+    <div class="explore-toolbar">
+      <div class="explore-modes"><button type="button" class="explore-action" (click)="startTour()" [attr.aria-pressed]="tourActive()">Explorar pavilhões ↗</button><button type="button" (click)="toggleOrbit()" [disabled]="motionReduced()" [attr.title]="motionReduced() ? 'Órbita desativada pela preferência de movimento reduzido' : null" [attr.aria-pressed]="orbiting()">{{ orbiting() ? 'Pausar órbita' : 'Orbitar seleção' }}</button></div>
+      <div class="explore-options"><button type="button" (click)="toggleLabels()" [attr.aria-pressed]="labelsVisible()">{{ labelsVisible() ? 'Ocultar nomes' : 'Mostrar nomes' }}</button><button type="button" (click)="toggleExpanded()" [attr.aria-expanded]="expanded()">{{ expanded() ? 'Recolher mapa' : 'Ampliar mapa' }}</button></div>
+    </div>
+  }
   <div class="geographic-stage" [hidden]="status() === 'fallback'">
     <div #mapHost class="geographic-host" aria-label="Mapa do campus. Use setas para navegar, mais e menos para zoom e Shift com setas para inclinar ou girar." tabindex="0"></div>
     @if (status() === 'loading') { <div class="geographic-loading" role="status">Carregando o campus…</div> }
@@ -10,8 +16,13 @@
       <button type="button" [attr.aria-label]="threeDimensional() ? 'Visão 2D' : 'Visão 3D'" (click)="toggleMode()">{{ threeDimensional() ? '2D' : '3D' }}</button>
       <button type="button" aria-label="Restaurar vista do campus" (click)="reset()">⌂</button>
     </div>
+    @if (hoverInfo(); as hover) { <div class="map-tooltip" [style.left.px]="hover.x" [style.top.px]="hover.y" role="tooltip">{{ hover.name }}<small>Clique para explorar</small></div> }
+    @if (tourActive()) { <aside class="campus-tour" aria-label="Exploração guiada"><div><span>EXPLORAÇÃO GUIADA · {{ tourIndex() + 1 }}/{{ tourStops().length }}</span><strong>{{ tourStops()[tourIndex()]?.name }}</strong></div><div class="campus-tour__actions"><button type="button" aria-label="Pavilhão anterior" (click)="previousTour()">←</button><button type="button" aria-label="Próximo pavilhão" (click)="nextTour()">→</button><button type="button" aria-label="Encerrar exploração guiada" (click)="stopTour()">×</button></div></aside> }
     @if (selectedName()) { <div class="geographic-selection" aria-live="polite"><strong>{{ selectedName() }}</strong><p>{{ selectedDescription() }}</p></div> }
   </div>
+  @if (status() === 'ready') {
+    <div class="perspective-panel"><label><span>Volume dos edifícios <strong>{{ heightScale().toFixed(1) }}×</strong></span><input type="range" min="1" max="3" step="0.1" [value]="heightScale()" (input)="setHeightScale($event)" aria-label="Volume ilustrativo dos edifícios" /></label><label><span>Inclinação <strong>{{ pitch().toFixed(0) }}°</strong></span><input type="range" min="0" max="65" step="1" [value]="pitch()" (input)="setPitch($event)" aria-label="Inclinação do mapa" /></label><p>Volumetria estilizada sobre contornos reais. Alturas e detalhes não representam um levantamento arquitetônico.</p></div>
+  }
   <p class="geographic-status" role="status">{{ message() }}</p>
   @if (geographicPaths().length) {
     <label class="geographic-picker">Edificações do campus <select aria-label="Selecionar edificação geográfica" (change)="chooseFlatFeature($event)"><option value="">Explore uma edificação</option>@for (path of geographicPaths(); track path.id) { <option [value]="path.id">{{ path.name }} · {{ path.id }}</option> }</select></label>
