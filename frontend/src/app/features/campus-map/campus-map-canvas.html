@@ -1,0 +1,99 @@
+<section class="map-card" aria-label="Mapa interativo do campus">
+  <div class="map-card__heading">
+    <span class="section-label">{{ campusName }}</span>
+    <span class="map-mode-label">Vista em {{ isThreeDimensional() ? '3D' : '2D' }}</span>
+  </div>
+
+  <div
+    class="map-canvas"
+    [class.map-canvas--flat]="!isThreeDimensional()"
+    [attr.aria-label]="'Mapa esquemático do campus. Use as setas do teclado para mover.'"
+    tabindex="0"
+    (keydown)="moveMapWithKeyboard($event)"
+  >
+    <div
+      class="map-scene"
+      [class.map-scene--dragging]="isDragging()"
+      [style.transform]="mapTransform"
+      (pointerdown)="beginPan($event)"
+      (pointermove)="movePan($event)"
+      (pointerup)="endPan($event)"
+      (pointercancel)="endPan($event)"
+    >
+      <svg class="campus-illustration" viewBox="0 0 960 620" role="img" aria-label="Mapa esquemático da UFLA">
+        <defs>
+          <pattern id="campus-grid" width="56" height="56" patternUnits="userSpaceOnUse">
+            <path d="M 56 0 L 0 0 0 56" fill="none" stroke="#dce4e9" stroke-width="1" />
+          </pattern>
+        </defs>
+        <rect width="960" height="620" fill="#e9eff3" />
+        <rect width="960" height="620" fill="url(#campus-grid)" opacity=".42" />
+        <path class="map-road map-road--wide" d="M-40 520 300 330 610 405 990 160" />
+        <path class="map-road map-road--wide" d="M120 -50 320 180 520 252 840 705" />
+        <path class="map-road" d="M-30 280 250 205 440 278 650 214 990 300" />
+        <path class="map-road" d="M180 660 385 450 565 384 755 410 1000 545" />
+        <path class="map-walk" d="M40 102 260 140 430 116 710 186 910 120" />
+        <path class="map-walk" d="M72 456 245 398 398 440 650 355 905 444" />
+        <g class="map-blocks" aria-hidden="true">
+          <path d="M58 162 124 134 181 158 115 188Z" />
+          <path d="M566 94 638 64 696 90 624 122Z" />
+          <path d="M720 252 784 224 848 248 782 280Z" />
+          <path d="M487 510 556 478 620 503 550 537Z" />
+          <path d="M816 485 882 456 934 479 868 510Z" />
+          <path d="M281 80 326 60 367 76 322 98Z" />
+        </g>
+        <g class="map-buildings" aria-hidden="true">
+          <g transform="translate(580 156)"><path d="M0 24 64 0 112 20 48 46Z" /><path d="M48 46 112 20 112 42 48 69Z" /><path d="M0 24 48 46 48 69 0 47Z" /></g>
+          <g transform="translate(88 355)"><path d="M0 22 56 0 111 22 55 46Z" /><path d="M55 46 111 22 111 43 55 68Z" /><path d="M0 22 55 46 55 68 0 45Z" /></g>
+          <g transform="translate(325 455)"><path d="M0 18 54 0 99 18 45 39Z" /><path d="M45 39 99 18 99 37 45 58Z" /><path d="M0 18 45 39 45 58 0 38Z" /></g>
+          <g transform="translate(390 402)"><path d="M0 22 62 0 115 23 53 47Z" /><path d="M53 47 115 23 115 45 53 69Z" /><path d="M0 22 53 47 53 69 0 44Z" /></g>
+          <g transform="translate(292 373)"><path d="M0 17 56 0 100 18 44 38Z" /><path d="M44 38 100 18 100 37 44 57Z" /><path d="M0 17 44 38 44 57 0 37Z" /></g>
+          <g transform="translate(626 417)"><path d="M0 18 64 0 111 20 47 42Z" /><path d="M47 42 111 20 111 41 47 63Z" /><path d="M0 18 47 42 47 63 0 39Z" /></g>
+          <g transform="translate(745 302)"><path d="M0 26 72 0 126 25 54 52Z" /><path d="M54 52 126 25 126 50 54 78Z" /><path d="M0 26 54 52 54 78 0 51Z" /></g>
+          <g transform="translate(731 491)"><path d="M0 20 58 0 108 20 50 43Z" /><path d="M50 43 108 20 108 43 50 66Z" /><path d="M0 20 50 43 50 66 0 43Z" /></g>
+        </g>
+      </svg>
+
+      @for (building of buildings; track building.code) {
+        <button
+          class="building-marker"
+          type="button"
+          [class.building-marker--selected]="selectedCode === building.code"
+          [style.left.%]="building.position.x"
+          [style.top.%]="building.position.y"
+          [attr.aria-pressed]="selectedCode === building.code"
+          [attr.aria-label]="'Selecionar ' + building.code + ' — ' + building.fullName + '. ' + building.rooms.length + ' salas demonstrativas.'"
+          [attr.data-code]="building.code"
+          (click)="chooseBuilding(building)"
+        >
+          <span class="building-marker__name">{{ building.name }}</span>
+          <span class="building-marker__code">{{ building.code }} · {{ building.rooms.length }} salas</span>
+        </button>
+      }
+    </div>
+
+    <div class="map-controls" role="group" aria-label="Controles do mapa">
+      <button type="button" data-control="zoom-in" aria-label="Aproximar mapa" (click)="zoomIn()">+</button>
+      <button type="button" data-control="zoom-out" aria-label="Afastar mapa" (click)="zoomOut()">−</button>
+      <button type="button" data-control="rotate" aria-label="Girar mapa em 30 graus" (click)="rotateMap()">↻</button>
+      <button
+        type="button"
+        data-control="map-mode"
+        [attr.aria-label]="'Mudar para mapa ' + (isThreeDimensional() ? '2D' : '3D')"
+        (click)="toggleMapMode()"
+      >{{ isThreeDimensional() ? '2D' : '3D' }}</button>
+      <button type="button" data-control="reset" aria-label="Restaurar posição do mapa" (click)="resetMap()">⌂</button>
+    </div>
+    <div class="map-orientation" aria-hidden="true">N<br /><span>↑</span></div>
+  </div>
+
+  <div class="map-card__footer">
+    <span>Arraste para mover · + e − para aproximar</span>
+    <span>Volumetria ilustrativa</span>
+    <span class="map-attribution">
+      <a href="https://ufla.br/calouros/mapa-da-ufla/" target="_blank" rel="noopener noreferrer">Mapa UFLA</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap</a>
+    </span>
+  </div>
+</section>

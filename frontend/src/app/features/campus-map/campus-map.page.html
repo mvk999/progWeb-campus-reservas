@@ -1,0 +1,156 @@
+<section class="campus-map-page" aria-labelledby="page-title">
+  <div class="page-heading">
+    <div>
+      <nav class="breadcrumb" aria-label="Caminho de navegação">
+        <a routerLink="/mapa">UFLA</a>
+        <span aria-hidden="true">/</span>
+        <span>Campus sede · Lavras, MG</span>
+      </nav>
+      <h1 id="page-title">Reservar uma sala</h1>
+      <p>Selecione o prédio no mapa para consultar as salas.</p>
+    </div>
+    <a class="all-rooms-link" routerLink="/salas">
+      Consultar todas as salas <span aria-hidden="true">→</span>
+    </a>
+  </div>
+
+  <form class="period-query" (submit)="updatePeriod($event)" novalidate>
+    <div class="period-query__title">
+      <span class="section-label">Período da consulta</span>
+      <span class="demo-label">Salas e horários demonstrativos</span>
+    </div>
+
+    <div class="period-query__fields">
+      <label class="field field--date">
+        <span>Data</span>
+        <input
+          type="date"
+          [value]="queryDate()"
+          (input)="updateDate($event)"
+          [attr.aria-invalid]="periodError() ? 'true' : null"
+          [attr.aria-describedby]="periodError() ? 'period-error' : null"
+        />
+      </label>
+      <label class="field field--time">
+        <span>Das</span>
+        <input type="time" [value]="startTime()" (input)="updateStartTime($event)" />
+      </label>
+      <label class="field field--time">
+        <span>Às</span>
+        <input
+          type="time"
+          [value]="endTime()"
+          (input)="updateEndTime($event)"
+          [attr.aria-invalid]="periodError() && startTime() >= endTime() ? 'true' : null"
+          [attr.aria-describedby]="periodError() ? 'period-error' : null"
+        />
+      </label>
+      <button class="period-query__submit" type="submit">Atualizar horários</button>
+    </div>
+
+    @if (periodError()) {
+      <p class="period-error" id="period-error" role="alert">{{ periodError() }}</p>
+    }
+  </form>
+
+  @if (periodFeedback()) {
+    <p class="period-feedback" role="status">{{ periodFeedback() }}</p>
+  }
+
+  <div class="map-layout">
+    <app-campus-map-canvas
+      [campusName]="data.campusName"
+      [buildings]="data.buildings"
+      [selectedCode]="selectedCode()"
+      (buildingSelected)="selectBuilding($event)"
+    />
+
+    <aside class="building-sidebar" aria-label="Prédios e salas">
+      <div class="building-sidebar__list">
+        <div class="building-sidebar__heading">
+          <span class="section-label">Campus sede</span>
+          <h2>Prédios no mapa</h2>
+        </div>
+
+        <label class="search-field">
+          <span class="sr-only">Buscar prédio ou sigla</span>
+          <span class="search-field__icon" aria-hidden="true">⌕</span>
+          <input
+            class="building-search"
+            type="search"
+            placeholder="Buscar prédio ou sigla"
+            [value]="searchTerm()"
+            (input)="updateSearch($event)"
+          />
+        </label>
+
+        @if (filteredBuildings().length) {
+          <ul class="building-list">
+            @for (building of filteredBuildings(); track building.code) {
+              <li>
+                <button
+                  type="button"
+                  class="building-list__item"
+                  [class.building-list__item--selected]="selectedCode() === building.code"
+                  [attr.aria-pressed]="selectedCode() === building.code"
+                  [attr.data-code]="building.code"
+                  (click)="selectBuilding(building)"
+                >
+                  <span class="building-list__badge">{{ building.code }}</span>
+                  <span class="building-list__name">{{ building.name }}</span>
+                  <span class="building-list__arrow" aria-hidden="true">›</span>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="empty-search" role="status">Nenhum prédio encontrado.</p>
+        }
+      </div>
+
+      @if (selectedBuilding(); as building) {
+        <section class="building-detail" aria-live="polite">
+          <button class="building-detail__back" type="button" (click)="clearSelection()">
+            <span aria-hidden="true">‹</span> Todos os prédios
+          </button>
+          <p class="building-detail__code">{{ building.code }} · {{ data.campusName }}</p>
+          <h2>{{ building.name }}</h2>
+          <p class="building-detail__full-name">{{ building.fullName }}</p>
+          <p class="building-detail__location">{{ data.location.replace(' · Lavras, MG', ' · Lavras') }}</p>
+          <p class="building-detail__period">
+            <span aria-hidden="true">▢</span> {{ displayDate }} · {{ displayPeriod }}
+          </p>
+
+          <div class="room-list-heading">
+            <span>Salas de demonstração</span>
+            <strong>{{ building.rooms.length }}</strong>
+          </div>
+
+          <ul class="room-list">
+            @for (room of building.rooms; track room.code) {
+              <li class="room-card">
+                <div class="room-card__heading">
+                  <h3>{{ room.name }}</h3>
+                  <span class="availability" [class.availability--occupied]="room.availability === 'Ocupada'">
+                    <span aria-hidden="true">●</span> {{ room.availability }}
+                  </span>
+                </div>
+                <p>{{ room.capacity }} pessoas{{ room.category ? ' · ' + room.category : '' }}</p>
+                @if (room.features?.length) {
+                  <p>{{ room.features?.join(' · ') }}</p>
+                }
+                <a [routerLink]="['/ambientes', room.code]">
+                  Ver sala e horários <span aria-hidden="true">›</span>
+                </a>
+              </li>
+            }
+          </ul>
+
+          <p class="demo-disclaimer">Dados demonstrativos locais. Horários e disponibilidade não são reais.</p>
+        </section>
+      } @else {
+        <p class="building-placeholder">Selecione um prédio no mapa para ver os detalhes desta demonstração.</p>
+      }
+    </aside>
+  </div>
+</section>
