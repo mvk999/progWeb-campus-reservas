@@ -29,7 +29,7 @@ describe('Campus Reservas shell', () => {
     expect(host.querySelectorAll('button').length).toBe(0);
   });
 
-  it('routes the main navigation to its explicit not-yet-available state', async () => {
+  it('routes the main navigation to the rooms agenda', async () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const router = TestBed.inject(Router);
@@ -42,6 +42,7 @@ describe('Campus Reservas shell', () => {
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('h1')?.textContent?.trim()).toBe('Salas');
     expect(host.querySelector('.primary-nav a.is-active')?.textContent?.trim()).toBe('Salas');
-    expect(host.textContent).toContain('Esta área ainda não está disponível nesta versão.');
+    expect(host.querySelector('.agenda-table tbody tr')).toBeTruthy();
+    expect(host.textContent).toContain('24 ambientes');
   });
 });
