@@ -15,7 +15,7 @@ import { RoomsService } from './rooms.service';
 export class RoomsPage {
   private readonly roomsService = inject(RoomsService);
   protected readonly allRooms = this.roomsService.getRooms();
-  protected readonly viewMode = signal<RoomsViewMode>('agenda');
+  protected readonly viewMode = signal<RoomsViewMode>('cards');
   protected readonly searchTerm = signal('');
   protected readonly advancedOpen = signal(false);
   protected readonly queryDate = signal('2026-10-23');

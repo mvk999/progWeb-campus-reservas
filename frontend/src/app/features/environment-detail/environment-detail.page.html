@@ -10,7 +10,7 @@
       <div>
         <p class="room-type">{{ room.category }} · {{ room.code }}</p>
         <h1 id="page-title">{{ room.name }}</h1>
-        <p class="room-location">{{ room.buildingName }} · {{ room.location }}</p>
+        <p class="room-location">{{ room.buildingName }} · {{ room.location }}</p><a class="map-location-link" routerLink="/mapa" [queryParams]="{ predio: room.buildingCode }">Explorar no mapa &#8599;</a>
       </div>
       <span class="demo-tag">Dados demonstrativos locais</span>
     </header>

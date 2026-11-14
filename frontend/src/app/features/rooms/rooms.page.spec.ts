@@ -4,6 +4,13 @@ import { routes } from '../../app.routes';
 import { RoomsPage } from './rooms.page';
 
 describe('RoomsPage', () => {
+  it('starts with cards and keeps details and building map links available', () => {
+    const fixture = createPage('cards');
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelectorAll('.room-card').length).toBe(24);
+    expect(host.querySelector('.room-card h3 a')?.getAttribute('href')).toMatch(/^\/ambientes\//);
+    expect(host.querySelector('.room-card__actions a')?.getAttribute('href')).toContain('/mapa?predio=');
+  });
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [RoomsPage],
@@ -11,9 +18,13 @@ describe('RoomsPage', () => {
     }).compileComponents();
   });
 
-  function createPage() {
+  function createPage(view: 'agenda' | 'cards' = 'agenda') {
     const fixture = TestBed.createComponent(RoomsPage);
     fixture.detectChanges();
+    if (view === 'agenda') {
+      [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.view-toggle button')].find(button => button.textContent?.includes('Agenda'))!.click();
+      fixture.detectChanges();
+    }
     return fixture;
   }
 
@@ -66,7 +77,7 @@ describe('RoomsPage', () => {
   it('switches between agenda and list and opens local advanced controls', () => {
     const fixture = createPage();
     const host = fixture.nativeElement as HTMLElement;
-    host.querySelector<HTMLButtonElement>('.view-toggle button:nth-child(2)')!.click();
+    [...host.querySelectorAll<HTMLButtonElement>('.view-toggle button')].find(button => button.textContent?.includes('Lista'))!.click();
     fixture.detectChanges();
     expect(host.querySelector('.rooms-table')).not.toBeNull();
     expect(host.textContent).toContain('Disponibilidade da lista: 08:00 às 10:00');
@@ -144,7 +155,7 @@ describe('RoomsPage', () => {
     expect(host.querySelector<HTMLInputElement>('.search input')?.value).toBe('');
     expect(host.querySelector<HTMLInputElement>('.advanced-panel > .check-field input')?.checked).toBe(false);
     expect(host.querySelectorAll('.feature-checks input:checked').length).toBe(0);
-    host.querySelector<HTMLButtonElement>('.view-toggle button:nth-child(2)')!.click();
+    [...host.querySelectorAll<HTMLButtonElement>('.view-toggle button')].find(button => button.textContent?.includes('Lista'))!.click();
     fixture.detectChanges();
     expect(host.textContent).toContain('Disponibilidade da lista: 08:00 às 10:00');
   });

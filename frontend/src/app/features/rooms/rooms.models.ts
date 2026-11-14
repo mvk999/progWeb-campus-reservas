@@ -1,7 +1,7 @@
 import { DemonstrationRoom } from '../campus-map/campus-map.models';
 
 export type RoomAvailabilityStatus = 'Livre' | 'Pendente' | 'Aprovado' | 'Bloqueado';
-export type RoomsViewMode = 'agenda' | 'lista';
+export type RoomsViewMode = 'agenda' | 'lista' | 'cards';
 export type RoomSortOrder = 'nome' | 'capacidade';
 
 export interface RoomListItem extends DemonstrationRoom {

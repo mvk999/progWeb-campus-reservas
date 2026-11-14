@@ -40,7 +40,7 @@ describe('Campus Reservas shell', () => {
     expect(host.textContent).toContain('Restaurar demonstração');
   });
 
-  it('routes the main navigation to the rooms agenda', async () => {
+  it('routes the main navigation to the room cards', async () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const router = TestBed.inject(Router);
@@ -53,7 +53,7 @@ describe('Campus Reservas shell', () => {
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('h1')?.textContent?.trim()).toBe('Salas');
     expect(host.querySelector('.primary-nav a.is-active')?.textContent?.trim()).toBe('Salas');
-    expect(host.querySelector('.agenda-table tbody tr')).toBeTruthy();
+    expect(host.querySelector('.room-card')).toBeTruthy();
     expect(host.textContent).toContain('24 ambientes');
   });
 

@@ -63,3 +63,30 @@ button, a { touch-action: manipulation; }
 @media (prefers-reduced-motion: no-preference) {
   button, a, input, select, textarea { transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
 }
+
+app-rooms-page {
+.room-cards { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; }
+.room-card { display: flex; flex-direction: column; min-width: 0; padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow-soft); }
+.room-card__top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; color: var(--text-muted); font-size: .72rem; }
+.room-card h3 { margin: 1rem 0 .35rem; font-size: 1.1rem; line-height: 1.4; }
+.room-card h3 a { color: var(--text); text-decoration: none; }
+.room-card h3 a:hover { color: var(--accent); text-decoration: underline; }
+.room-card > p { margin: 0 0 1rem; color: var(--text-muted); font-size: .8rem; }
+.room-card__capacity { color: var(--accent); font-size: .85rem; font-weight: 600; }
+.room-card ul { display: flex; flex-wrap: wrap; gap: .4rem; margin: .75rem 0 1.25rem; padding: 0; list-style: none; }
+.room-card li { padding: .25rem .5rem; border-radius: .4rem; background: #edf4ee; color: var(--text-muted); font-size: .7rem; }
+.room-card__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .65rem; margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
+.room-card__actions > a:first-child { color: var(--accent); font-size: .75rem; text-underline-offset: 3px; }
+@media (max-width: 1100px) { .room-cards { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 600px) { .room-cards { grid-template-columns: 1fr; } }
+}
+
+app-rooms-page {
+.query-panel { border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; background: var(--surface); box-shadow: var(--shadow-soft); }
+.advanced-panel, .agenda-scroll, .list-scroll, .empty-state { border-radius: .75rem; }
+.search, .view-toggle { border-radius: .55rem; overflow: hidden; }
+.search:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+}
+
+app-rooms-page .query-panel { padding: 1.25rem; }

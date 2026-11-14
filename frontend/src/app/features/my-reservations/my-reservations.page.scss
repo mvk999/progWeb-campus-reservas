@@ -1,4 +1,8 @@
 :host { display: block; }
+.indicator, .reservation-card, .calendar-panel { border-radius: var(--radius); box-shadow: var(--shadow-soft); }
+.button, .situation-filter select, .calendar-heading button { border-radius: .55rem; }
+.indicator { border-top: 3px solid var(--accent); }
+.reservation-card { overflow-wrap: anywhere; }
 .my-reservations { --line: #dce5de; --ink: #20372e; --muted: #586b61; --accent: #236447; color: var(--text); }
 .breadcrumb { display: flex; gap: .5rem; margin-bottom: .9rem; color: var(--muted); font-size: .78rem; }.breadcrumb a { color: var(--accent); text-decoration: none; }
 .page-heading, .list-heading, .calendar-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }

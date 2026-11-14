@@ -228,3 +228,6 @@
 .reset-dialog { border-radius: var(--radius); padding: 1.5rem; }
 .reset-actions button { border-radius: 8px; }
 @media(max-width:480px) { .primary-nav__inner { gap: .2rem; }.primary-nav a { padding-inline: .7rem; }.brand__word { font-size: 1.5rem; } }
+
+.skip-link { position: fixed; top: .5rem; left: 1rem; z-index: 2000; transform: translateY(-200%); padding: .7rem 1rem; border-radius: 8px; background: var(--accent); color: white; }
+.skip-link:focus { transform: translateY(0); }
