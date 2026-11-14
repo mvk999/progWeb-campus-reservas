@@ -1,4 +1,5 @@
-<div class="app-shell">
+<div class="app-shell" [class.app-shell--legacy]="legacyRoute()">
+  @if (!legacyRoute()) {
   <header class="app-header">
     <div class="app-header__top shell-container">
       <a class="brand" routerLink="/mapa" aria-label="Campus Reservas — UFLA">
@@ -31,24 +32,19 @@
         } @else {
           <a routerLink="/admin" routerLinkActive="is-active" ariaCurrentWhenActive="page">Administração</a>
         }
-        <a
-          class="primary-nav__external"
-          href="https://campus-reservas-prototipo.jailtonvi.chatgpt.site/versao-anterior/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Versão anterior <span aria-hidden="true">↗</span>
-        </a>
+        <a class="primary-nav__external" routerLink="/versao-anterior">Versão anterior <span aria-hidden="true">↗</span></a>
       </div>
     </nav>
   </header>
+  }
 
   <main class="page-content" id="main">
-    <div class="page-content__inner shell-container">
+    <div class="page-content__inner shell-container" [class.page-content__inner--legacy]="legacyRoute()">
       <router-outlet />
     </div>
   </main>
 
+  @if (!legacyRoute()) {
   <footer class="app-footer">
     <div class="app-footer__inner shell-container">
       <span>Campus Reservas · UFLA</span>
@@ -60,6 +56,7 @@
       </nav>
     </div>
   </footer>
+  }
 
   @if (resetDialogOpen()) {
     <div class="reset-backdrop">

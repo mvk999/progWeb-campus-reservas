@@ -122,4 +122,25 @@ describe('Campus Reservas shell', () => {
     expect(localStorage.getItem('user:unrelated')).toBe('preserve');
     expect(TestBed.inject(DemoProfileService).profileId()).toBe('solicitante');
   });
+
+  it('opens the internal previous interface route with its own header and footer', async () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const previousLink = host.querySelector<HTMLAnchorElement>('.primary-nav__external')!;
+    expect(previousLink.getAttribute('href')).toBe('/versao-anterior');
+    previousLink.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(TestBed.inject(Router).url).toBe('/versao-anterior');
+    expect(host.querySelector('.app-header')).toBeNull();
+    expect(host.querySelector('.app-footer')).toBeNull();
+    expect(host.querySelector('.legacy-header')).not.toBeNull();
+    expect(host.querySelector('.legacy-nav')).not.toBeNull();
+    expect(host.querySelector('.legacy-footer')).not.toBeNull();
+    expect(host.querySelectorAll('.agenda-table tbody tr').length).toBe(6);
+  });
 });

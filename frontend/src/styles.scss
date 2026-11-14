@@ -1,3 +1,5 @@
+@use './app/features/legacy-rooms/legacy-rooms.page' as legacy;
+
 :root {
   color-scheme: light;
   --page-background: #f4f5f7;
@@ -43,4 +45,8 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+.app-shell--legacy {
+  @include legacy.styles;
 }

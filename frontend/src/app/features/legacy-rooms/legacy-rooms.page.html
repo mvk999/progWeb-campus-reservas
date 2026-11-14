@@ -1,0 +1,67 @@
+<section class="legacy-rooms" aria-labelledby="page-title">
+  <header class="legacy-header">
+    <div class="legacy-header__inner">
+      <a class="legacy-brand" routerLink="/versao-anterior" aria-label="Campus Reservas, ambientes e equipamentos">
+        <span class="legacy-brand__name">Campus Reservas</span><span>Ambientes e equipamentos</span>
+      </a>
+      <p>Serviços à comunidade acadêmica</p>
+      <button type="button" class="notification-button" disabled>Notificações <span>Não verificado</span></button>
+    </div>
+  </header>
+  <nav class="legacy-nav" aria-label="Navegação da versão anterior">
+    <div class="legacy-container legacy-nav__inner">
+      <a routerLink="/versao-anterior" aria-current="page">Ambientes</a>
+      <span aria-disabled="true">Equipamentos <small>Não verificado</small></span>
+      <span aria-disabled="true">Minhas reservas <small>Não verificado</small></span>
+    </div>
+  </nav>
+
+  <main class="legacy-container legacy-content">
+    <nav class="breadcrumb" aria-label="Caminho de navegação"><span>UFLA · Campus sede</span><span aria-hidden="true">/</span><span>Reservas</span><span aria-hidden="true">/</span><span>Ambientes</span></nav>
+    <header class="page-heading">
+      <div><p class="page-eyebrow">UFLA · Campus sede</p><h1 id="page-title">Ambientes</h1><p>Consulte os ambientes disponíveis no campus. Dados demonstrativos locais.</p></div>
+      <label class="school-label"><span>Período letivo</span><strong>2026</strong></label>
+    </header>
+
+    <form class="query-panel" (submit)="applyFilters($event)" novalidate>
+      <div class="panel-title"><h2>Consulta</h2><span>Dados fictícios para demonstração</span></div>
+      <div class="filter-grid">
+        <label class="field"><span>Data</span><input type="date" [value]="draftFilters().date" (input)="updateDate($event)" [attr.aria-invalid]="queryError() ? 'true' : null" [attr.aria-describedby]="queryError() ? 'query-error' : null" /></label>
+        <label class="field"><span>Campus</span><select [value]="draftFilters().campus" (change)="updateDraftFilter('campus', $any($event.target).value)"><option value="">Todos os locais</option><option [value]="campus">{{ campus }}</option></select></label>
+        <label class="field"><span>Prédio</span><select [value]="draftFilters().building" (change)="updateDraftFilter('building', $any($event.target).value)"><option value="">Todos os prédios</option>@for (code of buildingOptions; track code) {<option [value]="code">{{ buildingName(code) }}</option>}</select></label>
+        <label class="field"><span>Tipo de ambiente</span><select [value]="draftFilters().category" (change)="updateDraftFilter('category', $any($event.target).value)"><option value="">Todos os tipos</option>@for (category of categories; track category) {<option [value]="category">{{ category }}</option>}</select></label>
+        <label class="field"><span>Quantidade de pessoas</span><select [value]="draftFilters().minimumCapacity ?? ''" (change)="updateDraftFilter('minimumCapacity', $any($event.target).value)"><option value="">Qualquer capacidade</option><option value="10">10 pessoas ou mais</option><option value="20">20 pessoas ou mais</option><option value="40">40 pessoas ou mais</option><option value="60">60 pessoas ou mais</option></select></label>
+      </div>
+      <button class="refine-button" type="button" [attr.aria-expanded]="advancedOpen()" (click)="toggleAdvanced()">{{ advancedOpen() ? '⌄' : '›' }} Refinar consulta</button>
+      @if (advancedOpen()) {
+        <div class="advanced-panel">
+          <div><span class="field-title">Período para filtrar</span><div class="time-fields"><label class="field"><span>Das</span><input type="time" [value]="draftFilters().startTime" (input)="updateStart($event)" [attr.aria-invalid]="queryError() ? 'true' : null" [attr.aria-describedby]="queryError() ? 'query-error' : null" /></label><label class="field"><span>Às</span><input type="time" [value]="draftFilters().endTime" (input)="updateEnd($event)" [attr.aria-invalid]="queryError() ? 'true' : null" [attr.aria-describedby]="queryError() ? 'query-error' : null" /></label></div></div>
+          <label class="check-field"><input type="checkbox" [checked]="draftFilters().onlyAvailable" (change)="setOnlyAvailable($event)" /> Somente disponíveis neste período</label>
+          <div class="feature-checks"><span class="field-title">Características</span><div class="check-list">@for (feature of featureOptions; track feature) {<label class="check-field"><input type="checkbox" [checked]="draftFilters().features.includes(feature)" (change)="toggleFeature(feature, $any($event.target).checked)" /> {{ feature }}</label>}</div></div>
+          <p class="advanced-note">Estes filtros atuam somente sobre os registros sintéticos desta página.</p>
+        </div>
+      }
+      <div class="query-actions"><p>Os filtros são aplicados ao atualizar a consulta.</p><div><button type="button" class="button button--quiet" (click)="clearFilters()">Limpar filtros</button><button type="submit" class="button button--primary">Atualizar consulta</button></div></div>
+      @if (queryError()) {<p class="error-message" id="query-error" role="alert">{{ queryError() }}</p>}
+    </form>
+
+    <section class="availability" aria-label="Disponibilidade dos ambientes">
+      <div class="availability-heading"><div><h2>Disponibilidade</h2><p>{{ selectedDateLabel() }} · Semana {{ weekRangeLabel() }}</p></div><div class="day-controls"><button type="button" aria-label="Dia anterior" (click)="moveDay(-1)">‹</button><button type="button" aria-label="Próximo dia" (click)="moveDay(1)">›</button></div></div>
+      <div class="week-strip"><button type="button" aria-label="Semana anterior" (click)="moveWeek(-1)">‹</button>@for (day of weekDays(); track trackDay($index, day)) {<button type="button" class="week-day" [class.week-day--selected]="selectedDate() === day.date" [attr.aria-pressed]="selectedDate() === day.date" (click)="setDay(day.date)"><span>{{ day.shortName }}</span><strong>{{ day.dayNumber }}</strong></button>}<button type="button" aria-label="Próxima semana" (click)="moveWeek(1)">›</button></div>
+      <div class="tools-row"><label class="search"><span aria-hidden="true">⌕</span><input type="search" placeholder="Buscar por nome ou localização" [value]="searchTerm()" (input)="updateSearch($event)" /></label><div class="view-toggle" role="group" aria-label="Visualização"><button type="button" [class.is-active]="viewMode() === 'agenda'" [attr.aria-pressed]="viewMode() === 'agenda'" (click)="toggleView('agenda')">Agenda</button><button type="button" [class.is-active]="viewMode() === 'lista'" [attr.aria-pressed]="viewMode() === 'lista'" (click)="toggleView('lista')">Lista</button></div></div>
+      <div class="results-heading"><span>{{ filteredRooms().length }} ambientes</span><label>Ordenar por <select [value]="sortOrder()" (change)="setSort($event)"><option value="nome">Nome</option><option value="capacidade">Capacidade</option></select></label></div>
+      @if (filteredRooms().length === 0) {
+        <section class="empty-state" role="status"><h3>Nenhum recurso encontrado</h3><p>Altere os filtros ou pesquise por outro nome.</p><button type="button" class="button button--quiet" (click)="clearFilters()">Limpar filtros</button></section>
+      } @else if (viewMode() === 'agenda') {
+        <div class="agenda-scroll" role="region" aria-label="Agenda de ambientes por hora" tabindex="0"><table class="agenda-table"><thead><tr><th class="room-column" scope="col">Ambiente</th>@for (hour of hours; track trackHour($index, hour)) {<th scope="col">{{ hour.toString().padStart(2, '0') }}h</th>}</tr></thead><tbody>@for (room of filteredRooms(); track trackRoom($index, room)) {<tr><th scope="row" class="room-cell"><strong>{{ room.name }}</strong><span>{{ room.buildingCode }} · {{ room.buildingName }}</span><small>{{ room.capacity }} pessoas · {{ room.category }}</small></th>@for (hour of hours; track trackHour($index, hour)) {<td><span class="slot" [class]="'slot ' + statusClass(status(room, hour))" [attr.aria-label]="status(room, hour) + ', ' + hour + ':00 a ' + (hour + 1) + ':00'">{{ status(room, hour) }}</span></td>}</tr>}</tbody></table></div>
+        <p class="timezone-note">Disponibilidade local demonstrativa para {{ selectedDate() }}; horários aproximados, não são dados reais.</p>
+      } @else {
+        <div class="list-period">Disponibilidade da lista: {{ listPeriodLabel() }} <button type="button" (click)="advancedOpen.set(true)">Alterar período</button></div>
+        <div class="list-scroll" role="region" aria-label="Lista de disponibilidade dos ambientes" tabindex="0"><table class="rooms-table"><thead><tr><th scope="col">Ambiente</th><th scope="col">Capacidade</th><th scope="col">Características</th><th scope="col">Disponibilidade</th><th scope="col">Ação</th></tr></thead><tbody>@for (room of filteredRooms(); track trackRoom($index, room)) {<tr><td><strong>{{ room.name }}</strong><span>{{ room.buildingCode }} · {{ room.location }}</span></td><td>{{ room.capacity }} pessoas</td><td>{{ featuresForRoom(room).join(', ') || '—' }}</td><td><span class="status-label" [class]="'status-label ' + statusClass(listStatus(room))">{{ listStatus(room) }}</span></td><td><a routerLink="/salas">Consultar</a></td></tr>}</tbody></table></div>
+      }
+      <div class="legend" aria-label="Legenda de disponibilidade"><span><i class="legend-dot legend-dot--livre"></i>Livre</span><span><i class="legend-dot legend-dot--pendente"></i>Pendente</span><span><i class="legend-dot legend-dot--aprovado"></i>Aprovado</span><span><i class="legend-dot legend-dot--bloqueado"></i>Bloqueado</span></div>
+      <p class="demo-disclaimer">Seis ambientes e horários sintéticos criados para demonstração. Esta interface não consulta nem altera reservas reais.</p>
+    </section>
+  </main>
+  <footer class="legacy-footer"><div class="legacy-container"><span>Campus Reservas · Ambientes e equipamentos</span><span>Serviços à comunidade acadêmica</span><a routerLink="/mapa">Voltar à interface atual</a></div></footer>
+</section>

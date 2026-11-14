@@ -1,8 +1,9 @@
 import { ChangeDetectorRef, Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ProfileMenu } from '../profile-menu/profile-menu';
 import { DemoProfileService } from '../../features/authentication/demo-profile.service';
 import { DemoResetService } from './demo-reset.service';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-shell',
@@ -18,10 +19,17 @@ export class AppShell {
   private readonly changeDetector = inject(ChangeDetectorRef);
   protected readonly resetDialogOpen = signal(false);
   protected readonly resetError = signal('');
+  protected readonly legacyRoute = signal(this.router.url.startsWith('/versao-anterior'));
   @ViewChild(ProfileMenu) private profileMenu?: ProfileMenu;
   @ViewChild('resetTrigger') private resetTrigger?: ElementRef<HTMLButtonElement>;
   @ViewChild('resetCancel') private resetCancel?: ElementRef<HTMLButtonElement>;
   @ViewChild('resetDialog') private resetDialog?: ElementRef<HTMLElement>;
+
+  constructor() {
+    this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe((event) => {
+      this.legacyRoute.set((event as NavigationEnd).urlAfterRedirects.startsWith('/versao-anterior'));
+    });
+  }
 
   protected openFooterProfileMenu(event: Event): void {
     this.profileMenu?.openFromExternalTrigger(event.currentTarget as HTMLElement);

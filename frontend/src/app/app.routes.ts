@@ -9,6 +9,7 @@ import { ReservationManagementPage } from './features/reservation-management/res
 import { OccupancyCalendarPage } from './features/occupancy-calendar/occupancy-calendar.page';
 import { AdministrationDemoPage } from './features/administration-demo/administration-demo.page';
 import { InterfaceGuidePage } from './features/interface-guide/interface-guide.page';
+import { LegacyRoomsPage } from './features/legacy-rooms/legacy-rooms.page';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'mapa' },
@@ -31,5 +32,6 @@ export const routes: Routes = [
   { path: 'calendario', component: OccupancyCalendarPage },
   { path: 'admin', component: AdministrationDemoPage },
   { path: 'design', component: InterfaceGuidePage },
+  { path: 'versao-anterior', component: LegacyRoomsPage },
   { path: '**', redirectTo: 'mapa' },
 ];
