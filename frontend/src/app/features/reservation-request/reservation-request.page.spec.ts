@@ -32,6 +32,26 @@ describe('ReservationRequestPage', () => {
     host.querySelector<HTMLInputElement>('.rules-check input')!.click();
   }
 
+  it('completes a local request for another catalog environment with its own capacity and context', async () => {
+    TestBed.resetTestingModule();
+    const params = convertToParamMap({ codigo: 'AMB-002' });
+    const query = convertToParamMap({ data: '2026-10-22', inicio: '08:00', fim: '10:00' });
+    await TestBed.configureTestingModule({
+      imports: [ReservationRequestPage],
+      providers: [provideRouter(routes), { provide: ActivatedRoute, useValue: {
+        snapshot: { paramMap: params, queryParamMap: query }, paramMap: of(params), queryParamMap: of(query),
+      } }],
+    }).compileComponents();
+    const fixture = createPage();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.textContent).toContain('Laboratório 101');
+    fillValidForm(host, '12');
+    host.querySelector<HTMLFormElement>('.request-form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    fixture.detectChanges();
+    expect(host.querySelector('.success-message')).toBeTruthy();
+    expect(TestBed.inject(DemoReservationStore).getAll()[0].environmentCode).toBe('AMB-002');
+  });
+
   it('validates the required purpose, participants and rules agreement', () => {
     const fixture = createPage();
     const host = fixture.nativeElement as HTMLElement;

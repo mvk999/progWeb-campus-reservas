@@ -231,3 +231,5 @@
 
 .skip-link { position: fixed; top: .5rem; left: 1rem; z-index: 2000; transform: translateY(-200%); padding: .7rem 1rem; border-radius: 8px; background: var(--accent); color: white; }
 .skip-link:focus { transform: translateY(0); }
+
+.skip-link:not(:focus) { clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; white-space: nowrap; padding: 0; }

@@ -40,7 +40,7 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
         const response = await fetch(CONFIG.buildingsUrl, { signal: this.abort.signal });
         if (response.ok && !this.destroyed) {
           this.features = await response.json();
-          this.features.features.forEach((feature, index) => { feature.id ??= index; });
+          this.features.features.forEach((feature, index) => { feature.id = index; });
           this.prepareFlatMap();
           this.message.set('Vista 2D com contornos oficiais NUP/UFLA. WebGL indisponível neste dispositivo.');
         }
@@ -56,7 +56,7 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
       this.features = await response.json();
       if (this.destroyed) return;
       if (!this.features.features?.length) throw new Error('Geometria vazia');
-      this.features.features.forEach((feature, index) => { feature.id ??= index; });
+      this.features.features.forEach((feature, index) => { feature.id = index; });
       this.prepareFlatMap();
       libre.setWorkerUrl('/maplibre-gl-worker.mjs');
       this.map = new libre.Map({
@@ -126,8 +126,11 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
       const building = this.associatedBuilding(feature.properties);
       return building && this.matchingCodes.includes(building.code);
     }).map(feature => feature.id!);
-    this.map.setPaintProperty('ufla-buildings', 'fill-extrusion-opacity', this.matchingCodes.length < this.buildings.length
-      ? ['case', ['in', ['id'], ['literal', matches]], 1, 0.3] : 0.95);
+    this.map.setPaintProperty('ufla-buildings', 'fill-extrusion-color', [
+      'case', ['boolean', ['feature-state', 'selected'], false], '#d19b46',
+      ['boolean', ['feature-state', 'hover'], false], '#6b9c85',
+      this.matchingCodes.length < this.buildings.length ? ['case', ['in', ['id'], ['literal', matches]], '#236447', '#b6c1b5'] : '#527763',
+    ]);
     const building = this.buildings.find(item => item.code === this.selectedCode);
     const feature = building && this.matchingCodes.includes(building.code) && this.features.features.find(item => this.associatedBuilding(item.properties)?.code === building.code);
     if (feature) this.chooseFeature(feature as MapGeoJSONFeature, false);
@@ -187,6 +190,7 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
     const minX = Math.min(...allPoints.map(p => p[0])), maxX = Math.max(...allPoints.map(p => p[0]));
     const minY = Math.min(...allPoints.map(p => p[1])), maxY = Math.max(...allPoints.map(p => p[1]));
     const scale = Math.min(920 / (maxX - minX), 580 / (maxY - minY));
+    if (this.status() === 'fallback') this.message.set('Vista 2D dos contornos NUP/UFLA. WebGL indisponível neste dispositivo.');
     this.geographicPaths.set(polygons.map(feature => ({
       id: String(feature.id), name: feature.properties?.['name'] || 'Edificação do campus',
       path: feature.geometry.type === 'Polygon' ? feature.geometry.coordinates.map(ring => ring.map((p, index) => `${index ? 'L' : 'M'}${20 + (p[0] - minX) * scale},${600 - (p[1] - minY) * scale}`).join(' ') + 'Z').join(' ') : '',
@@ -208,6 +212,7 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
   private fallback(): void {
     this.status.set('fallback');
     this.message.set('Modo esquemático 2D: WebGL ou dados geográficos indisponíveis. As posições abaixo são ilustrativas, sem precisão geográfica.');
+    if (this.geographicPaths().length) this.message.set('Vista 2D dos contornos NUP/UFLA. WebGL indisponível neste dispositivo.');
     this.map?.remove(); this.map = undefined;
   }
   ngOnDestroy(): void {
