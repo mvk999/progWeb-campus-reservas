@@ -6,8 +6,8 @@
         <span aria-hidden="true">/</span>
         <span>Campus sede · Lavras, MG</span>
       </nav>
-      <h1 id="page-title">Reservar uma sala</h1>
-      <p>Selecione o prédio no mapa para consultar as salas.</p>
+      <h1 id="page-title">Seu próximo espaço começa aqui</h1>
+      <p>Explore o campus real e encontre o ambiente ideal para sua próxima atividade.</p>
     </div>
     <a class="all-rooms-link" routerLink="/salas">
       Consultar todas as salas <span aria-hidden="true">→</span>
@@ -58,9 +58,9 @@
   }
 
   <div class="map-layout">
-    <app-campus-map-canvas
+    <app-campus-geographic-map
       [campusName]="data.campusName"
-      [buildings]="data.buildings"
+      [buildings]="data.buildings" [matchingCodes]="matchingCodes()"
       [selectedCode]="selectedCode()"
       (buildingSelected)="selectBuilding($event)"
     />
@@ -82,6 +82,12 @@
             [value]="searchTerm()"
             (input)="updateSearch($event)"
           />
+        </label>
+
+        <label class="search-field">Capacidade mínima
+          <select aria-label="Capacidade mínima" (change)="updateCapacity($event)">
+            <option value="0">Todas</option><option value="20">20 pessoas</option><option value="40">40 pessoas</option><option value="60">60 pessoas</option>
+          </select>
         </label>
 
         @if (filteredBuildings().length) {
@@ -123,11 +129,11 @@
 
           <div class="room-list-heading">
             <span>Salas de demonstração</span>
-            <strong>{{ building.rooms.length }}</strong>
+            <strong>{{ filteredRooms().length }}</strong>
           </div>
 
           <ul class="room-list">
-            @for (room of building.rooms; track room.code) {
+            @for (room of filteredRooms(); track room.code) {
               <li class="room-card">
                 <div class="room-card__heading">
                   <h3>{{ room.name }}</h3>
@@ -145,6 +151,8 @@
               </li>
             }
           </ul>
+
+          @if (!filteredRooms().length) { <p class="empty-search">Nenhum ambiente deste prédio corresponde aos filtros.</p> }
 
           <p class="demo-disclaimer">Dados demonstrativos locais. Horários e disponibilidade não são reais.</p>
         </section>

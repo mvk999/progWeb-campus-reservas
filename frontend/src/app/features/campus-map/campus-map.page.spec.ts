@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { CampusMapPage } from './campus-map.page';
 import { routes } from '../../app.routes';
 
@@ -16,6 +16,36 @@ describe('CampusMapPage', () => {
     fixture.detectChanges();
     return fixture;
   }
+
+  it('keeps building context in the URL and clears it when returning to all buildings', async () => {
+    const fixture = createPage();
+    const host = fixture.nativeElement as HTMLElement;
+    host.querySelector<HTMLButtonElement>('.building-list__item[data-code="DCC"]')!.click();
+    await fixture.whenStable();
+    expect(TestBed.inject(Router).url).toContain('predio=DCC');
+    host.querySelector<HTMLButtonElement>('.building-detail__back')!.click();
+    await fixture.whenStable();
+    expect(TestBed.inject(Router).url).not.toContain('predio=');
+  });
+
+  it('filters the catalog by room resources and minimum capacity', () => {
+    const fixture = createPage();
+    const host = fixture.nativeElement as HTMLElement;
+    const search = host.querySelector<HTMLInputElement>('.building-search')!;
+    search.value = 'Computadores';
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+    expect(host.querySelectorAll('.building-list__item').length).toBe(1);
+    expect(host.querySelector('.building-list__item')?.textContent).toContain('DCC');
+    search.value = '';
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+    const capacity = host.querySelector<HTMLSelectElement>('select[aria-label="Capacidade mínima"]')!;
+    capacity.value = '60';
+    capacity.dispatchEvent(new Event('change', { bubbles: true }));
+    fixture.detectChanges();
+    expect(host.querySelectorAll('.building-list__item').length).toBe(7);
+    expect(host.querySelector('.building-list__item[data-code="BU"]')).toBeNull();
+  });
 
   it('renders eight selectable buildings and the three observed PV4 rooms', () => {
     const fixture = createPage();
@@ -90,7 +120,7 @@ describe('CampusMapPage', () => {
 
     expect(host.querySelector('[role="alert"]')?.textContent).toContain('horário final deve ser posterior');
     expect(host.querySelector('.building-detail__period')?.textContent).toContain('08:00–10:00');
-    expect(host.querySelector('[role="status"]')).toBeNull();
+    expect(host.querySelector('.period-feedback')).toBeNull();
 
     dateField.value = '2026-10-23';
     dateField.dispatchEvent(new Event('input', { bubbles: true }));
@@ -101,7 +131,7 @@ describe('CampusMapPage', () => {
 
     expect(host.querySelector('[role="alert"]')).toBeNull();
     expect(host.querySelector('.building-detail__period')?.textContent).toContain('23/10/2026 · 08:00–10:00');
-    expect(host.querySelector('[role="status"]')?.textContent).toBe('Horários da demonstração atualizados.');
+    expect(host.querySelector('.period-feedback')?.textContent).toBe('Horários da demonstração atualizados.');
   });
 
   it('updates zoom in and out, rotation, display mode, and restores the initial map state', () => {

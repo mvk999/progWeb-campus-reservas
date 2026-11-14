@@ -1,0 +1,29 @@
+<section class="geographic-card" aria-label="Exploração geográfica da UFLA">
+  <header class="geographic-heading"><div><span class="geographic-eyebrow">EXPLORE O CAMPUS</span><h2>UFLA, por outra perspectiva</h2></div><span class="geographic-badge">{{ status() === 'ready' ? (threeDimensional() ? '3D' : '2D') : 'MAPA' }}</span></header>
+  <div class="geographic-stage" [hidden]="status() === 'fallback'">
+    <div #mapHost class="geographic-host" aria-label="Mapa do campus. Use setas para navegar, mais e menos para zoom e Shift com setas para inclinar ou girar." tabindex="0"></div>
+    @if (status() === 'loading') { <div class="geographic-loading" role="status">Carregando o campus…</div> }
+    <div class="geographic-controls" role="group" aria-label="Controles geográficos">
+      <button type="button" aria-label="Aproximar" (click)="zoomIn()">+</button>
+      <button type="button" aria-label="Afastar" (click)="zoomOut()">−</button>
+      <button type="button" aria-label="Girar 30 graus" (click)="rotate()">↻</button>
+      <button type="button" [attr.aria-label]="threeDimensional() ? 'Visão 2D' : 'Visão 3D'" (click)="toggleMode()">{{ threeDimensional() ? '2D' : '3D' }}</button>
+      <button type="button" aria-label="Restaurar vista do campus" (click)="reset()">⌂</button>
+    </div>
+    @if (selectedName()) { <div class="geographic-selection" aria-live="polite"><strong>{{ selectedName() }}</strong><p>{{ selectedDescription() }}</p></div> }
+  </div>
+  <p class="geographic-status" role="status">{{ message() }}</p>
+  @if (geographicPaths().length) {
+    <label class="geographic-picker">Edificações do campus <select aria-label="Selecionar edificação geográfica" (change)="chooseFlatFeature($event)"><option value="">Explore uma edificação</option>@for (path of geographicPaths(); track path.id) { <option [value]="path.id">{{ path.name }} · {{ path.id }}</option> }</select></label>
+  }
+  @if (status() === 'fallback') {
+    @if (geographicPaths().length) {
+      <svg class="geographic-flat" viewBox="0 0 960 620" role="img" aria-label="Contornos oficiais NUP das edificações, vista 2D">@for (path of geographicPaths(); track path.id) { <path [attr.d]="path.path"><title>{{ path.name }}</title></path> }</svg>
+      <p class="geographic-status">Vista geográfica 2D · selecione uma edificação no menu acima.</p>
+      @if (selectedName()) { <p class="geographic-status" aria-live="polite"><strong>{{ selectedName() }}</strong> · {{ selectedDescription() }}</p> }
+    } @else {
+      <app-campus-map-canvas [campusName]="campusName" [buildings]="buildings" [selectedCode]="selectedCode" (buildingSelected)="buildingSelected.emit($event)" />
+    }
+  }
+  <footer class="geographic-footer"><a href="https://nup.ufla.br/banco-de-projeto" target="_blank" rel="noopener">Edificações: NUP/UFLA</a><span>Arraste para explorar · Ctrl + arraste para inclinar</span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap · ODbL</a></footer>
+</section>

@@ -1,4 +1,5 @@
 @use './app/features/legacy-rooms/legacy-rooms.page' as legacy;
+@import 'maplibre-gl/dist/maplibre-gl.css';
 
 :root {
   color-scheme: light;
