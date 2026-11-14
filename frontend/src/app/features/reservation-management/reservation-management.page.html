@@ -1,0 +1,72 @@
+<section class="reservation-management" aria-labelledby="page-title">
+  <nav class="breadcrumb" aria-label="Caminho de navegação"><a routerLink="/mapa">Início</a><span aria-hidden="true">/</span><span>Gestão</span></nav>
+
+  <header class="page-heading">
+    <div><p class="page-eyebrow">Área do responsável · Demonstração local</p><h1 id="page-title">Gestão de solicitações</h1>
+      <p>Solicitações e recursos gerenciados nesta demonstração.</p></div>
+    <a class="calendar-link" routerLink="/calendario">Calendário de ocupação <span aria-hidden="true">→</span></a>
+  </header>
+
+  <div class="metrics" aria-label="Resumo demonstrativo">
+    <article class="metric"><span>Aguardando aprovação</span><strong>{{ pendingCount() }}</strong></article>
+    <article class="metric"><span>Aprovadas</span><strong>{{ approvedCount() }}</strong></article>
+    <article class="metric"><span>Recursos sob gestão</span><strong>{{ managedResourceCount }}</strong></article>
+  </div>
+
+  @if (storageError()) {<p class="storage-error" role="alert">{{ storageError() }} Decisões locais não foram carregadas; ações estão desabilitadas.</p>}
+  @if (toast()) {<p class="decision-toast" role="status" aria-live="polite"><span>{{ toast() }}</span><button type="button" aria-label="Fechar aviso" (click)="clearToast()">×</button></p>}
+
+  <section class="requests-section" aria-labelledby="requests-title">
+    <div class="section-heading"><div><h2 id="requests-title" tabindex="-1">Solicitações de reserva</h2><p>Registros sintéticos de demonstração, sem dados pessoais.</p></div></div>
+    <div class="filters">
+      <label><span>Recurso</span><select [value]="resourceFilter()" (change)="setResourceFilter($event)"><option value="all">Todos os recursos</option>@for (code of resources(); track code) {<option [value]="code">{{ code }}</option>}</select></label>
+      <label><span>Situação</span><select [value]="statusFilter()" (change)="setStatusFilter($event)"><option value="all">Todas as situações</option><option value="Pendente">Pendente</option><option value="Aprovada">Aprovada</option><option value="Rejeitada">Rejeitada</option><option value="Cancelada">Cancelada</option></select></label>
+    </div>
+
+    @if (visibleRequests().length) {
+      <div class="table-scroll" role="region" aria-label="Tabela de solicitações demonstrativas" tabindex="0">
+        <table class="requests-table">
+          <thead><tr><th>Solicitante / Identificação</th><th>Recurso</th><th>Data e horário</th><th>Situação</th><th>Ação</th></tr></thead>
+          <tbody>
+            @for (request of visibleRequests(); track trackRequest($index, request)) {
+              <tr>
+                <td><strong>{{ request.requesterLabel }}</strong><small>{{ request.id }}</small></td>
+                <td><strong>{{ request.environmentName }}</strong><small>{{ request.environmentCode }} · {{ request.buildingCode }}</small></td>
+                <td>{{ formatDate(request.date) }}<small>{{ request.startTime }}–{{ request.endTime }}</small></td>
+                <td><span class="status" [class]="'status ' + statusClass(request.status)">{{ request.status }}</span></td>
+                <td>@if (request.status === 'Pendente') {<button #rowAction type="button" class="row-action" [attr.data-request-id]="request.id" (click)="openDetails(request, $event)">Analisar</button>} @else if (request.status === 'Aprovada') {<button type="button" class="row-action" [attr.data-request-id]="request.id" (click)="openDetails(request, $event)">Ver detalhes</button>} @else {<span class="no-action" aria-label="Nenhuma ação disponível">—</span>}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="empty-state" role="status">Nenhuma solicitação encontrada.</p>
+    }
+    <p class="demo-disclaimer">Os seis registros e as contagens são dados sintéticos locais. Aprovar ou rejeitar altera somente este navegador, sem efeito real.</p>
+  </section>
+
+  @if (selectedRequest(); as request) {
+    <div class="modal-backdrop" (click)="onBackdropClick($event)">
+      <section #modalDialog class="review-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title"
+        tabindex="-1" (keydown)="onDialogKeydown($event)" (click)="$event.stopPropagation()">
+        <header class="dialog-header"><div><span class="page-eyebrow">{{ request.id }} · {{ request.status }}</span><h2 id="dialog-title">{{ modalTitle() }}</h2></div><button #firstModalControl type="button" class="icon-close" aria-label="Fechar diálogo" (click)="closeDialog()">×</button></header>
+        <dl class="request-details">
+          <div><dt>Recurso</dt><dd>{{ request.environmentName }} · {{ request.environmentCode }} · {{ request.buildingCode }}</dd></div>
+          <div><dt>Solicitante</dt><dd>{{ request.requesterLabel }}</dd></div>
+          <div><dt>Período</dt><dd>{{ formatDate(request.date) }} · {{ request.startTime }}–{{ request.endTime }}</dd></div>
+          <div><dt>Finalidade</dt><dd>{{ request.purpose }}</dd></div>
+          <div><dt>Participantes</dt><dd>{{ request.participants }}</dd></div>
+          <div><dt>Observações</dt><dd>{{ request.observations || 'Sem observações demonstrativas.' }}</dd></div>
+        </dl>
+        @if (request.hasConflictNotice) {<p class="conflict-note" role="note"><strong>Aviso de conflito</strong><span>Conflito sinalizado somente neste registro sintético de demonstração.</span></p>}
+        @if (decisionError()) {<p class="storage-error" role="alert">{{ decisionError() }}</p>}
+        @if (selectedReadOnly()) {<p class="read-only-note">Detalhes somente para leitura nesta demonstração.</p>}
+        <footer class="dialog-actions">
+          @if (request.status === 'Pendente' && !storageError()) {<button type="button" class="button button--reject" (click)="decide('Rejeitada')">Rejeitar</button><button type="button" class="button button--approve" (click)="decide('Aprovada')">Aprovar solicitação</button>}
+          <button type="button" class="button button--quiet" (click)="closeDialog()">Fechar</button>
+        </footer>
+      </section>
+    </div>
+  }
+</section>
