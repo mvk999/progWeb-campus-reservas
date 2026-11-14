@@ -1,37 +1,26 @@
 import { Routes } from '@angular/router';
-import { CampusMapPage } from './features/campus-map/campus-map.page';
-import { RoomsPage } from './features/rooms/rooms.page';
-import { EnvironmentDetailPage } from './features/environment-detail/environment-detail.page';
-import { ReservationRequestPage } from './features/reservation-request/reservation-request.page';
-import { MyReservationsPage } from './features/my-reservations/my-reservations.page';
-import { LoginPage } from './features/authentication/login.page';
-import { ReservationManagementPage } from './features/reservation-management/reservation-management.page';
-import { OccupancyCalendarPage } from './features/occupancy-calendar/occupancy-calendar.page';
-import { AdministrationDemoPage } from './features/administration-demo/administration-demo.page';
-import { InterfaceGuidePage } from './features/interface-guide/interface-guide.page';
-import { LegacyRoomsPage } from './features/legacy-rooms/legacy-rooms.page';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'mapa' },
-  { path: 'mapa', component: CampusMapPage },
-  { path: 'salas', component: RoomsPage },
-  { path: 'login', component: LoginPage },
+  { path: 'mapa', loadComponent: () => import('./features/campus-map/campus-map.page').then(m => m.CampusMapPage) },
+  { path: 'salas', loadComponent: () => import('./features/rooms/rooms.page').then(m => m.RoomsPage) },
+  { path: 'login', loadComponent: () => import('./features/authentication/login.page').then(m => m.LoginPage) },
   {
     path: 'minhas-reservas',
-    component: MyReservationsPage,
+    loadComponent: () => import('./features/my-reservations/my-reservations.page').then(m => m.MyReservationsPage),
   },
   {
     path: 'ambientes/:codigo',
-    component: EnvironmentDetailPage,
+    loadComponent: () => import('./features/environment-detail/environment-detail.page').then(m => m.EnvironmentDetailPage),
   },
   {
     path: 'solicitar/:codigo',
-    component: ReservationRequestPage,
+    loadComponent: () => import('./features/reservation-request/reservation-request.page').then(m => m.ReservationRequestPage),
   },
-  { path: 'gestao', component: ReservationManagementPage },
-  { path: 'calendario', component: OccupancyCalendarPage },
-  { path: 'admin', component: AdministrationDemoPage },
-  { path: 'design', component: InterfaceGuidePage },
-  { path: 'versao-anterior', component: LegacyRoomsPage },
+  { path: 'gestao', loadComponent: () => import('./features/reservation-management/reservation-management.page').then(m => m.ReservationManagementPage) },
+  { path: 'calendario', loadComponent: () => import('./features/occupancy-calendar/occupancy-calendar.page').then(m => m.OccupancyCalendarPage) },
+  { path: 'admin', loadComponent: () => import('./features/administration-demo/administration-demo.page').then(m => m.AdministrationDemoPage) },
+  { path: 'design', loadComponent: () => import('./features/interface-guide/interface-guide.page').then(m => m.InterfaceGuidePage) },
+  { path: 'versao-anterior', loadComponent: () => import('./features/legacy-rooms/legacy-rooms.page').then(m => m.LegacyRoomsPage) },
   { path: '**', redirectTo: 'mapa' },
 ];

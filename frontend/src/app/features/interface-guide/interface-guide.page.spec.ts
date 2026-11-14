@@ -49,7 +49,7 @@ describe('InterfaceGuidePage', () => {
     expect(host.querySelector('.focus-example')).not.toBeNull();
   });
 
-  it('registers /design as the interface guide route', () => {
-    expect(routes.find((route) => route.path === 'design')?.component).toBe(InterfaceGuidePage);
+  it('registers /design as the interface guide route', async () => {
+    expect(await routes.find((route) => route.path === 'design')?.loadComponent?.()).toBe(InterfaceGuidePage);
   });
 });

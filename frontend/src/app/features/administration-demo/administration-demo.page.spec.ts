@@ -52,7 +52,7 @@ describe('AdministrationDemoPage', () => {
     expect(host.querySelectorAll('a.menu-item, button.menu-item').length).toBe(0);
   });
 
-  it('maps /admin to the administration page', () => {
-    expect(routes.find((route) => route.path === 'admin')?.component).toBe(AdministrationDemoPage);
+  it('maps /admin to the administration page', async () => {
+    expect(await routes.find((route) => route.path === 'admin')?.loadComponent?.()).toBe(AdministrationDemoPage);
   });
 });
