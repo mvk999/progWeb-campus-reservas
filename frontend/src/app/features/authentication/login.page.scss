@@ -1,5 +1,5 @@
 :host { display: block; }
-.login-page { --line: #d4dce2; --ink: #303c46; --muted: #6c7983; --accent: #3c6279; color: var(--text); }
+.login-page { --line: #dce5de; --ink: #20372e; --muted: #586b61; --accent: #236447; color: var(--text); }
 .breadcrumb { display: flex; gap: .5rem; margin-bottom: 1rem; color: var(--muted); font-size: .78rem; }.breadcrumb a { color: var(--accent); text-decoration: none; }
 .login-layout { display: grid; max-width: 58rem; grid-template-columns: minmax(0,1.1fr) minmax(15rem,.7fr); align-items: start; gap: 1.25rem; margin: 1rem auto; }
 .login-card, .login-note { padding: 1.25rem; border: 1px solid var(--line); background: var(--surface); }

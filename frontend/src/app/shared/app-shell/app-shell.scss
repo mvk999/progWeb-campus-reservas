@@ -212,3 +212,19 @@
   .footer-actions { width: 100%; justify-content: space-between; gap: .4rem .7rem; }
   .footer-actions a, .footer-actions button { font-size: .68rem; }
 }
+
+.app-header { border-top: 4px solid var(--accent); }
+.brand { align-items: center; gap: .45rem; }
+.brand__word { color: var(--accent); font-size: 1.65rem; font-weight: 750; letter-spacing: -.065em; }
+.brand__name { font-size: .65rem; letter-spacing: .13em; }
+.brand__context { padding-left: .8rem; border-left: 1px solid var(--border); }
+.primary-nav { border-bottom-color: var(--border); background: #fcfdfb; }
+.primary-nav__inner { gap: .5rem; min-height: 3.5rem; align-items: center; }
+.primary-nav a { min-height: 2.6rem; padding: .5rem .9rem; border: 0; border-radius: 8px; font-weight: 550; }
+.primary-nav a:hover { background: #edf3ee; }
+.primary-nav a.is-active { color: #205c40; background: #e5f0e8; }
+.primary-nav__external { font-size: .75rem !important; }
+.page-content__inner { padding-block: 2.2rem 3rem; }
+.reset-dialog { border-radius: var(--radius); padding: 1.5rem; }
+.reset-actions button { border-radius: 8px; }
+@media(max-width:480px) { .primary-nav__inner { gap: .2rem; }.primary-nav a { padding-inline: .7rem; }.brand__word { font-size: 1.5rem; } }

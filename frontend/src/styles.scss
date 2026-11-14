@@ -2,16 +2,16 @@
 
 :root {
   color-scheme: light;
-  --page-background: #f4f5f7;
+  --page-background: #f5f7f4;
   --surface: #ffffff;
-  --text: #263340;
-  --text-muted: #516171;
-  --border: #d8dde2;
-  --accent: #2C4E70;
-  --accent-muted: #58748F;
-  --focus-ring: #2C4E70;
-  --font-brand: Georgia, 'Times New Roman', serif;
-  --font-sans: Arial, Helvetica, sans-serif;
+  --text: #20372e;
+  --text-muted: #586b61;
+  --border: #dce5de;
+  --accent: #236447;
+  --accent-muted: #58816b;
+  --focus-ring: #236447;
+  --font-brand: 'Segoe UI', Arial, sans-serif;
+  --font-sans: 'Segoe UI', Arial, sans-serif;
 
   font-family: var(--font-sans);
   color: var(--text);
@@ -49,4 +49,16 @@ textarea {
 
 .app-shell--legacy {
   @include legacy.styles;
+}
+
+/* Shared interaction and surface vocabulary. Component layouts remain independent. */
+:root { --radius: 14px; --shadow-soft: 0 6px 24px #20372e08; }
+body { line-height: 1.5; }
+::selection { background: #cce5d5; color: #153e2a; }
+:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button, input, select, textarea { accent-color: var(--accent); }
+button, a { touch-action: manipulation; }
+@media (prefers-reduced-motion: no-preference) {
+  button, a, input, select, textarea { transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
 }

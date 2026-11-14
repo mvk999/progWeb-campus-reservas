@@ -1,5 +1,5 @@
 :host { display: block; }
-.rooms-page { --line: #d4dce2; --ink: #303c46; --muted: #6c7983; --accent: #3c6279; color: var(--text); }
+.rooms-page { --line: #dce5de; --ink: #20372e; --muted: #586b61; --accent: #236447; color: var(--text); }
 .breadcrumb { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .9rem; color: var(--text-muted); font-size: .78rem; }
 .breadcrumb a { color: var(--accent); }
 .page-heading, .panel-title, .availability-heading, .tools-row, .results-heading, .query-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
@@ -25,7 +25,7 @@
 .query-actions p { margin: 0; color: var(--text-muted); font-size: .76rem; }
 .query-actions > div { display: flex; gap: .55rem; }
 .button { min-height: 2.4rem; padding: .45rem .8rem; border: 1px solid var(--line); border-radius: .12rem; background: var(--surface); color: var(--ink); font: inherit; font-size: .78rem; cursor: pointer; }
-.button--primary { border-color: #3c6279; background: #3c6279; color: #fff; }
+.button--primary { border-color: #236447; background: #236447; color: #fff; }
 .button:hover { filter: brightness(.97); }
 .error-message, .feedback-message { margin: .65rem 0 0; font-size: .8rem; }
 .error-message { color: #8f3030; }.feedback-message { color: #376d54; }
@@ -38,7 +38,7 @@
 .week-strip > button { align-self: center; flex: none; border: 0; background: transparent; font-size: 1.2rem; }
 .week-day { display: grid; flex: 1; gap: .25rem; justify-items: center; padding: .45rem .2rem; border: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer; }
 .week-day span { font-size: .68rem; text-transform: capitalize; }.week-day strong { font-size: .88rem; font-weight: 500; }
-.week-day--selected { border-color: #aabac4; background: #eef3f6; color: var(--ink); }
+.week-day--selected { border-color: #aabac4; background: #edf4ee; color: var(--ink); }
 .tools-row { margin: .85rem 0 .55rem; }
 .search { display: flex; width: min(26rem,100%); min-height: 2.4rem; align-items: center; gap: .45rem; padding-inline: .65rem; border: 1px solid var(--line); background: var(--surface); color: var(--muted); }
 .search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: inherit; font-size: .8rem; }
