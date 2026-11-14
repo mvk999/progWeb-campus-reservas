@@ -1,0 +1,60 @@
+<div class="app-shell">
+  <header class="app-header">
+    <div class="app-header__top shell-container">
+      <a class="brand" routerLink="/mapa" aria-label="Campus Reservas — UFLA">
+        <span class="brand__word">campus</span>
+        <span class="brand__name">RESERVAS</span>
+        <span class="brand__context">UFLA · Salas</span>
+      </a>
+
+      <p class="app-header__location">Campus sede · Lavras, MG</p>
+      <div class="profile-slot" aria-label="Área do perfil">
+        <ng-content select="[profileMenu]" />
+      </div>
+    </div>
+
+    <nav class="primary-nav" aria-label="Navegação principal">
+      <div class="primary-nav__inner shell-container">
+        <a
+          routerLink="/mapa"
+          routerLinkActive="is-active"
+          ariaCurrentWhenActive="page"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          Mapa do campus
+        </a>
+        <a routerLink="/salas" routerLinkActive="is-active" ariaCurrentWhenActive="page">
+          Salas
+        </a>
+        <a
+          routerLink="/minhas-reservas"
+          routerLinkActive="is-active"
+          ariaCurrentWhenActive="page"
+        >
+          Minhas reservas
+        </a>
+        <a
+          class="primary-nav__external"
+          href="https://campus-reservas-prototipo.jailtonvi.chatgpt.site/versao-anterior/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Versão anterior <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="page-content" id="main">
+    <div class="page-content__inner shell-container">
+      <router-outlet />
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="app-footer__inner shell-container">
+      <span>Campus Reservas · UFLA</span>
+      <ng-content select="[footerContent]" />
+    </div>
+  </footer>
+</div>
