@@ -8,9 +8,7 @@
       </a>
 
       <p class="app-header__location">Campus sede · Lavras, MG</p>
-      <div class="profile-slot" aria-label="Área do perfil">
-        <ng-content select="[profileMenu]" />
-      </div>
+      <div class="profile-slot"><app-profile-menu /></div>
     </div>
 
     <nav class="primary-nav" aria-label="Navegação principal">
@@ -26,13 +24,13 @@
         <a routerLink="/salas" routerLinkActive="is-active" ariaCurrentWhenActive="page">
           Salas
         </a>
-        <a
-          routerLink="/minhas-reservas"
-          routerLinkActive="is-active"
-          ariaCurrentWhenActive="page"
-        >
-          Minhas reservas
-        </a>
+        @if (profile.profileId() === 'solicitante') {
+          <a routerLink="/minhas-reservas" routerLinkActive="is-active" ariaCurrentWhenActive="page">Minhas reservas</a>
+        } @else if (profile.profileId() === 'responsavel') {
+          <a routerLink="/gestao" routerLinkActive="is-active" ariaCurrentWhenActive="page">Gestão de reservas</a>
+        } @else {
+          <a routerLink="/admin" routerLinkActive="is-active" ariaCurrentWhenActive="page">Administração</a>
+        }
         <a
           class="primary-nav__external"
           href="https://campus-reservas-prototipo.jailtonvi.chatgpt.site/versao-anterior/"

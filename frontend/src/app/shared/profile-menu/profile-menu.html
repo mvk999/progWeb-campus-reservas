@@ -1,0 +1,35 @@
+<div class="profile-menu">
+  <button #profileTrigger class="profile-trigger" type="button" aria-label="Alternar perfil de demonstração"
+    aria-controls="profile-dialog" [attr.aria-expanded]="dialogOpen()" (click)="openDialog()">
+    <span class="profile-avatar" aria-hidden="true">{{ profiles.profile().label.slice(0, 1) }}</span>
+    <span class="profile-trigger__text"><strong>{{ profiles.profile().label }}</strong><small>Demonstração</small></span>
+    <span aria-hidden="true">⌄</span>
+  </button>
+
+  @if (profiles.notice()) {
+    <div class="profile-toast" role="status" aria-live="polite"><span>{{ profiles.notice() }}</span><button type="button" aria-label="Fechar aviso" (click)="profiles.clearNotice()">×</button></div>
+  }
+
+  @if (dialogOpen()) {
+    <div class="profile-backdrop" (click)="onBackdropClick($event)">
+      <section #profileDialog id="profile-dialog" class="profile-dialog" role="dialog" aria-modal="true"
+        aria-labelledby="profile-dialog-title" aria-describedby="profile-dialog-description" tabindex="-1"
+        (keydown)="onDialogKeydown($event)" (click)="$event.stopPropagation()">
+        <header class="profile-dialog__header"><div><span class="dialog-eyebrow">Campus Reservas</span><h2 id="profile-dialog-title">Selecionar perfil</h2></div><button type="button" aria-label="Fechar diálogo" (click)="closeDialog()">×</button></header>
+        <p id="profile-dialog-description">Os perfis e os dados desta demonstração ficam salvos somente neste navegador. Eles não representam permissões reais.</p>
+        @if (profiles.storageError()) {<p class="storage-error" role="alert">{{ profiles.storageError() }}</p>}
+        <div class="profile-options">
+          @for (profile of profiles.options; track profile.id) {
+            <button #profileOption type="button" class="profile-option" [class.profile-option--active]="profiles.profileId() === profile.id"
+              [attr.aria-pressed]="profiles.profileId() === profile.id" (click)="selectProfile(profile.id)">
+              <span class="profile-option__mark" aria-hidden="true">{{ profile.label.slice(0, 1) }}</span>
+              <span><strong>{{ profile.label }}</strong><small>{{ profile.description }}</small></span>
+              @if (profiles.profileId() === profile.id) {<span class="current-mark">Atual</span>}
+            </button>
+          }
+        </div>
+        <footer class="profile-dialog__footer"><button type="button" class="login-link" (click)="goToLogin()">Ver tela de login</button><button type="button" class="dialog-close" (click)="closeDialog()">Fechar</button></footer>
+      </section>
+    </div>
+  }
+</div>
