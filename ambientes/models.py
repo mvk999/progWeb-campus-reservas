@@ -23,6 +23,12 @@ class Ambiente(models.Model):
     nome = models.CharField(max_length=150)
     descricao = models.TextField(blank=True)
     localizacao = models.CharField(max_length=200)
+    predio = models.CharField(
+        "prédio",
+        max_length=20,
+        blank=True,
+        help_text="Código do prédio usado no mapa do campus (ex.: PV1).",
+    )
     capacidade = models.PositiveIntegerField()
     ativo = models.BooleanField(default=True)
     categoria = models.ForeignKey(

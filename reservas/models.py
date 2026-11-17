@@ -54,6 +54,12 @@ class Reserva(models.Model):
         choices=ReservaStatus.choices,
         default=ReservaStatus.PENDENTE,
     )
+    finalidade = models.CharField(max_length=200, blank=True)
+    participantes = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1)],
+    )
     observacoes = models.TextField(blank=True)
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
@@ -86,6 +92,13 @@ class Reserva(models.Model):
                 condition=models.Q(status__in=ReservaStatus.values),
                 name="reserva_status_valido",
             ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(participantes__isnull=True)
+                    | models.Q(participantes__gte=1)
+                ),
+                name="reserva_participantes_gte_1",
+            ),
         ]
 
     def clean(self):
@@ -96,6 +109,7 @@ class Reserva(models.Model):
             )
         self._validar_reserva_concluida()
         self._validar_ambiente_e_solicitante_ativos()
+        self._validar_participantes()
         self._validar_dados_de_avaliacao()
         self._validar_conflito_com_aprovadas()
         self._validar_conflito_com_bloqueios()
@@ -223,6 +237,25 @@ class Reserva(models.Model):
             )
         if erros:
             raise ValidationError(erros)
+
+    def _validar_participantes(self):
+        """Impede informar mais participantes do que a capacidade do ambiente.
+
+        O campo é opcional: reservas sem número de participantes não são
+        verificadas.
+        """
+        if self.participantes is None or self.ambiente_id is None:
+            return
+        capacidade = self.ambiente.capacidade
+        if self.participantes > capacidade:
+            raise ValidationError(
+                {
+                    "participantes": (
+                        f"O ambiente comporta no máximo {capacidade} "
+                        "participante(s)."
+                    )
+                }
+            )
 
     def _validar_conflito_com_bloqueios(self):
         """Impede aprovar reserva durante um bloqueio do mesmo ambiente.
