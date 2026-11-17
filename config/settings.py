@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
     "usuarios.apps.UsuariosConfig",
     "ambientes.apps.AmbientesConfig",
     "reservas.apps.ReservasConfig",
@@ -88,6 +89,26 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# API (Django REST Framework). Contrato em docs/api.md.
+REST_FRAMEWORK = {
+    # Sessão do Django, respondendo 401 a quem não está logado.
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "usuarios.authentication.SessionAuthentication",
+    ],
+    # Toda rota exige login, salvo as que liberarem o acesso explicitamente.
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+    ],
+    # A página navegável do DRF só fica disponível em desenvolvimento.
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+        *(["rest_framework.renderers.BrowsableAPIRenderer"] if DEBUG else []),
+    ],
+}
 
 JAZZMIN_SETTINGS = {
     "site_title": "Administração — Campus Reservas",

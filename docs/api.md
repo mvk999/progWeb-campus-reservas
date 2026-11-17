@@ -1,7 +1,12 @@
 # API do Campus Reservas
 
 Contrato entre o backend Django e o frontend Angular. Todas as rotas ficam sob
-`/api/` e trocam JSON. As views são do Django (`JsonResponse`), sem DRF.
+`/api/` e trocam JSON. A API usa o Django REST Framework (DRF):
+serializers convertem os modelos em JSON e validam os dados recebidos, e as
+views herdam de `APIView` ou das views genéricas do DRF.
+
+Com `DEBUG` ligado, abrir uma rota da API no navegador mostra a página
+navegável do DRF, útil para testar os endpoints sem o frontend.
 
 ## Convenções
 
@@ -23,14 +28,22 @@ Contrato entre o backend Django e o frontend Angular. Todas as rotas ficam sob
 
 | Código | Quando | Corpo |
 | --- | --- | --- |
-| 400 | Dados inválidos ou regra de negócio violada | `{"errors": {"campo": ["mensagem"], "__all__": ["mensagem geral"]}}` |
-| 401 | Usuário não autenticado | `{"detail": "Autenticação necessária."}` |
+| 400 | Dados inválidos ou regra de negócio violada | `{"campo": ["mensagem"], "non_field_errors": ["mensagem geral"]}` |
+| 401 | Usuário não autenticado | `{"detail": "As credenciais de autenticação não foram fornecidas."}` |
 | 403 | Autenticado, mas sem permissão (ou CSRF ausente) | `{"detail": "..."}` |
-| 404 | Registro não existe ou não pertence ao usuário | `{"detail": "Não encontrado."}` |
+| 404 | Registro não existe ou não pertence ao usuário | `{"detail": "..."}` |
 | 405 | Método HTTP não permitido | `{"detail": "..."}` |
 
-As mensagens das regras de negócio (conflito de horário, bloqueio, estoque
-etc.) são as mesmas dos `clean()` dos modelos, exibidas também no Admin.
+O formato de erro é o padrão do DRF: cada campo inválido é uma chave com a
+lista de mensagens, e erros que não pertencem a um campo ficam em
+`non_field_errors`. As mensagens das regras de negócio (conflito de
+horário, bloqueio, estoque etc.) são as mesmas dos `clean()` dos modelos,
+exibidas também no Admin.
+
+Por padrão, a autenticação por sessão do DRF responde 403 também para quem
+não está logado. O projeto usa uma classe própria
+(`usuarios.authentication.SessionAuthentication`) para responder **401**
+nesse caso, e assim o frontend sabe quando redirecionar para o login.
 
 ## Objetos
 
@@ -62,12 +75,19 @@ etc.) são as mesmas dos `clean()` dos modelos, exibidas também no Admin.
   "description": "Sala com projetor.",
   "category": "Sala de aula",
   "location": "Pavilhão 1, térreo",
+  "buildingCode": "PV1",
   "capacity": 40,
-  "responsible": "João Lima"
+  "responsible": "João Lima",
+  "features": []
 }
 ```
 
-`description` só aparece no detalhe.
+- `description` só aparece no detalhe.
+- `buildingCode` é o código do prédio (campo `predio` do `Ambiente`), igual
+  aos códigos dos dados do mapa no frontend; pode vir vazio (`""`). O nome do
+  prédio é obtido pelo frontend a partir desses dados.
+- `features` é sempre uma lista vazia: os equipamentos são um estoque
+  compartilhado e não pertencem a uma sala.
 
 ### Reserva
 
@@ -81,6 +101,8 @@ etc.) são as mesmas dos `clean()` dos modelos, exibidas também no Admin.
   "endTime": "16:00",
   "status": "PENDENTE",
   "statusLabel": "Pendente",
+  "purpose": "Aula de revisão de Cálculo",
+  "participants": 35,
   "observations": "Aula de revisão.",
   "equipments": [{"code": "PROJ-01", "name": "Projetor", "quantity": 1}],
   "requester": {"username": "maria", "name": "Maria Souza"},
@@ -110,7 +132,7 @@ etc.) são as mesmas dos `clean()` dos modelos, exibidas também no Admin.
 
 | Método | Rota | Acesso | Descrição |
 | --- | --- | --- | --- |
-| GET | `/api/ambientes/` | Autenticado | Lista ambientes **ativos**. Filtros opcionais: `?category=`, `?minimumCapacity=`, `?q=` (código, nome ou localização). |
+| GET | `/api/ambientes/` | Autenticado | Lista ambientes **ativos**. Filtros opcionais: `?category=`, `?minimumCapacity=`, `?building=`, `?q=` (código, nome ou localização). |
 | GET | `/api/ambientes/<code>/` | Autenticado | Detalhe do ambiente. 404 se não existir ou estiver inativo. |
 | GET | `/api/ambientes/<code>/disponibilidade/?date=AAAA-MM-DD` | Autenticado | Intervalos ocupados no dia. |
 | GET | `/api/categorias/` | Autenticado | `[{"name": "Laboratório"}, ...]` |
@@ -150,10 +172,15 @@ Corpo do `POST /api/reservas/`:
   "date": "2026-11-20",
   "startTime": "14:00",
   "endTime": "16:00",
+  "purpose": "Aula de revisão de Cálculo",
+  "participants": 35,
   "observations": "Aula de revisão.",
   "equipments": [{"code": "PROJ-01", "quantity": 1}]
 }
 ```
+
+`purpose` é obrigatório. `participants` deve ser pelo menos 1 e não pode
+passar da capacidade do ambiente.
 
 O solicitante é sempre o usuário logado e o status inicial é sempre
 `PENDENTE`; esses valores nunca são lidos do corpo.
@@ -174,13 +201,22 @@ simultâneas não passem pela validação ao mesmo tempo.
 
 Reservas de ambientes de outro responsável retornam 404.
 
-## Pontos em aberto
+## Mudanças no banco previstas
 
-Campos que as telas atuais usam e que não existem no banco:
+Campos que as telas do frontend usam e que serão criados no backend:
 
-| Campo no frontend | Onde aparece | Proposta |
+| Campo na API | Campo no modelo | Regra |
 | --- | --- | --- |
-| `purpose`, `participants` | Solicitação e gestão de reservas | Adicionar `finalidade` e `participantes` em `Reserva` (migration), validando `participantes <= capacidade`. |
-| `buildingCode`, `buildingName`, `campus` | Mapa, salas, detalhe | Adicionar o prédio ao `Ambiente` ou derivar do início do `codigo`. Definir com o responsável pelo frontend. |
-| `features` | Salas e detalhe | Usar os equipamentos ou deixar fora da API. |
-| `acceptedRules` | Solicitação | Validação apenas no frontend; não é enviado. |
+| `purpose` | `Reserva.finalidade` (texto curto) | Obrigatório na API; opcional no modelo e no Admin. |
+| `participants` | `Reserva.participantes` (inteiro positivo) | Obrigatório na API; opcional no modelo. Quando informado: pelo menos 1 e no máximo a capacidade do ambiente. |
+| `buildingCode` | `Ambiente.predio` (texto curto, opcional) | Código do prédio usado no mapa (ex.: `PV1`). |
+
+Os dois campos de reserva são opcionais no modelo porque as reservas já
+cadastradas não têm esses dados; a API exige ambos nas reservas novas.
+
+Decisões para os demais campos do frontend:
+
+- `buildingName` e `campus`: vêm dos dados do mapa do frontend, a partir de
+  `buildingCode`.
+- `features`: fora do banco; a API devolve `[]`.
+- `acceptedRules`: validado apenas no frontend; não é enviado.
