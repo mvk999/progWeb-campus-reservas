@@ -1038,16 +1038,26 @@ class DjangoAdminHTTPTests(TestCase):
             dados.update(alteracoes)
             return url, dados
 
+        # As datas são relativas a "agora" porque a regra de conclusão
+        # compara o fim da reserva com timezone.now(); uma data fixa
+        # deixaria de ser futura com o passar do tempo.
+        agora = timezone.now().replace(second=0, microsecond=0)
+
         # Concluir uma reserva futura é recusado.
-        url, dados = dados_da(self.reserva, status=Reserva.Status.CONCLUIDA)
+        futura = Reserva.objects.create(
+            solicitante=self.solicitante,
+            ambiente=self.ambiente,
+            inicio=agora + timedelta(days=2),
+            fim=agora + timedelta(days=2, hours=1),
+        )
+        url, dados = dados_da(futura, status=Reserva.Status.CONCLUIDA)
         resposta = self.client.post(url, dados)
         self.assertEqual(resposta.status_code, 200)
         self.assertContains(resposta, "cujo período já terminou")
-        self.reserva.refresh_from_db()
-        self.assertEqual(self.reserva.status, Reserva.Status.PENDENTE)
+        futura.refresh_from_db()
+        self.assertEqual(futura.status, Reserva.Status.PENDENTE)
 
         # Reserva já concluída não volta a outro status...
-        agora = timezone.now().replace(second=0, microsecond=0)
         concluida = Reserva.objects.create(
             solicitante=self.solicitante,
             ambiente=self.ambiente,
