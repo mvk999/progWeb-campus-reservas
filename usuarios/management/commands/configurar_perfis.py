@@ -13,11 +13,7 @@ from ambientes.models import (
     Equipamento,
 )
 from reservas.models import BloqueioAmbiente, Reserva, ReservaEquipamento
-
-
-ADMINISTRADOR = "Administrador"
-RESPONSAVEL = "Responsável"
-SOLICITANTE = "Solicitante"
+from usuarios.perfis import ADMINISTRADOR, RESPONSAVEL, SOLICITANTE
 
 DOMAIN_MODELS = (
     CategoriaAmbiente,
