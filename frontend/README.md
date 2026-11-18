@@ -16,7 +16,7 @@ npm start
 ```
 
 O servidor de desenvolvimento fica em http://localhost:4200/. O tema claro/escuro fica disponível no cabeçalho e a escolha é salva neste navegador.
-As chamadas a `/api/` e o acesso a `/admin/` são encaminhados ao Django pelo proxy de desenvolvimento.
+As chamadas a `/api/`, o acesso a `/admin/` e os arquivos de `/static/` são encaminhados ao Django pelo proxy de desenvolvimento. Reinicie o `npm start` após mudar `proxy.conf.json`.
 
 ## Build e verificações
 
