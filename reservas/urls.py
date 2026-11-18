@@ -2,7 +2,7 @@
 
 from django.urls import path
 
-from . import views
+from . import views, views_gestao
 
 
 app_name = "reservas"
@@ -15,4 +15,20 @@ urlpatterns = [
         views.CancelarReservaView.as_view(),
         name="cancelar",
     ),
+    path(
+        "gestao/reservas/",
+        views_gestao.GestaoReservasView.as_view(),
+        name="gestao",
+    ),
+    path(
+        "gestao/reservas/<int:pk>/aprovar/",
+        views_gestao.AprovarReservaView.as_view(),
+        name="aprovar",
+    ),
+    path(
+        "gestao/reservas/<int:pk>/rejeitar/",
+        views_gestao.RejeitarReservaView.as_view(),
+        name="rejeitar",
+    ),
+    path("gestao/ocupacao/", views_gestao.OcupacaoView.as_view(), name="ocupacao"),
 ]
