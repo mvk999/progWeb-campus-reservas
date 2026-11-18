@@ -44,6 +44,7 @@ Representa sala, laboratório, auditório ou outro espaço reservável.
 | `nome` | Obrigatório | Até 150 caracteres. |
 | `descricao` | Opcional | Texto livre. |
 | `localizacao` | Obrigatório | Até 200 caracteres. |
+| `predio` | Opcional | Até 20 caracteres; código do prédio usado no mapa do campus (ex.: `PV1`). |
 | `capacidade` | Obrigatório | Inteiro de pelo menos 1; validado no modelo e no SQLite. |
 | `ativo` | Obrigatório | Booleano, padrão `True`. |
 | `categoria_id` | Obrigatório | FK para `CategoriaAmbiente`, `PROTECT`. |
@@ -90,6 +91,8 @@ Registra a solicitação de uso de um ambiente.
 | `ambiente_id` | Obrigatório | FK para `Ambiente`, `PROTECT`; relação reversa `Ambiente.reservas`. |
 | `inicio`, `fim` | Obrigatórios | `DateTimeField`; `inicio < fim` é validado no modelo e por `CheckConstraint` no SQLite. |
 | `status` | Obrigatório | Um dos cinco estados documentados abaixo; padrão `PENDENTE`, choices no modelo e constraint no banco. |
+| `finalidade` | Opcional no modelo | Até 200 caracteres. Obrigatória nas reservas criadas pela API; opcional no modelo para manter válidas as reservas anteriores ao campo. |
+| `participantes` | Opcional no modelo | Inteiro de pelo menos 1 e no máximo a capacidade do ambiente (`clean()`). Obrigatório nas reservas criadas pela API. |
 | `observacoes` | Opcional | Texto livre. |
 | `criado_em`, `atualizado_em` | Automáticos | Data de criação e última atualização pelo ORM convencional. |
 | `avaliado_por_id` | Condicional | FK nullable para `Usuario`, `PROTECT`; relação reversa `Usuario.reservas_avaliadas`. Exigido em `APROVADA`/`REJEITADA`, vazio em `PENDENTE` e diferente do solicitante. |
@@ -151,6 +154,7 @@ As chaves relacionadas a ambientes, categorias, usuários, reservas e equipament
 | Capacidade do ambiente `>= 1` | Tipo positivo e `clean()`. | `CheckConstraint` `ambiente_capacidade_gte_1`. |
 | Estoque total do equipamento `>= 0` | `PositiveIntegerField`; zero permitido. | Check do campo no SQLite; persistência inválida foi testada. |
 | Intervalo de reserva `inicio < fim` | `clean()`. | `CheckConstraint` `reserva_inicio_menor_que_fim`. |
+| Participantes `>= 1` e `<=` capacidade do ambiente | `MinValueValidator` e `clean()`. | `CheckConstraint` `reserva_participantes_gte_1` (mínimo; o máximo depende do ambiente e fica no `clean()`). |
 | Estado da reserva permitido | `TextChoices`. | `CheckConstraint` `reserva_status_valido`. |
 | Quantidade solicitada `>= 1` | `MinValueValidator` e `clean()`. | `CheckConstraint` `reserva_equip_quantidade_gte_1`. |
 | Um item de equipamento por reserva | Formulário/modelo e unicidade. | `UniqueConstraint` `reserva_equipamento_unico`. |

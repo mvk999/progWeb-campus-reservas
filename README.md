@@ -10,17 +10,23 @@
 
 O Campus Reservas é um sistema web para gerenciar reservas de ambientes e equipamentos universitários. Solicitantes poderão pedir reservas; responsáveis poderão avaliar pedidos dos ambientes sob sua responsabilidade; administradores poderão gerenciar os recursos do sistema.
 
-O projeto está em desenvolvimento para o Checkpoint 1 da disciplina GAC116 — Programação Web. O backend usa os apps `usuarios`, `ambientes` e `reservas`; implementa o usuário customizado, as entidades e constraints do domínio, o Django Admin com Jazzmin, filtros, pesquisas, inline de equipamentos, grupos/permissões iniciais e dados sintéticos. O backend também valida regras de disponibilidade: impede aprovar reservas sobrepostas no mesmo ambiente ou durante bloqueios, controla o estoque de equipamentos por horário e preserva reservas concluídas. As telas de solicitação, avaliação e cancelamento para usuários finais continuam planejadas para o Checkpoint 2.
+O backend em Django usa os apps `usuarios`, `ambientes` e `reservas` e oferece duas áreas protegidas por autenticação:
+
+- **Área administrativa:** Django Admin com tema Jazzmin, filtros, pesquisas e inline de equipamentos.
+- **Área dos usuários finais:** uma API REST (Django REST Framework) consumida pelo frontend Angular, com cadastro, login, logout, consulta de ambientes e disponibilidade, solicitação e cancelamento de reservas e a gestão de pedidos pelos responsáveis.
+
+As regras de negócio ficam nos modelos e valem nas duas áreas: o sistema impede aprovar reservas sobrepostas no mesmo ambiente ou durante bloqueios, controla o estoque de equipamentos por horário, limita os participantes à capacidade do ambiente e preserva reservas concluídas.
 
 ## Tecnologias
 
 | Área | Tecnologia | Situação |
 | --- | --- | --- |
-| Backend | Python 3.12 e Django 5.2.18 | Oito modelos de domínio com constraints, autenticação nativa, Groups/Permissions iniciais, Admin/Jazzmin com filtros e inline, e dados de demonstração. |
-| Banco de dados | SQLite relacional | Configurado para execução local. |
+| Backend | Python 3.12 e Django 5.2.18 | Oito modelos de domínio com constraints, autenticação nativa, Groups/Permissions, Admin/Jazzmin com filtros e inline, e dados de demonstração. |
+| API | Django REST Framework 3.18.3 | API REST com autenticação por sessão e proteção CSRF, consumida pelo frontend. Contrato em [`docs/api.md`](docs/api.md). |
+| Banco de dados | SQLite relacional | Configurado para execução local, com transações em modo `IMMEDIATE` para operações simultâneas. |
 | Administração | Django Admin com Jazzmin 3.0.5 | Models registrados com autenticação e permissões nativas; identidade Campus Reservas e seletor de tema claro/escuro. |
-| Frontend | Angular | Workspace inicial em `frontend/`, sem telas de domínio; telas e integração no Checkpoint 2. |
-| Estilização | Bootstrap 5 | Reservado para o Checkpoint 2. |
+| Frontend | Angular | Telas em `frontend/`; integração com a API em andamento. |
+| Estilização | Bootstrap 5 | Planejado para a interface do frontend. |
 
 Django 5.2 foi escolhido por ser uma versão LTS compatível com Python 3.12. O projeto fixa a versão patch 5.2.18, publicada em 6 de outubro de 2026. Confira as [notas oficiais de Django 5.2.18](https://docs.djangoproject.com/en/5.2/releases/5.2.18/) e a [tabela oficial de compatibilidade com Python](https://docs.djangoproject.com/en/5.2/faq/install/).
 
@@ -54,7 +60,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-O arquivo `requirements.txt` fixa Django 5.2.18 e Jazzmin 3.0.5.
+O arquivo `requirements.txt` fixa Django 5.2.18, Jazzmin 3.0.5 e Django REST Framework 3.18.3. Sempre que ele mudar (por exemplo, depois de um `git pull`), rode o `pip install -r requirements.txt` de novo.
 
 ## Banco de dados e conta administrativa
 
@@ -65,7 +71,7 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
-O modelo herda de `AbstractUser`, mantém autenticação por nome de usuário e senha com hash e oferece suporte aos mecanismos nativos de Groups e Permissions. Os grupos iniciais são configurados na C1.11; telas de login/cadastro de usuários finais permanecem planejadas para o Checkpoint 2.
+O modelo herda de `AbstractUser`, mantém autenticação por nome de usuário e senha com hash e oferece suporte aos mecanismos nativos de Groups e Permissions. Os grupos são configurados pelo comando `configurar_perfis`. Os usuários finais se cadastram e entram pela API (`/api/auth/cadastro/` e `/api/auth/login/`), usando o mesmo modelo e as mesmas regras de senha.
 
 ## Configuração e execução
 
@@ -114,11 +120,23 @@ executado novamente. As contas `demo.c111.*` são fictícias, não são
 staff nem superusuários e recebem senha inutilizável; não há credencial demo
 fixa. Crie uma conta administrativa própria com `createsuperuser`.
 
+O comando também cria as 21 salas que aparecem no mapa do campus do frontend, com os mesmos códigos e prédios usados pelo mapa (por exemplo, AMB-003 no prédio PV1). Sem elas no banco, o mapa não encontra as salas quando passar a usar a API. As salas dos prédios PV1 a PV3 ficam sob responsabilidade de demo.c111.responsavel.01, e as dos prédios PV4 a PV6 e DCC, de demo.c111.responsavel.02.
+
+Para entrar com uma conta de demonstração na área dos usuários finais (por
+exemplo, para mostrar a gestão de reservas com um responsável), defina uma
+senha para ela:
+
+```bash
+python manage.py changepassword demo.c111.responsavel.01
+```
+
+Contas novas de solicitante podem ser criadas pela tela de cadastro.
+
 | Grupo | Permissões de modelo configuradas | Limites nesta etapa |
 | --- | --- | --- |
 | `Administrador` | add, view, change e delete para categorias, ambientes, equipamentos, reservas, associações de equipamentos e bloqueios | Não recebe permissões de usuários, grupos ou credenciais. Para acesso ao Admin, `is_staff` deve ser concedido separadamente por uma conta autorizada; o comando não altera essa flag. |
-| `Responsável` | Nenhuma permissão padrão de modelo global atribuída pelo comando | A relação com os ambientes não concede acesso global. Decisões sobre reservas dos próprios ambientes e autorização por objeto ficam para o Checkpoint 2. |
-| `Solicitante` | Nenhuma permissão padrão de modelo global atribuída pelo comando | Consulta e gestão das próprias reservas ainda não estão disponíveis; ficam para o Checkpoint 2. |
+| `Responsável` | Nenhuma permissão padrão de modelo global atribuída pelo comando | Pela API, lista, aprova e rejeita reservas apenas dos ambientes pelos quais responde (autorização por objeto). Ser responsável por um ambiente também dá esse perfil, mesmo sem o grupo. |
+| `Solicitante` | Nenhuma permissão padrão de modelo global atribuída pelo comando | Pela API, solicita reservas e consulta e cancela apenas as próprias. Todo cadastro novo entra neste grupo. |
 
 `configurar_perfis` sincroniza apenas as permissões padrão dos modelos
 administrados e dos modelos sensíveis de usuário/grupo, preservando permissões
@@ -126,14 +144,36 @@ customizadas e permissões fora dessa matriz. Não modifica usuários, associaç
 de grupo, `user_permissions`, `is_staff`, `is_superuser` ou senhas. Superusuários
 mantêm o comportamento nativo do Django.
 
-Os registros com os cinco estados de reserva são sintéticos e servem à
+Os registros com os cinco estados de reserva são sintéticos, servem à
 demonstração das listagens e respeitam as regras de disponibilidade e de
-avaliação; o comando apenas cria os registros. Acesso por objeto de Responsáveis, a área de
-usuários finais, a API e a interface Angular continuam planejados para o
-Checkpoint 2.
+avaliação; o comando apenas cria os registros.
 
-## Documentação do Checkpoint 1
+O perfil que o frontend usa para montar menus vem do endpoint `/api/auth/me/`:
+`administrador` (superusuário ou grupo `Administrador`), `responsavel` (grupo
+`Responsável` ou responsável por algum ambiente) ou `solicitante`.
 
+## API
+
+A API fica em `/api/` e está documentada em [`docs/api.md`](docs/api.md). Com
+`DJANGO_DEBUG=1`, abrir uma rota no navegador mostra a página navegável do
+Django REST Framework; entre antes pelo `/admin/` para testar as rotas que
+exigem login.
+
+| Grupo de rotas | Endpoints |
+| --- | --- |
+| Autenticação | `GET /api/csrf/`, `POST /api/auth/login/`, `POST /api/auth/logout/`, `POST /api/auth/cadastro/`, `GET /api/auth/me/` |
+| Consulta | `GET /api/ambientes/`, `GET /api/ambientes/<code>/`, `GET /api/ambientes/<code>/disponibilidade/`, `GET /api/categorias/`, `GET /api/equipamentos/` |
+| Reservas do usuário | `GET` e `POST /api/reservas/`, `GET /api/reservas/<id>/`, `POST /api/reservas/<id>/cancelar/` |
+| Gestão | `GET /api/gestao/reservas/`, `POST /api/gestao/reservas/<id>/aprovar/`, `POST /api/gestao/reservas/<id>/rejeitar/`, `GET /api/gestao/ocupacao/` |
+
+Quem não está logado recebe 401; quem está logado sem permissão recebe 403.
+Toda requisição `POST` exige o cabeçalho `X-CSRFToken` com o valor do cookie
+`csrftoken`. Em desenvolvimento, o Angular acessa a API pelo proxy do
+`ng serve`, na mesma origem do Django.
+
+## Documentação
+
+- [Contrato da API](docs/api.md).
 - [Modelo de dados, relacionamentos e integridade](docs/modelagem.md).
 - [Diagrama entidade-relacionamento](docs/diagrama-er.md).
 - [Roteiro prático de apresentação](docs/apresentacao-checkpoint1.md).
@@ -147,7 +187,7 @@ Execute a suíte automatizada com:
 python manage.py test
 ```
 
-Na versão de 05/11/2026 a suíte tem 163 testes (18 em `usuarios`, 20 em `ambientes` e 125 em `reservas`).
+Em 18/11/2026 a suíte tem 258 testes (48 em `usuarios`, 35 em `ambientes` e 175 em `reservas`). Além dos modelos e do Admin, os testes cobrem cada endpoint da API: respostas, permissões por perfil e por objeto, proteção CSRF e regras de negócio.
 
 ## Funcionalidades
 
@@ -169,36 +209,41 @@ Na versão de 05/11/2026 a suíte tem 163 testes (18 em `usuarios`, 20 em `ambie
 - `BloqueioAmbiente`, associado obrigatoriamente a um `Ambiente` e ao usuário que o registrou. Armazena motivo e intervalo; a regra `inicio < fim` é validada pelo modelo e por constraint no SQLite. Um bloqueio impede aprovar reservas do ambiente no período; ao salvar um bloqueio que coincide com reservas já aprovadas, o Admin exibe um alerta listando-as para revisão manual.
 - Os oito models (`Usuario`, categorias, ambientes, equipamentos, reservas, itens de equipamento e bloqueios) estão disponíveis no Django Admin autenticado em `/admin/`, com criação, consulta, edição e exclusão sujeitas às permissões nativas e às restrições dos modelos. `Reserva` exibe seus campos de auditoria como somente leitura.
 - Regras de disponibilidade validadas no backend e exibidas como erro no Admin: duas reservas `APROVADA` do mesmo ambiente não podem se sobrepor (horários consecutivos são permitidos); reservas não podem ser aprovadas durante bloqueios; ambientes e usuários inativos não originam reservas novas; a quantidade de um equipamento não excede o estoque total nem, em reservas aprovadas, o saldo do horário; equipamentos inativos não podem ser adicionados. Detalhes em [Regras de disponibilidade e consistência](docs/modelagem.md#regras-de-disponibilidade-e-consistência).
-- A conta administrativa pode ser criada com `python manage.py createsuperuser`. A aprovação ou rejeição é registrada alterando o status da reserva no Admin, sujeita às regras acima; não há permissões por objeto.
+- A conta administrativa pode ser criada com `python manage.py createsuperuser`. No Admin, a aprovação ou rejeição é registrada alterando o status da reserva, sujeita às regras acima.
 - O Django Admin utiliza Jazzmin 3.0.5, com identidade visual Campus Reservas, navegação organizada por app, tema Flatly e seletor nativo de esquema claro, escuro ou automático. Fontes externas e CSS de marca customizados não são necessários.
 - As listagens administrativas de ambientes, equipamentos, reservas, bloqueios e associações de equipamentos exibem campos úteis e oferecem filtros nativos por categoria, situação, responsável, status, ambiente, solicitante, equipamento e período, conforme cada entidade. Pesquisas por código, nome, localização e identificação de usuários estão disponíveis nos modelos pertinentes; reservas (pela data de início) e bloqueios também oferecem navegação por data.
 - A edição de uma reserva inclui um inline para consultar, adicionar, alterar e remover equipamentos solicitados. As permissões nativas do Django e as validações existentes de quantidade positiva e associação única continuam aplicadas.
-- Os grupos `Administrador`, `Responsável` e `Solicitante` e a matriz inicial do Admin são configuráveis com `python manage.py configurar_perfis`. O comando `python manage.py popular_demo` cria registros sintéticos repetíveis, sem credenciais utilizáveis ou exclusão de dados.
+- Os grupos `Administrador`, `Responsável` e `Solicitante` e a matriz inicial do Admin são configuráveis com `python manage.py configurar_perfis`. O comando `python manage.py popular_demo` cria registros sintéticos repetíveis, incluindo as salas do mapa do campus, sem credenciais utilizáveis ou exclusão de dados.
+- Campos `predio` no ambiente e `finalidade` e `participantes` na reserva; o número de participantes é limitado à capacidade do ambiente.
+- **Autenticação da área de usuários finais (API):** cadastro com as regras de senha do Django e ingresso automático no grupo `Solicitante`, login, logout e consulta do usuário logado com o perfil calculado no servidor. Login e cadastro exigem token CSRF, e a mensagem de erro de login não revela quais usuários existem.
+- **Consulta (API):** ambientes ativos com filtros por categoria, prédio, capacidade mínima e busca; detalhe; disponibilidade de um ambiente por dia (reservas aprovadas e pendentes e bloqueios); categorias e equipamentos ativos.
+- **Reservas do usuário (API):** solicitação de reserva com equipamentos, recusando horários passados, horários com reserva aprovada ou bloqueio e estoque insuficiente; consulta das próximas reservas e do histórico; cancelamento de reservas pendentes ou aprovadas que ainda não começaram. Cada usuário só acessa as próprias reservas.
+- **Gestão (API):** responsáveis listam, aprovam e rejeitam (com justificativa) reservas dos próprios ambientes, e administradores de todos; aviso de conflito antes da aprovação; validação do estoque de equipamentos no horário ao aprovar; calendário de ocupação por período.
+- Transações do SQLite em modo `IMMEDIATE`, para que duas aprovações ou cancelamentos simultâneos não passem juntos pela validação.
 
 ### Planejado
 
-- Login, logout e cadastro de usuários finais.
-- Telas de solicitação, avaliação, cancelamento e consulta de reservas para usuários finais, com autorização por objeto (responsável apenas nos próprios ambientes, solicitante apenas nas próprias reservas).
-- API Django para o frontend e controle de concorrência nas aprovações.
-- Interface de usuário com Angular e Bootstrap 5, responsiva e com tema claro/escuro, no Checkpoint 2.
+- Integração das telas Angular com a API, substituindo os dados de demonstração.
+- Interface de usuário com Bootstrap 5, responsiva e com tema claro/escuro.
 
 ## Estrutura do backend
 
 ```text
 .
-├── config/                 # Settings, URLs e gateways ASGI/WSGI
-├── usuarios/               # App de usuários com Usuario e comando de configuração de grupos
-├── ambientes/              # Categorias, ambientes (C1.04) e equipamentos (C1.05)
-├── reservas/               # Reserva (C1.06), itens e bloqueios (C1.07); fluxos posteriores
+├── config/                 # Settings (inclui DRF e SQLite), URLs e gateways ASGI/WSGI
+├── usuarios/               # Usuario, perfis, comando configurar_perfis e API de autenticação
+├── ambientes/              # Categorias, ambientes e equipamentos; API de consulta
+├── reservas/               # Reservas, itens e bloqueios; API de reservas e de gestão; popular_demo
 ├── docs/
+│   ├── api.md              # Contrato da API entre backend e frontend
 │   ├── modelagem.md         # Entidades, relações, constraints e permissões
 │   ├── diagrama-er.md      # Diagrama Mermaid das oito entidades
 │   ├── apresentacao-checkpoint1.md # Roteiro prático de demonstração
 │   └── checkpoint1-checklist.md   # Checklist de revisão do Checkpoint 1
-├── frontend/               # Workspace Angular inicial (sem telas de domínio)
+├── frontend/               # Aplicação Angular (área dos usuários finais)
 ├── requirements.txt
 ├── manage.py
 └── .gitignore
 ```
 
-Os três apps estão registrados em `INSTALLED_APPS`. A pasta `frontend/` contém apenas o workspace inicial do Angular; as telas e a integração com o backend fazem parte do Checkpoint 2.
+Os três apps estão registrados em `INSTALLED_APPS`. Em cada app, a API segue a mesma divisão: `serializers.py` (conversão e validação dos dados), `views.py` (endpoints), `urls.py` (rotas, incluídas sob `/api/` em `config/urls.py`) e arquivos `test_*.py`. A gestão de reservas fica em `reservas/views_gestao.py`, com a permissão de perfil em `reservas/permissions.py`.

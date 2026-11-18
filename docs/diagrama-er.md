@@ -25,6 +25,7 @@ erDiagram
         string nome
         text descricao
         string localizacao
+        string predio "opcional"
         int capacidade
         boolean ativo
         BigInt categoria_id FK
@@ -54,6 +55,8 @@ erDiagram
         datetime inicio
         datetime fim
         string status
+        string finalidade "opcional"
+        int participantes "opcional"
         text observacoes
         datetime criado_em
         datetime atualizado_em

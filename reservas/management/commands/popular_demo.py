@@ -44,6 +44,7 @@ class Command(BaseCommand):
         }
         users = self._create_users(groups)
         _, environments = self._create_environments(users)
+        self._create_campus_rooms(users)
         equipment = self._create_equipment()
         reservations = self._create_reservations(users, environments)
         self._create_reservation_equipment(reservations, equipment)
@@ -207,6 +208,83 @@ class Command(BaseCommand):
                 DEMO_DESCRIPTION,
             )
         return categories, environments
+
+    # Salas do mapa do campus no frontend (campus-map.fixtures.ts): mesmos
+    # códigos, nomes, capacidades e prédios, para o mapa encontrar as salas.
+    CAMPUS_BUILDINGS = (
+        ("PV1", "PV1 - Centro de Eventos", "responsavel.01"),
+        ("PV2", "Pavilhão de Aulas 2", "responsavel.01"),
+        ("PV3", "Pavilhão de Aulas 3", "responsavel.01"),
+        ("PV4", "Pavilhão de Aulas 4", "responsavel.02"),
+        ("PV5", "Pavilhão de Aulas 5 (Nave 2)", "responsavel.02"),
+        ("PV6", "Pavilhão de Aulas 6", "responsavel.02"),
+        ("DCC", "DCC - Departamento de Ciência da Computação", "responsavel.02"),
+    )
+    CAMPUS_ROOMS = (
+        # (código, nome, capacidade, categoria, prédio)
+        ("AMB-003", "Sala 101", 40, "sala", "PV1"),
+        ("AMB-007", "Sala 102", 60, "sala", "PV1"),
+        ("AMB-008", "Sala 103", 16, "reuniao", "PV1"),
+        ("AMB-004", "Sala 101", 40, "sala", "PV2"),
+        ("AMB-009", "Sala 102", 60, "sala", "PV2"),
+        ("AMB-010", "Sala 103", 16, "reuniao", "PV2"),
+        ("AMB-011", "Sala 101", 40, "sala", "PV3"),
+        ("AMB-012", "Sala 102", 60, "sala", "PV3"),
+        ("AMB-013", "Sala 103", 16, "reuniao", "PV3"),
+        ("AMB-001", "Sala 101", 40, "sala", "PV4"),
+        ("AMB-014", "Sala 102", 60, "sala", "PV4"),
+        ("AMB-015", "Sala 103", 16, "reuniao", "PV4"),
+        ("AMB-016", "Sala 101", 40, "sala", "PV5"),
+        ("AMB-017", "Sala 102", 60, "sala", "PV5"),
+        ("AMB-018", "Sala 103", 16, "reuniao", "PV5"),
+        ("AMB-019", "Sala 101", 40, "sala", "PV6"),
+        ("AMB-020", "Sala 102", 60, "sala", "PV6"),
+        ("AMB-021", "Sala 103", 16, "reuniao", "PV6"),
+        ("AMB-002", "Laboratório 101", 30, "laboratorio", "DCC"),
+        ("AMB-006", "Sala 102", 60, "sala", "DCC"),
+        ("AMB-022", "Sala 103", 16, "reuniao", "DCC"),
+    )
+    CAMPUS_CATEGORIES = (
+        ("sala", "Sala de aula"),
+        ("reuniao", "Sala de reunião"),
+        ("laboratorio", "Laboratório"),
+    )
+
+    def _create_campus_rooms(self, users):
+        categories = {
+            suffix: self._record(
+                CategoriaAmbiente,
+                {"nome": name},
+                {"descricao": DEMO_DESCRIPTION},
+                "descricao",
+                DEMO_DESCRIPTION,
+            )
+            for suffix, name in self.CAMPUS_CATEGORIES
+        }
+        buildings = {
+            code: (full_name, responsible)
+            for code, full_name, responsible in self.CAMPUS_BUILDINGS
+        }
+        rooms = {}
+        for code, name, capacity, category, building in self.CAMPUS_ROOMS:
+            full_name, responsible = buildings[building]
+            rooms[code] = self._record(
+                Ambiente,
+                {"codigo": code},
+                {
+                    "nome": name,
+                    "descricao": DEMO_DESCRIPTION,
+                    "localizacao": f"{full_name} — {name}",
+                    "predio": building,
+                    "capacidade": capacity,
+                    "ativo": True,
+                    "categoria": categories[category],
+                    "responsavel": users[responsible],
+                },
+                "descricao",
+                DEMO_DESCRIPTION,
+            )
+        return rooms
 
     def _create_equipment(self):
         category_specs = (
