@@ -200,7 +200,8 @@ class ReservaCriacaoSerializer(serializers.Serializer):
         return dados
 
     def _validar_horario_livre(self, ambiente, inicio, fim):
-        """Recusa pedidos sobre reservas aprovadas ou bloqueios do ambiente.
+        """Recusa pedidos sobre reservas aprovadas ou bloqueios do ambiente,
+        e pedidos repetidos do mesmo solicitante.
 
         O modelo só verifica conflitos na aprovação; recusar aqui evita um
         pedido que seria rejeitado com certeza.
@@ -213,6 +214,22 @@ class ReservaCriacaoSerializer(serializers.Serializer):
         if BloqueioAmbiente.objects.filter(**sobrepostos).exists():
             raise serializers.ValidationError(
                 {"startTime": "O ambiente está bloqueado neste horário."}
+            )
+        # Pedidos de pessoas diferentes para o mesmo horário são permitidos (o
+        # responsável escolhe qual aprovar), mas a mesma pessoa repetir o
+        # pedido no mesmo ambiente só gera uma solicitação duplicada.
+        if Reserva.objects.filter(
+            solicitante=self.context["request"].user,
+            status__in=(Reserva.Status.PENDENTE, Reserva.Status.APROVADA),
+            **sobrepostos,
+        ).exists():
+            raise serializers.ValidationError(
+                {
+                    "startTime": (
+                        "Você já tem uma solicitação para este ambiente "
+                        "neste horário."
+                    )
+                }
             )
 
     @transaction.atomic

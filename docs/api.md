@@ -211,6 +211,7 @@ Regras da criação (erros com 400, na chave indicada):
 | `endTime` posterior a `startTime` | `endTime` |
 | Só horários futuros | `startTime` |
 | Sem reserva `APROVADA` nem bloqueio sobreposto no ambiente (reservas `PENDENTE` de outras pessoas não impedem o pedido; horários consecutivos são permitidos) | `startTime` |
+| O próprio solicitante não tem outra reserva `PENDENTE` ou `APROVADA` sobreposta no mesmo ambiente (pedido repetido) | `startTime` |
 | `purpose` obrigatório, até 200 caracteres | `purpose` |
 | `participants` de 1 até a capacidade do ambiente | `participants` |
 | Equipamentos existentes, ativos, sem repetição, com `quantity >= 1` e no máximo o estoque total | `equipments` (mensagem começa com o código do equipamento) |

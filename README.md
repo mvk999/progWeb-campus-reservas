@@ -168,6 +168,15 @@ exigem login.
 | Reservas do usuário | `GET` e `POST /api/reservas/`, `GET /api/reservas/<id>/`, `POST /api/reservas/<id>/cancelar/` |
 | Gestão | `GET /api/gestao/reservas/`, `POST /api/gestao/reservas/<id>/aprovar/`, `POST /api/gestao/reservas/<id>/rejeitar/`, `GET /api/gestao/ocupacao/` |
 
+A pasta [`docs/postman/`](docs/postman/) tem uma coleção do Postman com as
+rotas em ordem: cadastro, login, consulta, solicitação, aprovação, rejeição e
+cancelamento. Para usar, importe o arquivo no Postman (**Import**), rode
+`popular_demo` em um banco novo, defina a senha do responsável de demonstração
+com `python manage.py changepassword demo.c111.responsavel.01`, coloque-a na
+variável `senhaResponsavel` da coleção e execute as pastas na ordem. O token
+CSRF é enviado automaticamente, e cada requisição confere o código de resposta
+esperado.
+
 Quem não está logado recebe 401; quem está logado sem permissão recebe 403.
 Toda requisição `POST` exige o cabeçalho `X-CSRFToken` com o valor do cookie
 `csrftoken`. Em desenvolvimento, o Angular acessa a API pelo proxy do
@@ -238,6 +247,7 @@ Em 18/11/2026 a suíte tem 258 testes (48 em `usuarios`, 35 em `ambientes` e 175
 ├── reservas/               # Reservas, itens e bloqueios; API de reservas e de gestão; popular_demo
 ├── docs/
 │   ├── api.md              # Contrato da API entre backend e frontend
+│   ├── postman/            # Coleção do Postman com as rotas da API
 │   ├── modelagem.md         # Entidades, relações, constraints e permissões
 │   ├── diagrama-er.md      # Diagrama Mermaid das oito entidades
 │   ├── apresentacao-checkpoint1.md # Roteiro prático de demonstração

@@ -233,6 +233,40 @@ class CriarReservaTests(ApiReservasTestCase):
 
         self.assertEqual(resposta.status_code, 201, resposta.json())
 
+    def test_recusa_pedido_repetido_do_mesmo_solicitante_no_ambiente(self):
+        self.assertEqual(self.post(self.corpo()).status_code, 201)
+
+        resposta = self.post(self.corpo(startTime="15:00", endTime="17:00"))
+
+        self.assertEqual(resposta.status_code, 400)
+        self.assertIn("Você já tem uma solicitação", resposta.json()["startTime"][0])
+        self.assertEqual(Reserva.objects.count(), 1)
+
+    def test_pedido_repetido_permitido_em_casos_que_nao_duplicam(self):
+        primeira = Reserva.objects.get(pk=self.post(self.corpo()).json()["id"])
+        outra_sala = Ambiente.objects.create(
+            codigo="PV1-102",
+            nome="Sala 102",
+            localizacao="Pavilhão 1",
+            capacidade=40,
+            categoria=self.sala.categoria,
+            responsavel=self.responsavel,
+        )
+        casos = {
+            "horário consecutivo": self.corpo(startTime="16:00", endTime="17:00"),
+            "outro ambiente": self.corpo(environmentCode=outra_sala.codigo),
+        }
+        for caso, corpo in casos.items():
+            with self.subTest(caso):
+                self.assertEqual(self.post(corpo).status_code, 201)
+
+        primeira.status = Reserva.Status.CANCELADA
+        primeira.save()
+        self.assertEqual(self.post(self.corpo()).status_code, 201, "após cancelar")
+
+        self.client.force_login(self.joao)
+        self.assertEqual(self.post(self.corpo()).status_code, 201, "outra pessoa")
+
     def test_equipamento_desconhecido_ou_repetido(self):
         casos = {
             "desconhecido": [{"code": "XYZ", "quantity": 1}],
