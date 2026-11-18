@@ -183,10 +183,10 @@ em ordem alfabética de nome e de código, respectivamente.
 
 | Método | Rota | Acesso | Descrição |
 | --- | --- | --- | --- |
-| GET | `/api/reservas/` | Autenticado | Reservas do próprio usuário. `?scope=upcoming` (padrão: ainda não terminadas) ou `?scope=history`. |
+| GET | `/api/reservas/` | Autenticado | Reservas do próprio usuário. `?scope=upcoming` (padrão: ainda não terminadas, da mais próxima para a mais distante) ou `?scope=history` (já terminadas, da mais recente para a mais antiga). Outro valor responde 400. |
 | POST | `/api/reservas/` | Autenticado | Cria uma reserva `PENDENTE`. 201 com a reserva; 400 com erros. |
 | GET | `/api/reservas/<id>/` | Dono da reserva | Detalhe. 404 se for de outro usuário. |
-| POST | `/api/reservas/<id>/cancelar/` | Dono da reserva | Cancela. Permitido só para `PENDENTE` ou `APROVADA` que ainda não começou. |
+| POST | `/api/reservas/<id>/cancelar/` | Dono da reserva | Cancela. Permitido só para `PENDENTE` ou `APROVADA` que ainda não começou; nos outros casos, 400 com `non_field_errors`. 200 com a reserva atualizada; 404 se for de outro usuário. |
 
 Corpo do `POST /api/reservas/`:
 
@@ -203,8 +203,20 @@ Corpo do `POST /api/reservas/`:
 }
 ```
 
-`purpose` é obrigatório. `participants` deve ser pelo menos 1 e não pode
-passar da capacidade do ambiente.
+Regras da criação (erros com 400, na chave indicada):
+
+| Regra | Chave do erro |
+| --- | --- |
+| Ambiente existe e está ativo | `environmentCode` |
+| `endTime` posterior a `startTime` | `endTime` |
+| Só horários futuros | `startTime` |
+| Sem reserva `APROVADA` nem bloqueio sobreposto no ambiente (reservas `PENDENTE` de outras pessoas não impedem o pedido; horários consecutivos são permitidos) | `startTime` |
+| `purpose` obrigatório, até 200 caracteres | `purpose` |
+| `participants` de 1 até a capacidade do ambiente | `participants` |
+| Equipamentos existentes, ativos, sem repetição, com `quantity >= 1` e no máximo o estoque total | `equipments` (mensagem começa com o código do equipamento) |
+
+`observations` e `equipments` são opcionais. Se um equipamento for
+recusado, nada é gravado: nem a reserva, nem os outros itens.
 
 O solicitante é sempre o usuário logado e o status inicial é sempre
 `PENDENTE`; esses valores nunca são lidos do corpo.

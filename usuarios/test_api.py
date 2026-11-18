@@ -1,6 +1,7 @@
 """Testes da configuração base da API."""
 
 from django.contrib.auth import get_user_model
+from django.db import connection
 from django.test import TestCase, override_settings
 from django.urls import path, reverse
 from rest_framework.response import Response
@@ -50,3 +51,12 @@ class AutenticacaoPadraoTests(TestCase):
 
         self.assertEqual(resposta.status_code, 200)
         self.assertEqual(resposta.json(), {"username": "api-logado"})
+
+
+class ConfiguracaoDoBancoTests(TestCase):
+    def test_sqlite_abre_transacoes_em_modo_immediate(self):
+        if connection.vendor != "sqlite":
+            self.skipTest("Configuração específica do SQLite.")
+        self.assertEqual(
+            connection.settings_dict["OPTIONS"]["transaction_mode"], "IMMEDIATE"
+        )

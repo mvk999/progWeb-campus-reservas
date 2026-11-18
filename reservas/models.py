@@ -334,6 +334,16 @@ class Reserva(models.Model):
                 }
             )
 
+    STATUS_CANCELAVEIS = (ReservaStatus.PENDENTE, ReservaStatus.APROVADA)
+
+    def pode_ser_cancelada_por(self, usuario):
+        """O solicitante cancela reservas pendentes ou aprovadas não iniciadas."""
+        return (
+            self.solicitante_id == usuario.pk
+            and self.status in self.STATUS_CANCELAVEIS
+            and self.inicio > timezone.now()
+        )
+
     def delete(self, using=None, keep_parents=False):
         if self.pk:
             concluida = type(self).objects.filter(

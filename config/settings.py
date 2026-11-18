@@ -71,6 +71,16 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+        "OPTIONS": {
+            # O SQLite não trava linhas (select_for_update não tem efeito).
+            # IMMEDIATE faz cada transaction.atomic() pegar a trava de
+            # escrita do banco já no início, então duas operações que leem,
+            # validam e gravam (ex.: duas aprovações) rodam uma de cada vez.
+            "transaction_mode": "IMMEDIATE",
+            # Segundos que uma transação espera a outra liberar a trava antes
+            # de falhar com "database is locked".
+            "timeout": 20,
+        },
     }
 }
 
