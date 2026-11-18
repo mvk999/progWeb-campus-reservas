@@ -31,7 +31,7 @@ export class AuthService {
     }
   });
   readonly homePath = computed(() => this.user()?.profile === 'responsavel'
-    ? '/gestao' : this.user()?.profile === 'administrador' ? '/admin' : '/minhas-reservas');
+    ? '/gestao' : this.user()?.profile === 'administrador' ? '/admin/' : '/minhas-reservas');
   readonly loading = signal(true);
 
   async initialize(): Promise<void> {
@@ -76,6 +76,14 @@ export class AuthService {
     await firstValueFrom(this.http.post<void>('/api/auth/logout/', {}));
     this.user.set(null);
     await this.router.navigateByUrl('/login');
+  }
+
+  navigateHome(destination = this.homePath()): void {
+    if (destination === '/admin' || destination === '/admin/') {
+      globalThis.location.assign('/admin/');
+      return;
+    }
+    void this.router.navigateByUrl(destination);
   }
 
   private readErrors(error: unknown): AuthErrors {

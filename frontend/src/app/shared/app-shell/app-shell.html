@@ -1,5 +1,4 @@
-<div class="app-shell" [class.app-shell--legacy]="legacyRoute()">
-  @if (!legacyRoute()) {
+<div class="app-shell">
   <a class="skip-link" href="#main">Ir para o conte&#250;do</a>
   <header class="app-header">
     <div class="app-header__top shell-container container-fluid d-flex align-items-center">
@@ -36,35 +35,29 @@
         } @else if (auth.user()?.profile === 'responsavel') {
           <a routerLink="/gestao" routerLinkActive="is-active" ariaCurrentWhenActive="page">Gestão de reservas</a>
         } @else if (auth.user()?.profile === 'administrador') {
-          <a routerLink="/admin" routerLinkActive="is-active" ariaCurrentWhenActive="page">Administração</a>
+          <a href="/admin/">Administração</a>
         } @else {
           <a routerLink="/login" routerLinkActive="is-active" ariaCurrentWhenActive="page">Entrar</a>
         }
-        <a class="primary-nav__external" routerLink="/versao-anterior">Versão anterior</a>
       </div>
     </nav>
   </header>
-  }
-
   <main class="page-content" id="main" tabindex="-1">
-    <div class="page-content__inner shell-container" [class.page-content__inner--legacy]="legacyRoute()">
+    <div class="page-content__inner shell-container">
       <router-outlet />
     </div>
   </main>
 
-  @if (!legacyRoute()) {
   <footer class="app-footer">
     <div class="app-footer__inner shell-container">
       <span>Campus Reservas · UFLA</span>
       <span class="footer-demo-note">Dados fictícios para demonstração</span>
       <nav class="footer-actions" aria-label="Informações e demonstração">
-        <a routerLink="/design">Sobre o protótipo</a>
         @if (!auth.isAuthenticated()) { <a routerLink="/login">Entrar</a> }
         <button #resetTrigger type="button" (click)="requestDemoReset()">Restaurar demonstração</button>
       </nav>
     </div>
   </footer>
-  }
 
   @if (resetDialogOpen()) {
     <div class="reset-backdrop">

@@ -1,4 +1,3 @@
-@use './app/features/legacy-rooms/legacy-rooms.page' as legacy;
 @import 'maplibre-gl/dist/maplibre-gl.css';
 
 :root {
@@ -82,7 +81,7 @@ textarea {
 [data-bs-theme='dark'] :is(.app-header, .app-footer, .building-sidebar, .map-card,
   .geographic-card, .timeline, .query-panel, .request-form, .request-summary,
   .reservation-card, .calendar-panel, .login-card, .access-card, .profile-dialog,
-  .room-card, .availability-panel, .environment-panel, .admin-panel) {
+  .room-card, .availability-panel, .environment-panel) {
   border-color: var(--border);
   background-color: var(--surface);
   color: var(--text);
@@ -99,10 +98,6 @@ textarea {
   .map-card__footer, .geographic-footer) {
   background-color: var(--page-background);
   color: var(--text);
-}
-
-.app-shell--legacy {
-  @include legacy.styles;
 }
 
 /* MapLibre cria estes elementos fora da árvore de componentes do Angular. */

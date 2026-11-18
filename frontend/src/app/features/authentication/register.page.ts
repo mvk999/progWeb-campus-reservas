@@ -61,6 +61,6 @@ export class RegisterPage {
     const errors = await this.auth.register(this.values() as Parameters<AuthService['register']>[0]);
     this.submitting.set(false);
     this.errors.set(errors ?? {});
-    if (!errors) void this.router.navigateByUrl(this.auth.homePath());
+    if (!errors) this.auth.navigateHome();
   }
 }

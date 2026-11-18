@@ -3,14 +3,12 @@ import { Router } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
 import { routes } from './app.routes';
-import { DEMO_PROFILE_STORAGE_KEY } from './features/authentication/auth.fixtures';
+import { AuthService } from './features/authentication/auth.service';
 import { RESERVATION_STORAGE_KEY } from './features/reservation-request/reservation-request.fixtures';
 import { MANAGEMENT_DECISIONS_STORAGE_KEY } from './features/reservation-management/reservation-management.fixtures';
-import { DemoProfileService } from './features/authentication/demo-profile.service';
 
 describe('Campus Reservas shell', () => {
   beforeEach(async () => {
-    localStorage.removeItem(DEMO_PROFILE_STORAGE_KEY);
     localStorage.removeItem(RESERVATION_STORAGE_KEY);
     localStorage.removeItem(MANAGEMENT_DECISIONS_STORAGE_KEY);
     await TestBed.configureTestingModule({
@@ -33,10 +31,10 @@ describe('Campus Reservas shell', () => {
     expect(host.querySelector('nav[aria-label="Navegação principal"]')).toBeTruthy();
     expect(host.querySelector('footer')?.textContent).toContain('Campus Reservas · UFLA');
     expect(host.querySelector('.footer-demo-note')?.textContent).toBe('Dados fictícios para demonstração');
-    expect(host.querySelectorAll('nav[aria-label="Navegação principal"] a').length).toBe(4);
-    expect(host.querySelectorAll('button[aria-label="Alternar perfil de demonstração"]').length).toBe(1);
-    expect(host.querySelector('.footer-actions a[routerLink="/design"]')?.textContent).toContain('Sobre o protótipo');
-    expect(host.textContent).toContain('Trocar perfil');
+    expect(host.querySelectorAll('nav[aria-label="Navegação principal"] a').length).toBe(3);
+    expect(host.querySelector('button[aria-label="Alternar perfil de demonstração"]')).toBeNull();
+    expect(host.querySelector('.footer-actions a[routerLink="/design"]')).toBeNull();
+    expect(host.querySelector('.primary-nav__external')).toBeNull();
     expect(host.textContent).toContain('Restaurar demonstração');
   });
 
@@ -56,42 +54,33 @@ describe('Campus Reservas shell', () => {
     expect(host.querySelectorAll('.room-card').length).toBeGreaterThan(0);
   });
 
-  it('shows role-specific navigation after selecting a demonstrative profile', async () => {
+  it('links administrators directly to Django Admin', async () => {
     const fixture = TestBed.createComponent(App);
+    TestBed.inject(AuthService).user.set({
+      id: 1,
+      username: 'admin',
+      firstName: 'Admin',
+      lastName: '',
+      email: 'admin@example.test',
+      profile: 'administrador',
+    });
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
-    host.querySelector<HTMLButtonElement>('[aria-label="Alternar perfil de demonstração"]')!.click();
-    fixture.detectChanges();
-    host.querySelector<HTMLButtonElement>('.profile-option:nth-child(2)')!.click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(TestBed.inject(Router).url).toBe('/gestao');
-    expect(host.querySelector('.primary-nav a.is-active')?.textContent).toContain('Gestão de reservas');
-    expect(host.querySelector('.primary-nav a[href="/minhas-reservas"]')).toBeNull();
-    expect(host.querySelector('[role="status"]')?.textContent).toContain('Responsável');
+    const adminLink = host.querySelector<HTMLAnchorElement>('.primary-nav a[href="/admin/"]');
+    expect(adminLink?.textContent?.trim()).toBe('Administração');
+    expect(adminLink?.hasAttribute('routerLink')).toBe(false);
   });
 
-  it('opens the existing profile dialog from the footer and restores focus to that trigger', async () => {
+  it('removes the legacy, design, and Angular admin routes', async () => {
     const fixture = TestBed.createComponent(App);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    const host = fixture.nativeElement as HTMLElement;
-    const trigger = [...host.querySelectorAll<HTMLButtonElement>('.footer-actions button')]
-      .find((button) => button.textContent?.includes('Trocar perfil'))!;
-    trigger.focus();
-    trigger.click();
-    fixture.detectChanges();
-    expect(host.querySelector('#profile-dialog')).not.toBeNull();
-    host.querySelector<HTMLButtonElement>('.profile-dialog__header button')!.click();
-    fixture.detectChanges();
-    expect(host.querySelector('#profile-dialog')).toBeNull();
-    expect(document.activeElement).toBe(trigger);
+    const router = TestBed.inject(Router);
+    for (const removedPath of ['/versao-anterior', '/design', '/admin']) {
+      await router.navigateByUrl(removedPath);
+      expect(router.url).toBe('/mapa');
+    }
   });
 
   it('asks before restoring and clears only known local demo keys', async () => {
-    localStorage.setItem(DEMO_PROFILE_STORAGE_KEY, 'administrador');
     localStorage.setItem(RESERVATION_STORAGE_KEY, '[{"source":"demo-local"}]');
     localStorage.setItem(MANAGEMENT_DECISIONS_STORAGE_KEY, '[{"status":"Aprovada"}]');
     localStorage.setItem('user:unrelated', 'preserve');
@@ -115,31 +104,9 @@ describe('Campus Reservas shell', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect(TestBed.inject(Router).url).toBe('/mapa');
-    expect(localStorage.getItem(DEMO_PROFILE_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem(RESERVATION_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem(MANAGEMENT_DECISIONS_STORAGE_KEY)).toBeNull();
     expect(localStorage.getItem('user:unrelated')).toBe('preserve');
-    expect(TestBed.inject(DemoProfileService).profileId()).toBe('solicitante');
   });
 
-  it('opens the internal previous interface route with its own header and footer', async () => {
-    const fixture = TestBed.createComponent(App);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    const host = fixture.nativeElement as HTMLElement;
-    const previousLink = host.querySelector<HTMLAnchorElement>('.primary-nav__external')!;
-    expect(previousLink.getAttribute('href')).toBe('/versao-anterior');
-    previousLink.click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(TestBed.inject(Router).url).toBe('/versao-anterior');
-    expect(host.querySelector('.app-header')).toBeNull();
-    expect(host.querySelector('.app-footer')).toBeNull();
-    expect(host.querySelector('.legacy-header')).not.toBeNull();
-    expect(host.querySelector('.legacy-nav')).not.toBeNull();
-    expect(host.querySelector('.legacy-footer')).not.toBeNull();
-    expect(host.querySelectorAll('.agenda-table tbody tr').length).toBe(6);
-  });
 });

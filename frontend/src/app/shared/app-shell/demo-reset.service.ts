@@ -1,10 +1,8 @@
 import { Injectable } from '@angular/core';
-import { DEMO_PROFILE_STORAGE_KEY } from '../../features/authentication/auth.fixtures';
 import { MANAGEMENT_DECISIONS_STORAGE_KEY } from '../../features/reservation-management/reservation-management.fixtures';
 import { RESERVATION_STORAGE_KEY } from '../../features/reservation-request/reservation-request.fixtures';
 
 export const DEMONSTRATION_STORAGE_KEYS = [
-  DEMO_PROFILE_STORAGE_KEY,
   RESERVATION_STORAGE_KEY,
   MANAGEMENT_DECISIONS_STORAGE_KEY,
 ] as const;

@@ -31,7 +31,7 @@ export class LoginPage {
       return;
     }
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-    void this.router.navigateByUrl(returnUrl?.startsWith('/') ? returnUrl : this.auth.homePath());
+    this.auth.navigateHome(returnUrl?.startsWith('/') ? returnUrl : undefined);
   }
 
   protected updateUsername(event: Event): void { this.username.set((event.target as HTMLInputElement).value); }

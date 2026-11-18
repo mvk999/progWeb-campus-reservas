@@ -22,8 +22,5 @@ export const routes: Routes = [
   },
   { path: 'gestao', canActivate: [authGuard], loadComponent: () => import('./features/reservation-management/reservation-management.page').then(m => m.ReservationManagementPage) },
   { path: 'calendario', loadComponent: () => import('./features/occupancy-calendar/occupancy-calendar.page').then(m => m.OccupancyCalendarPage) },
-  { path: 'admin', loadComponent: () => import('./features/administration-demo/administration-demo.page').then(m => m.AdministrationDemoPage) },
-  { path: 'design', loadComponent: () => import('./features/interface-guide/interface-guide.page').then(m => m.InterfaceGuidePage) },
-  { path: 'versao-anterior', loadComponent: () => import('./features/legacy-rooms/legacy-rooms.page').then(m => m.LegacyRoomsPage) },
   { path: '**', redirectTo: 'mapa' },
 ];

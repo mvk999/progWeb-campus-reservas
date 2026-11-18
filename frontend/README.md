@@ -1,12 +1,12 @@
 # Frontend — Campus Reservas
 
-Aplicação Angular standalone para consulta de ambientes e demonstração do fluxo de reservas da UFLA. A interface usa Bootstrap 5 para a grade responsiva e utilitários, com SCSS próprio para os componentes do produto.
+Aplicação Angular standalone para consulta de ambientes e solicitação de reservas da UFLA. A interface usa Bootstrap 5 para a grade responsiva e utilitários, com SCSS próprio para os componentes do produto.
 
 ## Requisitos
 
 - Node.js compatível com Angular 22
 - npm
-- Backend Django disponível em http://localhost:8000 quando as chamadas da API forem ativadas
+- Backend Django disponível em http://localhost:8000 para autenticação, dados e administração
 
 ## Executar localmente
 
@@ -16,6 +16,7 @@ npm start
 ```
 
 O servidor de desenvolvimento fica em http://localhost:4200/. O tema claro/escuro fica disponível no cabeçalho e a escolha é salva neste navegador.
+As chamadas a `/api/` e o acesso a `/admin/` são encaminhados ao Django pelo proxy de desenvolvimento.
 
 ## Build e verificações
 
