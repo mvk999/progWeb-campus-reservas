@@ -58,13 +58,11 @@ class ReservaDetalheView(APIView):
 class CancelarReservaView(APIView):
     def post(self, request, pk):
         with transaction.atomic():
-            # select_for_update trava a linha até o fim da transação, para
-            # que um cancelamento e uma aprovação simultâneos não se misturem.
-            reserva = get_object_or_404(
-                Reserva.objects.select_for_update(),
-                pk=pk,
-                solicitante=request.user,
-            )
+            # A proteção contra um cancelamento e uma aprovação simultâneos
+            # vem do transaction_mode "IMMEDIATE" do SQLite (ver DATABASES
+            # em config/settings.py): o atomic() já trava o banco no início.
+            
+            reserva = get_object_or_404(Reserva, pk=pk, solicitante=request.user)
             if not reserva.pode_ser_cancelada_por(request.user):
                 return Response(
                     {
