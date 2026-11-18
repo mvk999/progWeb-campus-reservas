@@ -114,9 +114,11 @@ python manage.py runserver
 ```
 
 O acesso administrativo fica em `http://127.0.0.1:8000/admin/`. `popular_demo`
-cria registros identificados com `DEMO`/`DEMO:C1.11`, incluindo um equipamento
-inativo para contrastar o filtro de situação; não apaga registros e pode ser
-executado novamente. As contas `demo.c111.*` são fictícias, não são
+cria registros sintéticos, incluindo um equipamento inativo para contrastar o
+filtro de situação; não apaga registros e pode ser executado novamente. Códigos,
+usuários e marcadores levam `DEMO`/`DEMO:C1.11`; as categorias têm nomes simples
+(como "Sala de aula" e "Audiovisual"), porque aparecem nos filtros do frontend, e
+são reconhecidas como sintéticas pela descrição. As contas `demo.c111.*` são fictícias, não são
 staff nem superusuários e recebem senha inutilizável; não há credencial demo
 fixa. Crie uma conta administrativa própria com `createsuperuser`.
 

@@ -60,17 +60,22 @@ class PopularDemoCommandTests(TestCase):
                 username__startswith=DEMO_USER_PREFIX,
             ).exists()
         )
+        # Nomes sem prefixo, sem repetição; os sintéticos têm a descrição DEMO.
         self.assertEqual(
-            CategoriaAmbiente.objects.filter(
-                nome__startswith="DEMO C1.11"
-            ).count(),
-            3,
+            sorted(
+                CategoriaAmbiente.objects.filter(
+                    descricao__startswith="Dado sintético"
+                ).values_list("nome", flat=True)
+            ),
+            ["Auditório", "Laboratório de informática", "Sala de aula", "Sala de reunião"],
         )
         self.assertEqual(
-            CategoriaEquipamento.objects.filter(
-                nome__startswith="DEMO C1.11"
-            ).count(),
-            3,
+            sorted(
+                CategoriaEquipamento.objects.filter(
+                    descricao__startswith="Dado sintético"
+                ).values_list("nome", flat=True)
+            ),
+            ["Audiovisual", "Informática", "Áudio"],
         )
         self.assertEqual(Ambiente.objects.filter(codigo__startswith="DEMO-").count(), 3)
         self.assertEqual(
@@ -80,7 +85,7 @@ class PopularDemoCommandTests(TestCase):
         self.assertFalse(equipamento_inativo.ativo)
         self.assertEqual(
             equipamento_inativo.categoria.nome,
-            "DEMO C1.11 — Audiovisual",
+            "Audiovisual",
         )
 
         demo_reservations = Reserva.objects.filter(
@@ -134,7 +139,7 @@ class PopularDemoCommandTests(TestCase):
         self.assertEqual(laboratorio.nome, "Laboratório 101")
         self.assertEqual(laboratorio.predio, "DCC")
         self.assertEqual(laboratorio.capacidade, 30)
-        self.assertEqual(laboratorio.categoria.nome, "Laboratório")
+        self.assertEqual(laboratorio.categoria.nome, "Laboratório de informática")
         self.assertEqual(
             laboratorio.responsavel.username, DEMO_USER_PREFIX + "responsavel.02"
         )
@@ -182,7 +187,7 @@ class PopularDemoCommandTests(TestCase):
 
     def test_colisao_de_chave_natural_real_falha_sem_alterar_o_registro(self):
         existing = CategoriaAmbiente.objects.create(
-            nome="DEMO C1.11 — Sala de aula",
+            nome="Sala de aula",
             descricao="Categoria real preexistente.",
         )
 

@@ -43,8 +43,8 @@ class Command(BaseCommand):
             )
         }
         users = self._create_users(groups)
-        _, environments = self._create_environments(users)
-        self._create_campus_rooms(users)
+        categories, environments = self._create_environments(users)
+        self._create_campus_rooms(users, categories)
         equipment = self._create_equipment()
         reservations = self._create_reservations(users, environments)
         self._create_reservation_equipment(reservations, equipment)
@@ -148,14 +148,19 @@ class Command(BaseCommand):
             )
         return result
 
+    # Categorias compartilhadas pelos ambientes DEMO-AMB e pelas salas do
+    # mapa. Os nomes aparecem nos filtros do frontend, por isso não levam
+    # prefixo; os registros sintéticos são reconhecidos pela descrição.
+    ENVIRONMENT_CATEGORIES = (
+        ("sala", "Sala de aula"),
+        ("reuniao", "Sala de reunião"),
+        ("laboratorio", "Laboratório de informática"),
+        ("auditorio", "Auditório"),
+    )
+
     def _create_environments(self, users):
         categories = {}
-        for suffix, label in (
-            ("sala", "Sala de aula"),
-            ("laboratorio", "Laboratório de informática"),
-            ("auditorio", "Auditório"),
-        ):
-            name = f"DEMO C1.11 — {label}"
+        for suffix, name in self.ENVIRONMENT_CATEGORIES:
             categories[suffix] = self._record(
                 CategoriaAmbiente,
                 {"nome": name},
@@ -244,23 +249,8 @@ class Command(BaseCommand):
         ("AMB-006", "Sala 102", 60, "sala", "DCC"),
         ("AMB-022", "Sala 103", 16, "reuniao", "DCC"),
     )
-    CAMPUS_CATEGORIES = (
-        ("sala", "Sala de aula"),
-        ("reuniao", "Sala de reunião"),
-        ("laboratorio", "Laboratório"),
-    )
 
-    def _create_campus_rooms(self, users):
-        categories = {
-            suffix: self._record(
-                CategoriaAmbiente,
-                {"nome": name},
-                {"descricao": DEMO_DESCRIPTION},
-                "descricao",
-                DEMO_DESCRIPTION,
-            )
-            for suffix, name in self.CAMPUS_CATEGORIES
-        }
+    def _create_campus_rooms(self, users, categories):
         buildings = {
             code: (full_name, responsible)
             for code, full_name, responsible in self.CAMPUS_BUILDINGS
@@ -288,9 +278,9 @@ class Command(BaseCommand):
 
     def _create_equipment(self):
         category_specs = (
-            ("audiovisual", "DEMO C1.11 — Audiovisual"),
-            ("informatica", "DEMO C1.11 — Informática"),
-            ("audio", "DEMO C1.11 — Áudio"),
+            ("audiovisual", "Audiovisual"),
+            ("informatica", "Informática"),
+            ("audio", "Áudio"),
         )
         equipment_categories = {}
         for suffix, name in category_specs:
