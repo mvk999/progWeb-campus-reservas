@@ -121,6 +121,30 @@ class PopularDemoCommandTests(TestCase):
         self.assertEqual(unrelated_user.email, "pessoa@example.invalid")
         self.assertEqual(unrelated_category.descricao, "Registro preexistente.")
 
+    def test_cria_as_salas_do_mapa_do_campus(self):
+        self.populate_demo()
+
+        salas = Ambiente.objects.filter(codigo__startswith="AMB-")
+        self.assertEqual(salas.count(), 21)
+        self.assertEqual(
+            set(salas.values_list("predio", flat=True)),
+            {"PV1", "PV2", "PV3", "PV4", "PV5", "PV6", "DCC"},
+        )
+        laboratorio = Ambiente.objects.get(codigo="AMB-002")
+        self.assertEqual(laboratorio.nome, "Laboratório 101")
+        self.assertEqual(laboratorio.predio, "DCC")
+        self.assertEqual(laboratorio.capacidade, 30)
+        self.assertEqual(laboratorio.categoria.nome, "Laboratório")
+        self.assertEqual(
+            laboratorio.responsavel.username, DEMO_USER_PREFIX + "responsavel.02"
+        )
+        self.assertEqual(
+            Ambiente.objects.get(codigo="AMB-003").responsavel.username,
+            DEMO_USER_PREFIX + "responsavel.01",
+        )
+        for sala in salas:
+            sala.full_clean()
+
     def test_reexecucao_nao_duplica_nem_sobrescreve_registros_existentes(self):
         unrelated_user = User.objects.create_user(username="usuario-fora-da-demo")
         unrelated_user.first_name = "Nome preservado"
