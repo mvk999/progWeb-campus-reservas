@@ -20,6 +20,9 @@ navegável do DRF, útil para testar os endpoints sem o frontend.
   front e back ficam na mesma origem e não é preciso CORS.
 - **CSRF:** toda requisição `POST` deve enviar o cabeçalho `X-CSRFToken`
   com o valor do cookie `csrftoken`. O cookie é criado por `GET /api/csrf/`.
+  Login e cadastro também exigem o token. O Django troca o token a cada
+  login, então o frontend deve sempre ler o valor atual do cookie, e não
+  guardar uma cópia.
 - **Status de reserva:** `status` traz o código (`PENDENTE`, `APROVADA`,
   `REJEITADA`, `CANCELADA`, `CONCLUIDA`) e `statusLabel` traz o texto para
   exibição (`Pendente`, `Aprovada`...).
@@ -123,10 +126,20 @@ nesse caso, e assim o frontend sabe quando redirecionar para o login.
 | Método | Rota | Acesso | Descrição |
 | --- | --- | --- | --- |
 | GET | `/api/csrf/` | Público | Cria o cookie `csrftoken`. Resposta: `{"csrfToken": "..."}` |
-| POST | `/api/auth/login/` | Público | Corpo: `{"username", "password"}`. 200 com o usuário; 400 se as credenciais forem inválidas ou a conta estiver inativa. |
+| POST | `/api/auth/login/` | Público | Corpo: `{"username", "password"}`. 200 com o usuário; 400 com `{"non_field_errors": ["Usuário ou senha inválidos."]}` para senha errada, usuário inexistente ou conta inativa (a mesma mensagem nos três casos). |
 | POST | `/api/auth/logout/` | Autenticado | Encerra a sessão. 204 sem corpo. |
-| POST | `/api/auth/cadastro/` | Público | Corpo: `{"username", "email", "firstName", "lastName", "password", "passwordConfirmation"}`. Cria o usuário no grupo `Solicitante`, já autenticado. 201 com o usuário; 400 com os erros por campo (inclui as regras de senha do Django). |
+| POST | `/api/auth/cadastro/` | Público | Corpo: `{"username", "email", "firstName", "lastName", "password", "passwordConfirmation"}`. Todos obrigatórios. Cria o usuário no grupo `Solicitante`, já autenticado. 201 com o usuário; 400 com os erros por campo. |
 | GET | `/api/auth/me/` | Autenticado | 200 com o usuário logado; 401 se não houver sessão. |
+
+Regras do cadastro:
+
+- `username` e `email` não podem repetir, sem diferenciar maiúsculas de
+  minúsculas; `username` aceita letras, números e `@ . + - _`.
+- A senha passa pelas regras do Django (`AUTH_PASSWORD_VALIDATORS`): pelo
+  menos 8 caracteres, não pode ser só números, comum demais ou parecida com
+  o nome ou o e-mail.
+- Campos como `is_staff` ou `profile` enviados no corpo são ignorados: todo
+  cadastro novo é um solicitante comum.
 
 ### Ambientes e equipamentos (consulta)
 
