@@ -165,8 +165,19 @@ Resposta da disponibilidade:
 }
 ```
 
-Só reservas `APROVADA` e bloqueios impedem uma aprovação; `PENDENTE` é
-informativo.
+- `type` é `APROVADA`, `PENDENTE` ou `BLOQUEIO`; reservas rejeitadas,
+  canceladas e concluídas não aparecem. Só `APROVADA` e `BLOQUEIO` impedem
+  uma aprovação; `PENDENTE` é informativo.
+- Os intervalos vêm em ordem de início. Um intervalo que começa no dia
+  anterior ou termina no seguinte é cortado nos limites do dia: `00:00` e
+  `24:00`.
+- `date` é obrigatório; ausente ou inválido responde 400 com
+  `{"date": ["..."]}`.
+
+Filtros da listagem: `category` e `building` comparam o texto inteiro sem
+diferenciar maiúsculas; `q` busca parte do texto; `minimumCapacity` precisa
+ser um inteiro maior ou igual a 1 (senão, 400). Categorias e equipamentos vêm
+em ordem alfabética de nome e de código, respectivamente.
 
 ### Reservas do usuário logado
 
