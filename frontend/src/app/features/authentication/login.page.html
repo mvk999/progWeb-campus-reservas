@@ -1,36 +1,28 @@
 <section class="login-page" aria-labelledby="page-title">
   <header class="login-heading">
-    <h1 id="page-title">Acessar o Campus Reservas</h1>
-    <p>Escolha um perfil para usar a demonstração.</p>
+    <h1 id="page-title">Entrar</h1>
+    <p>Acesse suas reservas e os ambientes do campus.</p>
   </header>
 
-  <div class="profile-list" role="group" aria-label="Perfis de acesso">
-    <button type="button" (click)="enterProfile('solicitante')">
-      <span>
-        <strong>Solicitante</strong>
-        <small>Consulte salas e registre solicitações de reserva.</small>
-      </span>
-      <span class="profile-arrow" aria-hidden="true">›</span>
+  <form class="login-card" (submit)="submit($event)" novalidate>
+    <label class="login-field">
+      <span>Usuário</span>
+      <input name="username" autocomplete="username" required [value]="username()" (input)="updateUsername($event)"
+        [attr.aria-invalid]="messages('username').length ? 'true' : null" />
+      @for (message of messages('username'); track message) { <small class="field-error">{{ message }}</small> }
+    </label>
+    <label class="login-field">
+      <span>Senha</span>
+      <input name="password" type="password" autocomplete="current-password" required [value]="password()"
+        (input)="updatePassword($event)" [attr.aria-invalid]="messages('password').length ? 'true' : null" />
+      @for (message of messages('password'); track message) { <small class="field-error">{{ message }}</small> }
+    </label>
+    @for (message of messages('non_field_errors'); track message) { <p class="error-message" role="alert">{{ message }}</p> }
+    <button class="btn btn-success w-100" type="submit" [disabled]="submitting()">
+      {{ submitting() ? 'Entrando…' : 'Entrar' }}
     </button>
-    <button type="button" (click)="enterProfile('responsavel')">
-      <span>
-        <strong>Responsável</strong>
-        <small>Analise solicitações e consulte o calendário de ocupação.</small>
-      </span>
-      <span class="profile-arrow" aria-hidden="true">›</span>
-    </button>
-    <button type="button" (click)="enterProfile('administrador')">
-      <span>
-        <strong>Administrador</strong>
-        <small>Consulte o cadastro dos ambientes.</small>
-      </span>
-      <span class="profile-arrow" aria-hidden="true">›</span>
-    </button>
-  </div>
+  </form>
 
-  @if (storageError()) {
-    <p class="error-message" role="alert">{{ storageError() }}</p>
-  }
-
+  <p class="register-prompt">Ainda não tem acesso? <a routerLink="/cadastro">Criar uma conta</a></p>
   <a class="map-link" routerLink="/mapa">Voltar ao mapa</a>
 </section>

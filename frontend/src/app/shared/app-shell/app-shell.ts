@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ProfileMenu } from '../profile-menu/profile-menu';
-import { DemoProfileService } from '../../features/authentication/demo-profile.service';
+import { AuthService } from '../../features/authentication/auth.service';
 import { DemoResetService } from './demo-reset.service';
 import { ThemeService } from '../../core/theme.service';
 import { filter } from 'rxjs';
@@ -14,7 +14,7 @@ import { filter } from 'rxjs';
   styleUrl: './app-shell.scss',
 })
 export class AppShell {
-  protected readonly profile = inject(DemoProfileService);
+  protected readonly auth = inject(AuthService);
   protected readonly theme = inject(ThemeService);
   private readonly router = inject(Router);
   private readonly resetService = inject(DemoResetService);
@@ -31,10 +31,6 @@ export class AppShell {
     this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe((event) => {
       this.legacyRoute.set((event as NavigationEnd).urlAfterRedirects.startsWith('/versao-anterior'));
     });
-  }
-
-  protected openFooterProfileMenu(event: Event): void {
-    this.profileMenu?.openFromExternalTrigger(event.currentTarget as HTMLElement);
   }
 
   protected requestDemoReset(): void {
@@ -57,7 +53,6 @@ export class AppShell {
       this.resetError.set(result.message);
       return;
     }
-    this.profile.resetToDefault();
     this.resetDialogOpen.set(false);
     this.changeDetector.detectChanges();
     void this.router.navigateByUrl('/mapa');
