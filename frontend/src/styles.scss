@@ -24,6 +24,24 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+[data-bs-theme='dark'] {
+  color-scheme: dark;
+  --page-background: #151c18;
+  --surface: #202a24;
+  --text: #e6eee8;
+  --text-muted: #b0c0b5;
+  --border: #3d4c42;
+  --accent: #83bd98;
+  --accent-muted: #9bc9aa;
+  --focus-ring: #a9dbb8;
+  --shadow-soft: 0 1px 2px #0003;
+  --bs-body-bg: var(--page-background);
+  --bs-body-color: var(--text);
+  --bs-border-color: var(--border);
+  --bs-secondary-color: var(--text-muted);
+  --bs-tertiary-bg: var(--surface);
+}
+
 *,
 *::before,
 *::after {
@@ -38,6 +56,9 @@ body {
   min-height: 100dvh;
   margin: 0;
   line-height: 1.5;
+  font-family: var(--font-sans);
+  color: var(--text);
+  background: var(--page-background);
 }
 
 button,
@@ -56,6 +77,28 @@ textarea {
 ::selection {
   background: #d7eadf;
   color: #153e2a;
+}
+
+[data-bs-theme='dark'] :is(.app-header, .app-footer, .building-sidebar, .map-card,
+  .geographic-card, .timeline, .query-panel, .request-form, .request-summary,
+  .reservation-card, .calendar-panel, .login-card, .access-card, .profile-dialog,
+  .room-card, .availability-panel, .environment-panel, .admin-panel) {
+  border-color: var(--border);
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+[data-bs-theme='dark'] :is(input, select, textarea, .field input, .field select,
+  .building-search, .search-field, .timeline__durations button) {
+  border-color: var(--border);
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+[data-bs-theme='dark'] :is(.page-content, .geographic-stage, .map-canvas,
+  .map-card__footer, .geographic-footer) {
+  background-color: var(--page-background);
+  color: var(--text);
 }
 
 .app-shell--legacy {

@@ -3,6 +3,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { ProfileMenu } from '../profile-menu/profile-menu';
 import { DemoProfileService } from '../../features/authentication/demo-profile.service';
 import { DemoResetService } from './demo-reset.service';
+import { ThemeService } from '../../core/theme.service';
 import { filter } from 'rxjs';
 
 @Component({
@@ -14,6 +15,7 @@ import { filter } from 'rxjs';
 })
 export class AppShell {
   protected readonly profile = inject(DemoProfileService);
+  protected readonly theme = inject(ThemeService);
   private readonly router = inject(Router);
   private readonly resetService = inject(DemoResetService);
   private readonly changeDetector = inject(ChangeDetectorRef);

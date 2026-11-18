@@ -2,19 +2,24 @@
   @if (!legacyRoute()) {
   <a class="skip-link" href="#main">Ir para o conte&#250;do</a>
   <header class="app-header">
-    <div class="app-header__top shell-container">
+    <div class="app-header__top shell-container container-fluid d-flex align-items-center">
       <a class="brand" routerLink="/mapa" aria-label="Campus Reservas — UFLA">
         <span class="brand__word">campus</span>
         <span class="brand__name">RESERVAS</span>
         <span class="brand__context">UFLA · Salas</span>
       </a>
 
-      <p class="app-header__location">Campus sede · Lavras, MG</p>
+      <p class="app-header__location d-none d-md-block">Campus sede · Lavras, MG</p>
+      <button class="theme-toggle btn btn-outline-secondary btn-sm" type="button"
+        [attr.aria-label]="theme.isDark() ? 'Ativar tema claro' : 'Ativar tema escuro'"
+        [attr.aria-pressed]="theme.isDark()" (click)="theme.toggle()">
+        {{ theme.isDark() ? 'Claro' : 'Escuro' }}
+      </button>
       <div class="profile-slot"><app-profile-menu /></div>
     </div>
 
     <nav class="primary-nav" aria-label="Navegação principal">
-      <div class="primary-nav__inner shell-container">
+      <div class="primary-nav__inner shell-container container-fluid d-flex align-items-center">
         <a
           routerLink="/mapa"
           routerLinkActive="is-active"

@@ -69,6 +69,11 @@
   margin-left: auto;
 }
 
+.theme-toggle {
+  flex: none;
+  min-height: 2.5rem;
+}
+
 .primary-nav {
   border-block: 1px solid var(--border);
 }
