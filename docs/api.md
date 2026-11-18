@@ -223,19 +223,60 @@ O solicitante é sempre o usuário logado e o status inicial é sempre
 
 ### Gestão (responsável e administrador)
 
-| Método | Rota | Acesso | Descrição |
-| --- | --- | --- | --- |
-| GET | `/api/gestao/reservas/` | Responsável ou administrador | Reservas dos ambientes sob responsabilidade do usuário (administrador vê todas). Filtros: `?status=PENDENTE`, `?environment=<code>`, `?date=AAAA-MM-DD`. |
-| POST | `/api/gestao/reservas/<id>/aprovar/` | Responsável pelo ambiente ou administrador | Aprova. 400 se houver conflito com reserva aprovada ou bloqueio. |
-| POST | `/api/gestao/reservas/<id>/rejeitar/` | Responsável pelo ambiente ou administrador | Corpo: `{"justification": "..."}` (obrigatória). |
-| GET | `/api/gestao/ocupacao/?start=AAAA-MM-DD&end=AAAA-MM-DD` | Responsável ou administrador | Reservas `PENDENTE`/`APROVADA` e bloqueios do período, para o calendário de ocupação. |
+Rotas liberadas para quem tem perfil `responsavel` ou `administrador`
+(demais usuários recebem 403). O responsável só enxerga e avalia reservas dos
+ambientes pelos quais responde; reservas de outros ambientes retornam 404. O
+administrador enxerga e avalia todas.
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| GET | `/api/gestao/reservas/` | Reservas dos ambientes geridos, em ordem de início. Filtros opcionais: `?status=PENDENTE` (qualquer status), `?environment=<code>`, `?date=AAAA-MM-DD`. Valor inválido responde 400. |
+| POST | `/api/gestao/reservas/<id>/aprovar/` | Aprova uma reserva `PENDENTE` que ainda não começou. 200 com a reserva atualizada. |
+| POST | `/api/gestao/reservas/<id>/rejeitar/` | Corpo: `{"justification": "..."}` (obrigatória). Rejeita uma reserva `PENDENTE`. 200 com a reserva atualizada. |
+| GET | `/api/gestao/ocupacao/?start=AAAA-MM-DD&end=AAAA-MM-DD` | Reservas `PENDENTE`/`APROVADA` e bloqueios dos ambientes geridos no período (até 62 dias), para o calendário de ocupação. |
+
+As reservas da gestão têm o mesmo formato do objeto Reserva, mais o campo
+`hasConflict`: `true` quando a reserva está pendente e se sobrepõe a uma
+reserva aprovada ou a um bloqueio do ambiente, ou seja, a aprovação vai ser
+recusada.
 
 Aprovar e rejeitar preenchem `avaliado_por` (usuário logado) e `avaliado_em`
-(momento atual). Ninguém avalia a própria reserva. A aprovação usa
-`transaction.atomic()` e `select_for_update()` para que duas aprovações
-simultâneas não passem pela validação ao mesmo tempo.
+(momento atual) e passam pelas regras dos `clean()` do modelo. Erros com 400:
 
-Reservas de ambientes de outro responsável retornam 404.
+| Situação | Chave do erro |
+| --- | --- |
+| Reserva não está pendente, ou (na aprovação) já começou | `non_field_errors` |
+| Conflito com reserva aprovada ou bloqueio | `non_field_errors` |
+| O avaliador é o próprio solicitante | `non_field_errors` |
+| Estoque insuficiente de algum equipamento no horário | `equipments` (mensagem começa com o código do equipamento) |
+| Rejeição sem justificativa | `justification` |
+
+As avaliações rodam em `transaction.atomic()`. Com o SQLite em modo
+`IMMEDIATE` (ver `DATABASES` em `config/settings.py`), duas aprovações
+simultâneas rodam uma de cada vez, e a segunda já enxerga a primeira ao
+validar conflitos e estoque.
+
+Resposta da ocupação:
+
+```json
+{
+  "start": "2026-11-20",
+  "end": "2026-11-21",
+  "items": [
+    {"id": "reserva-12", "date": "2026-11-20", "startTime": "08:00", "endTime": "10:00",
+     "type": "APROVADA", "environmentCode": "PV1-101", "environmentName": "Sala 101",
+     "buildingCode": "PV1"},
+    {"id": "bloqueio-3", "date": "2026-11-20", "startTime": "20:00", "endTime": "24:00",
+     "type": "BLOQUEIO", "reason": "Evento", "environmentCode": "PV1-101",
+     "environmentName": "Sala 101", "buildingCode": "PV1"}
+  ]
+}
+```
+
+Itens que atravessam a meia-noite aparecem uma vez em cada dia, cortados em
+`00:00` e `24:00`. Os itens vêm ordenados por data, horário de início e
+ambiente. `start` e `end` são obrigatórios; `end` não pode ser anterior a
+`start`.
 
 ## Mudanças no banco previstas
 

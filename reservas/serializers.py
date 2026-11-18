@@ -95,6 +95,35 @@ class ReservaSerializer(serializers.ModelSerializer):
         return reserva.pode_ser_cancelada_por(usuario)
 
 
+class ReservaGestaoSerializer(ReservaSerializer):
+    """Reserva vista pela gestão: indica se o pedido conflita com a agenda."""
+
+    hasConflict = serializers.SerializerMethodField()
+
+    class Meta(ReservaSerializer.Meta):
+        fields = ReservaSerializer.Meta.fields + ("hasConflict",)
+        read_only_fields = fields
+
+    def get_hasConflict(self, reserva):
+        """Pendente sobreposta a reserva aprovada ou bloqueio do ambiente.
+
+        Avisa o responsável de que a aprovação vai ser recusada.
+        """
+        if reserva.status != Reserva.Status.PENDENTE:
+            return False
+        sobrepostos = {
+            "ambiente_id": reserva.ambiente_id,
+            "inicio__lt": reserva.fim,
+            "fim__gt": reserva.inicio,
+        }
+        return (
+            Reserva.objects.filter(status=Reserva.Status.APROVADA, **sobrepostos)
+            .exclude(pk=reserva.pk)
+            .exists()
+            or BloqueioAmbiente.objects.filter(**sobrepostos).exists()
+        )
+
+
 class ItemEquipamentoSerializer(serializers.Serializer):
     code = serializers.CharField()
     quantity = serializers.IntegerField(min_value=1)
