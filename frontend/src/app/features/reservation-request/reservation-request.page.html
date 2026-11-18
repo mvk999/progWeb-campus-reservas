@@ -1,4 +1,8 @@
-@if (environment(); as room) {
+@if (loading()) {
+  <p role="status">Carregando ambiente…</p>
+} @else if (loadError()) {
+  <section class="not-found" role="alert"><h1>Não foi possível carregar o ambiente</h1><p>{{ loadError() }}</p><a routerLink="/salas">Voltar às salas</a></section>
+} @else if (environment(); as room) {
   <section class="reservation-request" aria-labelledby="page-title">
     <nav class="breadcrumb" aria-label="Caminho de navegação">
       <a routerLink="/mapa">Início</a><span aria-hidden="true">/</span>
@@ -10,7 +14,7 @@
     <header class="request-heading">
       <p class="page-eyebrow">{{ room.category }} · {{ room.code }}</p>
       <h1 id="page-title">Solicitar reserva</h1>
-      <p>A solicitação de demonstração será salva neste navegador.</p>
+      <p>Envie seu pedido para análise do responsável pelo ambiente.</p>
     </header>
 
     <div class="request-layout">
@@ -22,7 +26,7 @@
         @if (success()) {
           <section class="success-message" role="status" aria-live="polite">
             <span class="success-mark" aria-hidden="true">✓</span>
-            <div><h2>Solicitação registrada</h2><p>Os dados foram salvos neste navegador.</p></div>
+            <div><h2>Solicitação registrada</h2><p>Pedido #{{ success()?.id }} · {{ success()?.statusLabel }}.</p></div>
           </section>
         }
         @if (storageError()) {<p class="storage-error" role="alert" aria-live="assertive">{{ storageError() }}</p>}
@@ -51,6 +55,20 @@
             <textarea id="observations" rows="3" [value]="observations()" (input)="setObservations($event)"></textarea>
           </label>
 
+          @if (equipment().length) {
+            <fieldset class="field equipment-field">
+              <legend>Equipamentos <em>Opcional</em></legend>
+              @for (item of equipment(); track item.code) {
+                <label class="equipment-option" [for]="'equipment-' + item.code">
+                  <span>{{ item.name }} <small>{{ item.totalQuantity }} disponíveis</small></span>
+                  <input [id]="'equipment-' + item.code" type="number" min="0" [max]="item.totalQuantity"
+                    [value]="equipmentQuantity(item.code)" (input)="setEquipmentQuantity(item.code, $event)" />
+                </label>
+              }
+            </fieldset>
+          }
+          @if (equipmentError()) { <p class="field-error" role="alert">{{ equipmentError() }}</p> }
+
           @if (attempted() && errors().period) {
             <p class="field-error period-error" id="period-error" role="alert">{{ errors().period }}</p>
           }
@@ -65,7 +83,7 @@
 
           <div class="form-actions">
             <a class="button button--quiet" [routerLink]="changePeriodRoute()" [queryParams]="changePeriodQueryParams()">Cancelar</a>
-            <button class="button button--primary" type="submit" [disabled]="success()">Enviar solicitação</button>
+            <button class="button button--primary" type="submit" [disabled]="success() || submitting()">{{ submitting() ? 'Enviando…' : 'Enviar solicitação' }}</button>
           </div>
         </form>
       </div>
@@ -77,10 +95,7 @@
           <div><dt>Data</dt><dd>{{ formattedDate() }}</dd></div>
           <div><dt>Horário</dt><dd>{{ startTime() }}–{{ endTime() }}</dd></div>
           <div><dt>Duração</dt><dd>{{ durationLabel() }}</dd></div>
-          <div><dt>Responsável</dt><dd>{{ summary().responsible }}</dd></div>
-          <div><dt>Previsão de aprovação</dt><dd>{{ summary().approvalForecast }}</dd></div>
         </dl>
-        @if (requestCount() > 0) {<p class="local-count">Solicitações neste navegador: {{ requestCount() }}</p>}
       </aside>
     </div>
   </section>

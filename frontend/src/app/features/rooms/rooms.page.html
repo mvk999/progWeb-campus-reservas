@@ -5,8 +5,11 @@
   </nav>
   <header class="page-heading">
     <h1 id="page-title">Salas</h1>
-    <p class="demo-disclaimer">Dados demonstrativos. Os horários e a disponibilidade não são reais.</p>
+    <p>Ambientes e horários consultados no sistema de reservas.</p>
   </header>
+
+  @if (roomsService.loading()) { <p role="status">Carregando ambientes do campus…</p> }
+  @if (roomsService.error()) { <p class="error-message" role="alert">{{ roomsService.error() }} @if (roomsService.loginRequired()) { <a routerLink="/login">Entrar</a> } @else { <button type="button" (click)="roomsService.loadRooms()">Tentar novamente</button> }</p> }
 
   <form class="query-panel" aria-labelledby="query-title" (submit)="applyFilters($event)" novalidate>
     <div class="panel-title">
@@ -19,9 +22,9 @@
     </div>
     <div class="filter-grid">
       <label class="field"><span>Data</span><input type="date" [value]="queryDate()" (input)="updateDate($event)" [attr.aria-invalid]="dateInvalid() ? 'true' : null" [attr.aria-describedby]="dateInvalid() ? 'query-error' : null" /></label>
-      <label class="field"><span>Campus</span><select [value]="draftFilters().campus" (change)="updateDraftFilter('campus', $any($event.target).value)"><option value="">Todos os locais</option><option value="UFLA · Campus sede">UFLA · Campus sede</option></select></label>
+      <label class="field"><span>Campus</span><select [value]="draftFilters().campus" (change)="updateDraftFilter('campus', $any($event.target).value)"><option value="UFLA">UFLA · Campus sede</option></select></label>
       <label class="field"><span>Prédio</span><select [value]="draftFilters().building" (change)="updateDraftFilter('building', $any($event.target).value)"><option value="">Todos os prédios</option>@for (code of buildingOptions(); track code) {<option [value]="code">{{ code }} · {{ buildingName(code) }}</option>}</select></label>
-      <label class="field"><span>Tipo de ambiente</span><select [value]="draftFilters().category" (change)="updateDraftFilter('category', $any($event.target).value)"><option value="">Todos os tipos</option>@for (category of ['Sala de aula', 'Sala de reunião', 'Laboratório', 'Sala de estudo']; track category) {<option [value]="category">{{ category }}</option>}</select></label>
+      <label class="field"><span>Tipo de ambiente</span><select [value]="draftFilters().category" (change)="updateDraftFilter('category', $any($event.target).value)"><option value="">Todos os tipos</option>@for (category of roomsService.categories(); track category) {<option [value]="category">{{ category }}</option>}</select></label>
       <label class="field"><span>Quantidade de pessoas</span><select [value]="draftFilters().minimumCapacity ?? ''" (change)="updateDraftFilter('minimumCapacity', $any($event.target).value)"><option value="">Qualquer capacidade</option><option value="10">10 pessoas ou mais</option><option value="20">20 pessoas ou mais</option><option value="40">40 pessoas ou mais</option><option value="60">60 pessoas ou mais</option></select></label>
     </div>
     <button class="refine-button" type="button" [attr.aria-expanded]="advancedOpen()" (click)="toggleAdvanced()"><span aria-hidden="true">{{ advancedOpen() ? '−' : '+' }}</span> Filtros avançados</button>
@@ -29,7 +32,6 @@
       <div class="advanced-panel">
         <div><span class="field-title">Período para filtrar</span><div class="time-fields"><label class="field"><span>Das</span><input type="time" [value]="searchStart()" (input)="updateStart($event)" [attr.aria-invalid]="timeInvalid() ? 'true' : null" [attr.aria-describedby]="timeInvalid() ? 'query-error' : null" /></label><label class="field"><span>Às</span><input type="time" [value]="searchEnd()" (input)="updateEnd($event)" [attr.aria-invalid]="timeInvalid() ? 'true' : null" [attr.aria-describedby]="timeInvalid() ? 'query-error' : null" /></label></div></div>
         <label class="check-field"><input type="checkbox" [checked]="onlyAvailable()" (change)="onlyAvailable.set($any($event.target).checked)" /> Somente disponíveis neste período</label>
-        <div class="feature-checks"><span class="field-title">Características</span><div class="check-list">@for (feature of advancedFeatureOptions; track feature) {<label class="check-field"><input type="checkbox" [checked]="advancedFeatures().includes(feature)" (change)="toggleFeature(feature, $any($event.target).checked)" /> {{ feature }}</label>}</div></div>
       </div>
     }
     <div class="query-actions">
@@ -45,6 +47,7 @@
     <div class="week-strip"><button type="button" aria-label="Semana anterior" (click)="moveWeek(-1)">‹</button>@for (day of weekDays(); track day.date) {<button type="button" class="week-day" [class.week-day--selected]="selectedDay() === day.date" [attr.aria-pressed]="selectedDay() === day.date" (click)="setDay(day.date)"><span>{{ day.shortName }}</span><strong>{{ day.dayNumber }}</strong></button>}<button type="button" aria-label="Próxima semana" (click)="moveWeek(1)">›</button></div>
     <div class="tools-row"><label class="search"><span aria-hidden="true">⌕</span><input type="search" aria-label="Buscar por nome ou localização" placeholder="Buscar por nome ou localização" [value]="searchTerm()" (input)="updateSearch($event)" /></label><div class="view-toggle" role="group" aria-label="Visualização"><button type="button" [class.is-active]="viewMode() === 'cards'" [attr.aria-pressed]="viewMode() === 'cards'" (click)="toggleView('cards')">Cards</button><button type="button" [class.is-active]="viewMode() === 'agenda'" [attr.aria-pressed]="viewMode() === 'agenda'" (click)="toggleView('agenda')">Agenda</button><button type="button" [class.is-active]="viewMode() === 'lista'" [attr.aria-pressed]="viewMode() === 'lista'" (click)="toggleView('lista')">Lista</button></div></div>
     <div class="results-heading"><span>{{ filteredRooms().length }} ambientes</span><label>Ordenar por <select [value]="sortOrder()" (change)="setSort($event)"><option value="nome">Nome</option><option value="capacidade">Capacidade</option></select></label></div>
+    @if (roomsService.availabilityLoading()) { <p role="status">Consultando disponibilidade para {{ selectedDateLabel() }}…</p> }
     @if (filteredRooms().length === 0) {
       <div class="empty-state"><h3>Nenhum recurso encontrado</h3><p>Altere os filtros ou pesquise por outro nome.</p><button type="button" class="button button--quiet" (click)="clearFilters()">Limpar filtros</button></div>
      } @else if (viewMode() === 'cards') {

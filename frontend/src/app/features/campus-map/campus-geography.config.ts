@@ -1,4 +1,4 @@
-/** Geographic data is independent from the demonstration reservation catalog. */
+/** Geographic basemap data is separate from the live reservation API. */
 export const CAMPUS_GEOGRAPHY = {
   center: [-44.9763, -21.227] as [number, number],
   zoom: 15.8,

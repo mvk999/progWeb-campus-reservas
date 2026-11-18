@@ -1,27 +1,14 @@
-export interface EnvironmentDetail {
-  readonly code: string;
-  readonly name: string;
-  readonly category: string;
-  readonly buildingCode: string;
-  readonly buildingName: string;
-  readonly location: string;
-  readonly capacity: number;
-  readonly features: readonly string[];
-}
+import { ApiEnvironment } from '../../core/campus-api.service';
 
-export type PeriodAvailability = 'available' | 'unavailable' | 'unknown';
+export type PeriodAvailability = 'available' | 'pending' | 'unavailable';
 
-export interface DemonstrationPeriod {
+export interface AvailabilityPeriod {
   readonly startTime: string;
   readonly endTime: string;
   readonly availability: PeriodAvailability;
 }
 
-export interface DemonstrationAvailability {
-  readonly environmentCode: string;
-  readonly date: string;
-  readonly periods: readonly DemonstrationPeriod[];
-}
+export type EnvironmentDetail = ApiEnvironment & { readonly buildingName: string; readonly buildingFullName: string };
 
 export interface CalendarDay {
   readonly date: string;

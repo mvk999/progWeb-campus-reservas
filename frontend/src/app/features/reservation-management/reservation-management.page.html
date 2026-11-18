@@ -3,17 +3,18 @@
 
   <header class="page-heading">
     <div><h1 id="page-title">Gestão de solicitações</h1>
-      <p>Solicitações de demonstração.</p></div>
+      <p>Solicitações recebidas para os ambientes sob sua responsabilidade.</p></div>
     <a class="calendar-link" routerLink="/calendario">Calendário de ocupação <span aria-hidden="true">→</span></a>
   </header>
 
   <div class="metrics" aria-label="Resumo">
     <article class="metric"><span>Aguardando aprovação</span><strong>{{ pendingCount() }}</strong></article>
     <article class="metric"><span>Aprovadas</span><strong>{{ approvedCount() }}</strong></article>
-    <article class="metric"><span>Recursos sob gestão</span><strong>{{ managedResourceCount }}</strong></article>
+    <article class="metric"><span>Recursos sob gestão</span><strong>{{ managedResourceCount() }}</strong></article>
   </div>
 
-  @if (storageError()) {<p class="storage-error" role="alert">{{ storageError() }} Decisões locais não foram carregadas; ações estão desabilitadas.</p>}
+  @if (loading()) { <p role="status">Carregando solicitações da API…</p> }
+  @if (storageError()) {<p class="storage-error" role="alert">{{ storageError() }} <button type="button" (click)="loadRequests()">Tentar novamente</button></p>}
   @if (toast()) {<p class="decision-toast" role="status" aria-live="polite"><span>{{ toast() }}</span><button type="button" aria-label="Fechar aviso" (click)="clearToast()">×</button></p>}
 
   <section class="requests-section" aria-labelledby="requests-title">
@@ -30,7 +31,7 @@
             @for (request of visibleRequests(); track trackRequest($index, request)) {
               <tr>
                 <td><strong>{{ request.requesterLabel }}</strong><small>{{ request.id }}</small></td>
-                <td><strong>{{ request.environmentName }}</strong><small>{{ request.environmentCode }} · {{ request.buildingCode }}</small></td>
+                <td><strong>{{ request.environmentName }}</strong><small>{{ request.environmentCode }}</small></td>
                 <td>{{ formatDate(request.date) }}<small>{{ request.startTime }}–{{ request.endTime }}</small></td>
                 <td><span class="status" [class]="'status ' + statusClass(request.status)">{{ request.status }}</span></td>
                 <td>@if (request.status === 'Pendente') {<button #rowAction type="button" class="row-action" [attr.data-request-id]="request.id" (click)="openDetails(request, $event)">Analisar</button>} @else if (request.status === 'Aprovada') {<button type="button" class="row-action" [attr.data-request-id]="request.id" (click)="openDetails(request, $event)">Ver detalhes</button>} @else {<span class="no-action" aria-label="Nenhuma ação disponível">—</span>}</td>
@@ -50,18 +51,19 @@
         tabindex="-1" (keydown)="onDialogKeydown($event)" (click)="$event.stopPropagation()">
         <header class="dialog-header"><div><span class="page-eyebrow">{{ request.id }} · {{ request.status }}</span><h2 id="dialog-title">{{ modalTitle() }}</h2></div><button #firstModalControl type="button" class="icon-close" aria-label="Fechar diálogo" (click)="closeDialog()">×</button></header>
         <dl class="request-details">
-          <div><dt>Recurso</dt><dd>{{ request.environmentName }} · {{ request.environmentCode }} · {{ request.buildingCode }}</dd></div>
+          <div><dt>Recurso</dt><dd>{{ request.environmentName }} · {{ request.environmentCode }}</dd></div>
           <div><dt>Solicitante</dt><dd>{{ request.requesterLabel }}</dd></div>
           <div><dt>Período</dt><dd>{{ formatDate(request.date) }} · {{ request.startTime }}–{{ request.endTime }}</dd></div>
           <div><dt>Finalidade</dt><dd>{{ request.purpose }}</dd></div>
           <div><dt>Participantes</dt><dd>{{ request.participants }}</dd></div>
           <div><dt>Observações</dt><dd>{{ request.observations || 'Sem observações.' }}</dd></div>
         </dl>
-        @if (request.hasConflictNotice) {<p class="conflict-note" role="note"><strong>Aviso de conflito</strong><span>Conflito sinalizado somente neste registro sintético.</span></p>}
+        @if (request.hasConflictNotice) {<p class="conflict-note" role="note"><strong>Aviso de conflito</strong><span>Este pedido se sobrepõe a uma reserva aprovada ou a um bloqueio.</span></p>}
         @if (decisionError()) {<p class="storage-error" role="alert">{{ decisionError() }}</p>}
+        @if (request.status === 'Pendente') {<label class="field"><span>Justificativa da rejeição</span><textarea rows="3" [value]="justification()" (input)="updateJustification($event)"></textarea></label>}
         @if (selectedReadOnly()) {<p class="read-only-note">Detalhes somente para leitura.</p>}
         <footer class="dialog-actions">
-          @if (request.status === 'Pendente' && !storageError()) {<button type="button" class="button button--reject" (click)="decide('Rejeitada')">Rejeitar</button><button type="button" class="button button--approve" (click)="decide('Aprovada')">Aprovar solicitação</button>}
+          @if (request.status === 'Pendente' && !storageError()) {<button type="button" class="button button--reject" [disabled]="savingDecision()" (click)="decide('Rejeitada')">Rejeitar</button><button type="button" class="button button--approve" [disabled]="savingDecision()" (click)="decide('Aprovada')">{{ savingDecision() ? 'Salvando…' : 'Aprovar solicitação' }}</button>}
           <button type="button" class="button button--quiet" (click)="closeDialog()">Fechar</button>
         </footer>
       </section>

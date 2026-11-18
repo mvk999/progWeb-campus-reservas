@@ -236,6 +236,12 @@
 }
 
 @media (max-width: 640px) {
+  .app-header__top {
+    flex-wrap: wrap;
+    gap: .5rem;
+    padding-block: .45rem;
+  }
+
   .app-header__location,
   .brand__context {
     display: none;

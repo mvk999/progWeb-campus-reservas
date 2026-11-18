@@ -1,27 +1,12 @@
-import { DemonstrationRoom } from '../campus-map/campus-map.models';
+import { ApiAvailability, ApiEnvironment } from '../../core/campus-api.service';
 
-export type RoomAvailabilityStatus = 'Livre' | 'Pendente' | 'Aprovado' | 'Bloqueado';
+export type RoomAvailabilityStatus = 'Livre' | 'Pendente' | 'Aprovado' | 'Bloqueado' | 'Sem dados';
 export type RoomsViewMode = 'agenda' | 'lista' | 'cards';
 export type RoomSortOrder = 'nome' | 'capacidade';
 
-export interface RoomListItem extends DemonstrationRoom {
-  readonly buildingCode: string;
+export interface RoomListItem extends ApiEnvironment {
   readonly buildingName: string;
   readonly campusName: string;
-  readonly location: string;
-}
-
-export interface AvailabilityExample {
-  readonly roomCode: string;
-  readonly date: string;
-  readonly startTime: string;
-  readonly endTime: string;
-  readonly status: Exclude<RoomAvailabilityStatus, 'Livre'>;
-}
-
-export interface RoomFeatureExample {
-  readonly roomCode: string;
-  readonly features: readonly string[];
 }
 
 export interface RoomsFilterState {
@@ -36,3 +21,5 @@ export interface WeekDay {
   readonly shortName: string;
   readonly dayNumber: string;
 }
+
+export type AvailabilityByRoom = Readonly<Record<string, ApiAvailability['occupied']>>;

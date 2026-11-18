@@ -1,12 +1,11 @@
-export type ManagementRequestStatus = 'Pendente' | 'Aprovada' | 'Rejeitada' | 'Cancelada';
+export type ManagementRequestStatus = 'Pendente' | 'Aprovada' | 'Rejeitada' | 'Cancelada' | 'Concluída';
 export type ManagementDecision = 'Aprovada' | 'Rejeitada';
 
-export interface DemonstrationManagementRequest {
-  readonly id: string;
+export interface ManagementRequest {
+  readonly id: number;
   readonly requesterLabel: string;
   readonly environmentCode: string;
   readonly environmentName: string;
-  readonly buildingCode: string;
   readonly date: string;
   readonly startTime: string;
   readonly endTime: string;
@@ -16,13 +15,3 @@ export interface DemonstrationManagementRequest {
   readonly observations: string;
   readonly hasConflictNotice: boolean;
 }
-
-export interface ManagementDecisionRecord {
-  readonly requestId: string;
-  readonly status: ManagementDecision;
-  readonly decidedAt: string;
-}
-
-export type ManagementReadResult =
-  | { readonly ok: true; readonly decisions: readonly ManagementDecisionRecord[] }
-  | { readonly ok: false; readonly message: string };

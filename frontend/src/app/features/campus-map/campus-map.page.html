@@ -7,7 +7,7 @@
         <span>Campus sede · Lavras, MG</span>
       </nav>
       <h1 id="page-title">Mapa vivo da UFLA</h1>
-      <p>Explore a disponibilidade por prédio nos horários de demonstração.</p>
+      <p>Explore os ambientes e horários disponíveis em cada prédio.</p>
     </div>
     <a class="all-rooms-link" routerLink="/salas">
       Consultar todas as salas <span aria-hidden="true">→</span>
@@ -15,6 +15,8 @@
   </div>
 
   <section class="timeline" aria-labelledby="timeline-title">
+    @if (loading()) { <p role="status">Consultando ambientes e disponibilidade na API…</p> }
+    @if (loadError()) { <p role="alert">{{ loadError() }} @if (loginRequired()) { <a routerLink="/login">Entrar</a> } @else { <button type="button" (click)="retry()">Tentar novamente</button> }</p> }
     <div class="timeline__heading">
       <div>
         <h2 id="timeline-title">Disponibilidade no campus</h2>

@@ -35,6 +35,8 @@ describe('ProfileMenu', () => {
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
     expect(host.textContent).toContain('Marina · Solicitante');
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
     host.querySelector<HTMLButtonElement>('.profile-logout')!.click();
 
     const request = TestBed.inject(HttpTestingController).expectOne('/api/auth/logout/');
@@ -43,7 +45,7 @@ describe('ProfileMenu', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect(TestBed.inject(AuthService).user()).toBeNull();
-    expect(TestBed.inject(Router).url).toBe('/login');
+    expect(navigate).toHaveBeenCalledWith('/login');
     TestBed.inject(HttpTestingController).verify();
   });
 });

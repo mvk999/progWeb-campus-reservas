@@ -1,12 +1,17 @@
 import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CampusGeographicMap } from './campus-geographic-map';
-import { CampusBuilding, CampusMapSnapshot } from './campus-map.models';
+import { CampusBuilding } from './campus-map.models';
 import { CampusMapService } from './campus-map.service';
-import { EnvironmentDetailService } from '../environment-detail/environment-detail.service';
+import { apiErrorMessage, loginRequired } from '../../core/api-error';
 
 const DAY_START = 8 * 60;
 const DAY_END = 20 * 60;
+
+function todayIso(): string {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
 
 function clockTime(minutes: number): string {
   return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
@@ -27,21 +32,22 @@ function minutesOf(time: string): number {
 })
 export class CampusMapPage {
   private readonly mapService = inject(CampusMapService);
-  private readonly availability = inject(EnvironmentDetailService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  protected readonly snapshot = signal(this.mapService.getMapForPeriod());
-  protected readonly data = this.snapshot().map;
+  protected readonly snapshot = signal({ map: this.mapService.emptyMap(), period: { date: todayIso(), startTime: '08:00', endTime: '10:00' } });
+  protected get data() { return this.snapshot().map; }
+  protected readonly loading = signal(true);
+  protected readonly loadError = signal('');
+  protected readonly loginRequired = signal(false);
   protected readonly searchTerm = signal('');
   protected readonly minimumCapacity = signal(0);
-  protected readonly selectedCode = signal<string | null>(this.data.buildings.some(building => building.code === this.route.snapshot.queryParamMap.get('predio')) ? this.route.snapshot.queryParamMap.get('predio') : 'PV4');
-  protected readonly queryDate = signal(this.data.initialDate);
-  protected readonly startTime = signal(this.data.initialStartTime);
-  protected readonly endTime = signal(this.data.initialEndTime);
+  protected readonly selectedCode = signal<string | null>(this.route.snapshot.queryParamMap.get('predio'));
+  protected readonly queryDate = signal(todayIso());
+  protected readonly startTime = signal('08:00');
+  protected readonly endTime = signal('10:00');
   protected readonly periodError = signal('');
   protected readonly periodFeedback = signal('');
   protected readonly appliedPeriod = computed(() => this.snapshot().period);
-  private readonly scheduleDate = computed(() => this.appliedPeriod().date);
   protected readonly dayStart = DAY_START;
   protected readonly dayEnd = DAY_END;
   protected readonly durations = [30, 60, 120];
@@ -56,14 +62,22 @@ export class CampusMapPage {
   @ViewChild('buildingPanel') private buildingPanel?: ElementRef<HTMLElement>;
   private panelTrigger?: HTMLElement;
 
+  constructor() { this.applyPeriod(); }
+
   private readonly schedules = computed(() => {
-    const date = this.scheduleDate();
     return new Map(this.data.buildings.flatMap(building => building.rooms.map(room => {
-      const periods = this.availability.getPeriods(room.code, date);
-      return [room.code, {
-        windows: this.availability.getFreeWindows(periods),
-        known: periods.some(period => period.availability !== 'unknown'),
-      }] as const;
+      const busy = room.occupied.filter(slot => slot.type === 'APROVADA' || slot.type === 'BLOQUEIO')
+        .map(slot => ({ startTime: slot.startTime, endTime: slot.endTime }))
+        .sort((a, b) => a.startTime.localeCompare(b.startTime));
+      const windows: { startTime: string; endTime: string }[] = [];
+      let cursor = '08:00';
+      for (const slot of busy) {
+        if (slot.endTime <= cursor || slot.startTime >= '20:00') continue;
+        if (slot.startTime > cursor) windows.push({ startTime: cursor, endTime: slot.startTime });
+        if (slot.endTime > cursor) cursor = slot.endTime;
+      }
+      if (cursor < '20:00') windows.push({ startTime: cursor, endTime: '20:00' });
+      return [room.code, { windows, known: true }] as const;
     })));
   });
 
@@ -224,17 +238,32 @@ export class CampusMapPage {
 
     this.periodError.set('');
     this.applyPeriod();
-    this.periodFeedback.set('Horários da demonstração atualizados.');
+    this.periodFeedback.set('Consultando horários atualizados…');
   }
 
   private applyPeriod(): void {
-    const snapshot: CampusMapSnapshot = this.mapService.getMapForPeriod({
+    this.loading.set(true);
+    this.loadError.set('');
+    this.loginRequired.set(false);
+    this.mapService.getMapForPeriod({
       date: this.queryDate(),
       startTime: this.startTime(),
       endTime: this.endTime(),
+    }).subscribe({
+      next: snapshot => {
+        this.snapshot.set(snapshot);
+        this.loading.set(false);
+        this.periodFeedback.set('Horários atualizados com os dados do campus.');
+      },
+      error: error => {
+        this.loadError.set(apiErrorMessage(error));
+        this.loginRequired.set(loginRequired(error));
+        this.loading.set(false);
+      },
     });
-    this.snapshot.set(snapshot);
   }
+
+  protected retry(): void { this.applyPeriod(); }
 
   protected get displayDate(): string {
     const value = this.appliedPeriod().date;

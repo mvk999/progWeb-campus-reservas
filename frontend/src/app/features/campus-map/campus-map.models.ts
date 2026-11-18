@@ -8,16 +8,22 @@ export interface CampusBuilding {
   readonly name: string;
   readonly fullName: string;
   readonly position: MapPosition;
-  readonly rooms: readonly DemonstrationRoom[];
+  readonly rooms: readonly CampusRoom[];
 }
 
-export interface DemonstrationRoom {
+export interface CampusRoom {
   readonly code: string;
   readonly name: string;
-  readonly availability: 'Livre' | 'Ocupada';
   readonly capacity: number;
   readonly category?: string;
   readonly features?: readonly string[];
+  readonly location?: string;
+  readonly responsible?: string;
+  readonly occupied: readonly {
+    readonly startTime: string;
+    readonly endTime: string;
+    readonly type: 'APROVADA' | 'PENDENTE' | 'BLOQUEIO';
+  }[];
 }
 
 export interface CampusMapData {

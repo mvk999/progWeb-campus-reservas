@@ -68,7 +68,7 @@ export class CampusGeographicMap implements AfterViewInit, OnChanges, OnDestroy 
           this.prepareFlatMap();
           this.message.set('Vista 2D com contornos oficiais NUP/UFLA. WebGL indisponível neste dispositivo.');
         }
-      } catch { /* The local demonstration remains usable without a geographic source. */ }
+      } catch { /* Keep the API driven room list available when map geometry cannot load. */ }
       return;
     }
     this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
