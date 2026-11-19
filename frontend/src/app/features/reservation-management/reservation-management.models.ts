@@ -11,7 +11,7 @@ export interface ManagementRequest {
   readonly endTime: string;
   readonly status: ManagementRequestStatus;
   readonly purpose: string;
-  readonly participants: number;
+  readonly participants: number | null;
   readonly observations: string;
   readonly hasConflictNotice: boolean;
 }

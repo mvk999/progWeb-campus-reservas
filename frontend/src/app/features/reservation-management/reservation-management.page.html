@@ -10,7 +10,7 @@
   <div class="metrics" aria-label="Resumo">
     <article class="metric"><span>Aguardando aprovação</span><strong>{{ pendingCount() }}</strong></article>
     <article class="metric"><span>Aprovadas</span><strong>{{ approvedCount() }}</strong></article>
-    <article class="metric"><span>Recursos sob gestão</span><strong>{{ managedResourceCount() }}</strong></article>
+    <article class="metric"><span>Recursos sob gestão</span><strong>{{ managedResourceCount() ?? '—' }}</strong></article>
   </div>
 
   @if (loading()) { <p role="status">Carregando solicitações da API…</p> }
@@ -54,13 +54,20 @@
           <div><dt>Recurso</dt><dd>{{ request.environmentName }} · {{ request.environmentCode }}</dd></div>
           <div><dt>Solicitante</dt><dd>{{ request.requesterLabel }}</dd></div>
           <div><dt>Período</dt><dd>{{ formatDate(request.date) }} · {{ request.startTime }}–{{ request.endTime }}</dd></div>
-          <div><dt>Finalidade</dt><dd>{{ request.purpose }}</dd></div>
-          <div><dt>Participantes</dt><dd>{{ request.participants }}</dd></div>
+          <div><dt>Finalidade</dt><dd>{{ request.purpose || 'Não informada.' }}</dd></div>
+          <div><dt>Participantes</dt><dd>{{ request.participants ?? 'Não informado.' }}</dd></div>
           <div><dt>Observações</dt><dd>{{ request.observations || 'Sem observações.' }}</dd></div>
         </dl>
         @if (request.hasConflictNotice) {<p class="conflict-note" role="note"><strong>Aviso de conflito</strong><span>Este pedido se sobrepõe a uma reserva aprovada ou a um bloqueio.</span></p>}
         @if (decisionError()) {<p class="storage-error" role="alert">{{ decisionError() }}</p>}
-        @if (request.status === 'Pendente') {<label class="field"><span>Justificativa da rejeição</span><textarea rows="3" [value]="justification()" (input)="updateJustification($event)"></textarea></label>}
+        @if (request.status === 'Pendente') {
+          <div class="justification">
+            <label class="form-label" for="justification">Justificativa da rejeição</label>
+            <textarea id="justification" class="form-control" rows="3" aria-describedby="justification-help"
+              placeholder="Ex.: a sala estará em manutenção neste horário." [value]="justification()" (input)="updateJustification($event)"></textarea>
+            <div id="justification-help" class="form-text">Obrigatória para rejeitar. O solicitante verá este texto.</div>
+          </div>
+        }
         @if (selectedReadOnly()) {<p class="read-only-note">Detalhes somente para leitura.</p>}
         <footer class="dialog-actions">
           @if (request.status === 'Pendente' && !storageError()) {<button type="button" class="button button--reject" [disabled]="savingDecision()" (click)="decide('Rejeitada')">Rejeitar</button><button type="button" class="button button--approve" [disabled]="savingDecision()" (click)="decide('Aprovada')">{{ savingDecision() ? 'Salvando…' : 'Aprovar solicitação' }}</button>}

@@ -10,6 +10,22 @@
   --accent: #236447;
   --accent-muted: #4c735e;
   --focus-ring: var(--accent);
+  /* Cores de apoio dos componentes; o tema escuro redefine todas abaixo. */
+  --on-accent: #fff;
+  --surface-muted: #f5f7f8;
+  --accent-soft: #e7f1e9;
+  --accent-border: #b7d0bf;
+  --line-soft: #e7ebee;
+  --danger-soft: #fbefed;
+  --danger-border: #d9aaa4;
+  --danger-text: #873c35;
+  --warning-soft: #fff3d8;
+  --warning-text: #816224;
+  --info-soft: #eaf1f5;
+  --info-text: #315d75;
+  /* Links do Bootstrap com a cor do projeto. */
+  --bs-link-color-rgb: 35, 100, 71;
+  --bs-link-hover-color-rgb: 23, 70, 49;
   --radius: 10px;
   --shadow-soft: 0 1px 2px #20372e0a;
   --font-brand: 'Segoe UI', Arial, sans-serif;
@@ -33,6 +49,20 @@
   --accent: #83bd98;
   --accent-muted: #9bc9aa;
   --focus-ring: #a9dbb8;
+  --on-accent: #0f2118;
+  --surface-muted: #1a231e;
+  --accent-soft: #233a2c;
+  --accent-border: #4d6e58;
+  --line-soft: #313e36;
+  --danger-soft: #3a2421;
+  --danger-border: #7a4640;
+  --danger-text: #f2aaa0;
+  --warning-soft: #3a311c;
+  --warning-text: #e8c97f;
+  --info-soft: #1f2d36;
+  --info-text: #a3cbe2;
+  --bs-link-color-rgb: 131, 189, 152;
+  --bs-link-hover-color-rgb: 169, 219, 184;
   --shadow-soft: 0 1px 2px #0003;
   --bs-body-bg: var(--page-background);
   --bs-body-color: var(--text);
@@ -74,8 +104,8 @@ textarea {
 }
 
 ::selection {
-  background: #d7eadf;
-  color: #153e2a;
+  background: var(--accent-soft);
+  color: var(--text);
 }
 
 [data-bs-theme='dark'] :is(.app-header, .app-footer, .building-sidebar, .map-card,
@@ -100,6 +130,29 @@ textarea {
   color: var(--text);
 }
 
+/* Botões contornados do Bootstrap com as cores do tema do projeto. */
+.btn-outline-secondary {
+  --bs-btn-color: var(--text-muted);
+  --bs-btn-border-color: var(--border);
+  --bs-btn-hover-color: var(--text);
+  --bs-btn-hover-bg: var(--surface-muted);
+  --bs-btn-hover-border-color: var(--text-muted);
+  --bs-btn-active-color: var(--text);
+  --bs-btn-active-bg: var(--surface-muted);
+  --bs-btn-active-border-color: var(--text-muted);
+}
+
+.btn-outline-success {
+  --bs-btn-color: var(--accent);
+  --bs-btn-border-color: var(--accent);
+  --bs-btn-hover-color: var(--on-accent);
+  --bs-btn-hover-bg: var(--accent);
+  --bs-btn-hover-border-color: var(--accent);
+  --bs-btn-active-color: var(--on-accent);
+  --bs-btn-active-bg: var(--accent);
+  --bs-btn-active-border-color: var(--accent);
+}
+
 /* MapLibre cria estes elementos fora da árvore de componentes do Angular. */
 .campus-pin {
   display: flex;
@@ -108,7 +161,8 @@ textarea {
   padding: .4rem .6rem;
   border: 2px solid #fff;
   border-radius: 8px;
-  background: var(--accent);
+  /* Cor fixa: o mapa tem fundo claro nos dois temas. */
+  background: #236447;
   color: #fff;
   box-shadow: 0 1px 5px #153d2440;
   cursor: pointer;

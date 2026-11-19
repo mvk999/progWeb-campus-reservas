@@ -7,6 +7,11 @@ import { ManagementRequest, ManagementRequestStatus } from './reservation-manage
 export class ReservationManagementService {
   private readonly api = inject(CampusApiService);
 
+  /** Quantos ambientes ativos o usuário logado gere (o administrador gere todos). */
+  countManagedEnvironments() {
+    return this.api.getEnvironments({ managed: true }).pipe(map(environments => environments.length));
+  }
+
   getRequests(filters: { status?: string; environment?: string; date?: string } = {}) {
     return this.api.getManagedReservations(filters).pipe(map(items => items.map(item => this.toRequest(item))));
   }

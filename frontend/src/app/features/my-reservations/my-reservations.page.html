@@ -62,8 +62,8 @@
       @for (reservation of visibleReservations(); track trackReservation($index, reservation)) {
         <article class="reservation-card">
           <div class="reservation-card__top"><div><p>{{ reservation.environmentCode }}</p><h2>{{ reservation.environmentName }}</h2></div></div>
-          <dl><div><dt>Data</dt><dd>{{ formatDate(reservation.date) }}</dd></div><div><dt>Horário</dt><dd>{{ reservation.startTime }}–{{ reservation.endTime }}</dd></div><div><dt>Participantes</dt><dd>{{ reservation.participants }}</dd></div><div><dt>Situação</dt><dd>{{ reservation.statusLabel }}</dd></div></dl>
-          <p class="reservation-purpose">{{ reservation.purpose }}</p>
+          <dl><div><dt>Data</dt><dd>{{ formatDate(reservation.date) }}</dd></div><div><dt>Horário</dt><dd>{{ reservation.startTime }}–{{ reservation.endTime }}</dd></div><div><dt>Participantes</dt><dd>{{ reservation.participants ?? '—' }}</dd></div><div><dt>Situação</dt><dd>{{ reservation.statusLabel }}</dd></div></dl>
+          @if (reservation.purpose) {<p class="reservation-purpose">{{ reservation.purpose }}</p>}
           @if (reservation.observations) {<p class="reservation-observation">{{ reservation.observations }}</p>}
           <footer><span>Enviada em {{ formatCreatedAt(reservation.createdAt) }}</span><a [routerLink]="roomRoute(reservation)">Ver ambiente</a>
             @if (reservation.canCancel) { <button type="button" [disabled]="service.cancellingId() === reservation.id" (click)="cancel(reservation)">{{ service.cancellingId() === reservation.id ? 'Cancelando…' : 'Cancelar reserva' }}</button> }
