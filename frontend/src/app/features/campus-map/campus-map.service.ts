@@ -21,7 +21,7 @@ export class CampusMapService {
       )).pipe(map(records => {
         const buildings = CAMPUS_MAP_LAYOUT.buildings.map(building => ({
           ...building,
-          rooms: records.filter(({ environment }) => environment.buildingCode === building.code).map(({ environment, availability }) => ({
+          rooms: records.filter(({ environment }) => environment.buildingCode.trim().toUpperCase() === building.code).map(({ environment, availability }) => ({
             code: environment.code,
             name: environment.name,
             category: environment.category,
