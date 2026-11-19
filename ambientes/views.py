@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from reservas.models import BloqueioAmbiente, Reserva
+from usuarios.perfis import PERFIL_ADMINISTRADOR, perfil_do_usuario
 
 from .models import Ambiente, CategoriaAmbiente, Equipamento
 from .serializers import (
@@ -37,6 +38,12 @@ class AmbienteListView(generics.ListAPIView):
         dados = filtros.validated_data
 
         ambientes = ambientes_ativos()
+        # managed=true: só os ambientes que o usuário gere (o administrador
+        # gere todos), a mesma regra usada na gestão de reservas.
+        if dados.get("managed") and (
+            perfil_do_usuario(self.request.user) != PERFIL_ADMINISTRADOR
+        ):
+            ambientes = ambientes.filter(responsavel=self.request.user)
         if "category" in dados:
             ambientes = ambientes.filter(categoria__nome__iexact=dados["category"])
         if "building" in dados:

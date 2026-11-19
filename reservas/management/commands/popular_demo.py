@@ -369,6 +369,15 @@ class Command(BaseCommand):
             ),
         )
         start_times = self._reservation_start_times()
+        # Finalidade e participantes de cada reserva de exemplo, para que as
+        # telas de análise e de "Minhas reservas" mostrem dados completos.
+        details = {
+            ReservaStatus.PENDENTE: ("Aula de revisão para a prova", 25),
+            ReservaStatus.APROVADA: ("Prática de laboratório de redes", 20),
+            ReservaStatus.REJEITADA: ("Palestra de abertura do semestre", 90),
+            ReservaStatus.CANCELADA: ("Reunião do grupo de estudos", 12),
+            ReservaStatus.CONCLUIDA: ("Minicurso de programação", 18),
+        }
         reservations = {}
         for status, environment_code, requester, evaluator in reservation_specs:
             marker = f"DEMO:C1.11:reserva:{status.lower()}"
@@ -382,6 +391,8 @@ class Command(BaseCommand):
                     "inicio": start,
                     "fim": start + timedelta(hours=2),
                     "status": status,
+                    "finalidade": details[status][0],
+                    "participantes": details[status][1],
                     "avaliado_por": (
                         users[evaluator]
                         if status in (ReservaStatus.APROVADA, ReservaStatus.REJEITADA)
