@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { CampusGeographicMap } from './campus-geographic-map';
 import { CampusBuilding } from './campus-map.models';
 import { CampusMapService } from './campus-map.service';
@@ -34,6 +36,10 @@ export class CampusMapPage {
   private readonly mapService = inject(CampusMapService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  private mapRequest?: Subscription;
+  private requestedDate: string | null = null;
+  private loadedDate: string | null = null;
   protected readonly snapshot = signal({ map: this.mapService.emptyMap(), period: { date: todayIso(), startTime: '08:00', endTime: '10:00' } });
   protected get data() { return this.snapshot().map; }
   protected readonly loading = signal(true);
@@ -47,7 +53,7 @@ export class CampusMapPage {
   protected readonly endTime = signal('10:00');
   protected readonly periodError = signal('');
   protected readonly periodFeedback = signal('');
-  protected readonly appliedPeriod = computed(() => this.snapshot().period);
+  protected readonly appliedPeriod = signal(this.snapshot().period);
   protected readonly dayStart = DAY_START;
   protected readonly dayEnd = DAY_END;
   protected readonly durations = [30, 60, 120];
@@ -65,6 +71,9 @@ export class CampusMapPage {
   constructor() { this.applyPeriod(); }
 
   private readonly schedules = computed(() => {
+    if (this.loading() || this.loadError()) {
+      return new Map<string, { windows: { startTime: string; endTime: string }[]; known: boolean }>();
+    }
     return new Map(this.data.buildings.flatMap(building => building.rooms.map(room => {
       const busy = room.occupied.filter(slot => slot.type === 'APROVADA' || slot.type === 'BLOQUEIO')
         .map(slot => ({ startTime: slot.startTime, endTime: slot.endTime }))
@@ -238,24 +247,42 @@ export class CampusMapPage {
 
     this.periodError.set('');
     this.applyPeriod();
-    this.periodFeedback.set('Consultando horários atualizados…');
   }
 
   private applyPeriod(): void {
-    this.loading.set(true);
-    this.loadError.set('');
-    this.loginRequired.set(false);
-    this.mapService.getMapForPeriod({
+    const period = {
       date: this.queryDate(),
       startTime: this.startTime(),
       endTime: this.endTime(),
-    }).subscribe({
+    };
+    // The API returns the entire day's schedule. Time selection is local and
+    // must not wait for network responses or be replaced by an older interval.
+    this.appliedPeriod.set(period);
+    if (this.loading() && this.requestedDate === period.date) return;
+
+    this.mapRequest?.unsubscribe();
+    this.requestedDate = null;
+    this.loadError.set('');
+    this.loginRequired.set(false);
+    if (this.loadedDate === period.date) {
+      this.loading.set(false);
+      this.periodFeedback.set('Horários atualizados com os dados do campus.');
+      return;
+    }
+
+    this.loading.set(true);
+    this.requestedDate = period.date;
+    this.periodFeedback.set('Consultando horários atualizados…');
+    this.mapRequest = this.mapService.getMapForPeriod(period).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: snapshot => {
         this.snapshot.set(snapshot);
+        this.loadedDate = period.date;
+        this.requestedDate = null;
         this.loading.set(false);
         this.periodFeedback.set('Horários atualizados com os dados do campus.');
       },
       error: error => {
+        this.requestedDate = null;
         this.loadError.set(apiErrorMessage(error));
         this.loginRequired.set(loginRequired(error));
         this.loading.set(false);
