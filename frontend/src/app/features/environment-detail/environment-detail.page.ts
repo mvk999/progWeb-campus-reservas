@@ -5,6 +5,7 @@ import { ApiAvailability } from '../../core/campus-api.service';
 import { apiErrorMessage } from '../../core/api-error';
 import { AvailabilityPeriod, CalendarDay, EnvironmentDetail, PeriodAvailability } from './environment-detail.models';
 import { EnvironmentDetailService } from './environment-detail.service';
+import { localIsoDate } from '../../core/local-date';
 
 @Component({
   selector: 'app-environment-detail-page', standalone: true, imports: [RouterLink],
@@ -121,11 +122,11 @@ export class EnvironmentDetailPage {
   private formatDate(value: string): string { return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(`${value}T12:00:00`)); }
   private initialDateFromRoute(): string {
     const queryDate = this.route.snapshot.queryParamMap.get('data');
-    return queryDate && this.isValidDate(queryDate) ? queryDate : new Date().toISOString().slice(0, 10);
+    return queryDate && this.isValidDate(queryDate) ? queryDate : localIsoDate();
   }
   private isValidDate(value: string): boolean {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
     const parsed = new Date(`${value}T12:00:00`);
-    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+    return !Number.isNaN(parsed.getTime()) && localIsoDate(parsed) === value;
   }
 }

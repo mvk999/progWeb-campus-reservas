@@ -42,7 +42,7 @@ export interface ApiReservation {
   readonly status: 'PENDENTE' | 'APROVADA' | 'REJEITADA' | 'CANCELADA' | 'CONCLUIDA';
   readonly statusLabel: string;
   readonly purpose: string;
-  readonly participants: number;
+  readonly participants: number | null;
   readonly observations: string;
   readonly equipments: readonly { readonly code: string; readonly name: string; readonly quantity: number }[];
   readonly requester: { readonly username: string; readonly name: string };
@@ -70,12 +70,13 @@ export interface ApiOccupancyItem {
 export class CampusApiService {
   private readonly http = inject(HttpClient);
 
-  getEnvironments(filters: { category?: string; building?: string; minimumCapacity?: number; q?: string } = {}) {
+  getEnvironments(filters: { category?: string; building?: string; minimumCapacity?: number; q?: string; managed?: boolean } = {}) {
     let params = new HttpParams();
     if (filters.category) params = params.set('category', filters.category);
     if (filters.building) params = params.set('building', filters.building);
     if (filters.minimumCapacity) params = params.set('minimumCapacity', filters.minimumCapacity);
     if (filters.q) params = params.set('q', filters.q);
+    if (filters.managed) params = params.set('managed', 'true');
     return this.http.get<ApiEnvironment[]>('/api/ambientes/', { params });
   }
 

@@ -54,7 +54,7 @@
   color: var(--text);
 }
 
-.field-error { color: #a23d35; }
+.field-error { color: var(--danger-text); }
 .register-prompt { margin-top: 1.2rem; color: var(--text-muted); }
 
 .profile-list button {
@@ -110,9 +110,9 @@
 
 .error-message {
   padding: .65rem .8rem;
-  border-left: 3px solid #a23d35;
-  background: #fbefed;
-  color: #873c35;
+  border-left: 3px solid var(--danger-text);
+  background: var(--danger-soft);
+  color: var(--danger-text);
 }
 
 .map-link {

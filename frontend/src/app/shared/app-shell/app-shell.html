@@ -30,12 +30,15 @@
         <a routerLink="/salas" routerLinkActive="is-active" ariaCurrentWhenActive="page">
           Salas
         </a>
-        @if (auth.user()?.profile === 'solicitante') {
+        @if (auth.user(); as user) {
+          <!-- Todo perfil pode solicitar reservas, então todos acompanham as próprias. -->
           <a routerLink="/minhas-reservas" routerLinkActive="is-active" ariaCurrentWhenActive="page">Minhas reservas</a>
-        } @else if (auth.user()?.profile === 'responsavel') {
-          <a routerLink="/gestao" routerLinkActive="is-active" ariaCurrentWhenActive="page">Gestão de reservas</a>
-        } @else if (auth.user()?.profile === 'administrador') {
-          <a href="/admin/">Administração</a>
+          @if (user.profile === 'responsavel' || user.profile === 'administrador') {
+            <a routerLink="/gestao" routerLinkActive="is-active" ariaCurrentWhenActive="page">Gestão de reservas</a>
+          }
+          @if (user.profile === 'administrador') {
+            <a href="/admin/">Administração</a>
+          }
         } @else {
           <a routerLink="/login" routerLinkActive="is-active" ariaCurrentWhenActive="page">Entrar</a>
         }

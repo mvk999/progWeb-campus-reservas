@@ -111,6 +111,30 @@ class AmbienteListaTests(ApiAmbientesTestCase):
                     self.codigos(self.get("ambientes:lista", **params)), esperado
                 )
 
+    def test_managed_lista_apenas_os_ambientes_geridos(self):
+        self.client.force_login(self.responsavel)
+        self.assertEqual(
+            self.codigos(self.get("ambientes:lista", managed="true")), ["PV1-101"]
+        )
+
+        self.client.force_login(self.usuario)
+        self.assertEqual(self.codigos(self.get("ambientes:lista", managed="true")), [])
+
+        administrador = Usuario.objects.create_superuser("adm-ambientes")
+        self.client.force_login(administrador)
+        self.assertEqual(
+            self.codigos(self.get("ambientes:lista", managed="true")),
+            ["DCC-LAB1", "PV1-101"],
+        )
+
+    def test_managed_falso_ou_ausente_lista_todos(self):
+        self.client.force_login(self.responsavel)
+
+        self.assertEqual(
+            self.codigos(self.get("ambientes:lista", managed="false")),
+            ["DCC-LAB1", "PV1-101"],
+        )
+
     def test_capacidade_minima_invalida(self):
         for valor in ("abc", "0"):
             with self.subTest(valor=valor):

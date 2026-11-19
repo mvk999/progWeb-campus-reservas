@@ -145,7 +145,7 @@ Regras do cadastro:
 
 | Método | Rota | Acesso | Descrição |
 | --- | --- | --- | --- |
-| GET | `/api/ambientes/` | Autenticado | Lista ambientes **ativos**. Filtros opcionais: `?category=`, `?minimumCapacity=`, `?building=`, `?q=` (código, nome ou localização). |
+| GET | `/api/ambientes/` | Autenticado | Lista ambientes **ativos**. Filtros opcionais: `?category=`, `?minimumCapacity=`, `?building=`, `?q=` (código, nome ou localização) e `?managed=true` (só os ambientes que o usuário logado gere; o administrador gere todos). |
 | GET | `/api/ambientes/<code>/` | Autenticado | Detalhe do ambiente. 404 se não existir ou estiver inativo. |
 | GET | `/api/ambientes/<code>/disponibilidade/?date=AAAA-MM-DD` | Autenticado | Intervalos ocupados no dia. |
 | GET | `/api/categorias/` | Autenticado | `[{"name": "Laboratório de informática"}, ...]` |

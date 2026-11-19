@@ -104,6 +104,10 @@ class PopularDemoCommandTests(TestCase):
                 reservation.solicitante.groups.filter(name="Solicitante").exists()
             )
             self.assertTrue(reservation.ambiente.codigo.startswith("DEMO-AMB-"))
+            self.assertTrue(reservation.finalidade)
+            self.assertLessEqual(
+                reservation.participantes, reservation.ambiente.capacidade
+            )
             self.assertTrue(reservation.itens_equipamento.exists())
 
         demo_items = ReservaEquipamento.objects.filter(

@@ -8,6 +8,7 @@ import { apiErrorMessage } from '../../core/api-error';
 import { EnvironmentDetail } from '../environment-detail/environment-detail.models';
 import { EnvironmentDetailService } from '../environment-detail/environment-detail.service';
 import { ReservationFormErrors } from './reservation-request.models';
+import { localIsoDate } from '../../core/local-date';
 
 @Component({
   selector: 'app-reservation-request-page', standalone: true, imports: [RouterLink],
@@ -26,7 +27,7 @@ export class ReservationRequestPage {
   protected readonly equipmentQuantities = signal<Readonly<Record<string, number>>>({});
   protected readonly loading = signal(true);
   protected readonly loadError = signal('');
-  protected readonly date = computed(() => this.queryParams().get('data') ?? new Date().toISOString().slice(0, 10));
+  protected readonly date = computed(() => this.queryParams().get('data') ?? localIsoDate());
   protected readonly startTime = computed(() => this.queryParams().get('inicio') ?? '08:00');
   protected readonly endTime = computed(() => this.queryParams().get('fim') ?? '10:00');
   protected readonly purpose = signal('');
@@ -119,7 +120,7 @@ export class ReservationRequestPage {
   private validDate(value: string): boolean {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
     const date = new Date(`${value}T12:00:00`);
-    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+    return !Number.isNaN(date.getTime()) && localIsoDate(date) === value;
   }
   private toMinutes(value: string): number {
     const [hours, minutes] = value.split(':').map(Number);

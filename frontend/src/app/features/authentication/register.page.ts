@@ -14,7 +14,7 @@ import { AuthErrors, AuthService } from './auth.service';
         @for (field of fields; track field.key) {
           <label class="login-field"><span>{{ field.label }}</span>
             <input [name]="field.key" [type]="field.type" [autocomplete]="field.autocomplete" required
-              [value]="values()[field.key]" (input)="update(field.key, $event)" />
+              [value]="values()[field.key] ?? ''" (input)="update(field.key, $event)" />
             @for (message of messages(field.key); track message) { <small class="field-error">{{ message }}</small> }
           </label>
         }
@@ -33,7 +33,7 @@ import { AuthErrors, AuthService } from './auth.service';
     .login-card{display:grid;gap:1rem;padding:clamp(1rem,4vw,1.5rem);border:1px solid var(--border);border-radius:var(--radius);background:var(--surface)}
     .login-field{display:grid;gap:.35rem;color:var(--text-muted);font-size:.85rem}
     .login-field input{min-height:2.8rem;padding:.5rem .7rem;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)}
-    .field-error,.error-message{color:#a23d35}.register-prompt{margin-top:1.2rem}
+    .field-error,.error-message{color:var(--danger-text)}.register-prompt{margin-top:1.2rem}
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -34,6 +34,7 @@ Django 5.2 foi escolhido por ser uma versão LTS compatível com Python 3.12. O 
 
 - Python 3.12, compatível com Django 5.2.
 - `venv` e `pip` disponíveis.
+- Node.js 22 ou mais novo e `npm`, para o frontend Angular.
 
 ## Instalação
 
@@ -100,6 +101,42 @@ python manage.py runserver
 `DJANGO_SECRET_KEY` define a chave de assinatura local; `DJANGO_DEBUG` controla o modo de depuração (`1` habilita); `DJANGO_ALLOWED_HOSTS` recebe hosts separados por vírgulas e, se omitida, usa `localhost,127.0.0.1,[::1]`. A chave padrão do código é somente para desenvolvimento local.
 
 Depois de aplicar as migrations e criar o superusuário conforme a seção anterior, o servidor local ficará disponível em `http://127.0.0.1:8000/`. O caminho `/admin/` usa a autenticação nativa do Django e o modelo customizado `usuarios.Usuario`, com apresentação do Jazzmin identificada como Campus Reservas.
+
+## Executar o sistema completo (backend e frontend)
+
+O frontend Angular roda em `http://localhost:4200` e repassa as chamadas de
+`/api/` ao Django em `http://127.0.0.1:8000`. Com o ambiente virtual criado
+(seção "Instalação") e o banco preparado (seção "Banco de dados e conta
+administrativa"), suba os dois com um único comando, na raiz do projeto:
+
+```bash
+./iniciar.sh
+```
+
+O script confere o `.venv` e as portas 8000 e 4200, instala as dependências do
+frontend na primeira vez (`npm ci`), sobe o Django e o Angular no mesmo
+terminal (com as linhas marcadas como `[django]` e `[angular]`) e abre o
+navegador quando o sistema responde. Um único `Ctrl+C` encerra os dois. **Ele
+não altera o banco:** não roda `migrate` nem `popular_demo`, e usa o
+`db.sqlite3` que já existe.
+
+Para subir manualmente, use dois terminais. No primeiro:
+
+```bash
+python manage.py runserver
+```
+
+No segundo:
+
+```bash
+cd frontend
+npm ci
+npm start
+```
+
+Acesse o sistema em `http://localhost:4200` e o Admin em
+`http://127.0.0.1:8000/admin/`. Para testar dois usuários ao mesmo tempo, use
+uma janela anônima: abas da mesma janela compartilham a sessão.
 
 ## Perfis e dados de demonstração
 

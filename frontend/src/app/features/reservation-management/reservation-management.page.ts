@@ -24,7 +24,7 @@ export class ReservationManagementPage {
   protected readonly savingDecision = signal(false);
   protected readonly toast = signal('');
   protected readonly resources = computed(() => [...new Set(this.requests().map(request => request.environmentCode))]);
-  protected readonly managedResourceCount = computed(() => this.resources().length);
+  protected readonly managedResourceCount = signal<number | null>(null);
   protected readonly pendingCount = computed(() => this.service.countByStatus(this.requests(), 'Pendente'));
   protected readonly approvedCount = computed(() => this.service.countByStatus(this.requests(), 'Aprovada'));
   protected readonly visibleRequests = computed(() => this.requests().filter(request =>
@@ -37,7 +37,10 @@ export class ReservationManagementPage {
   @ViewChild('modalDialog') private modalDialog?: ElementRef<HTMLElement>;
   private returnFocus?: HTMLElement;
 
-  constructor() { this.loadRequests(); }
+  constructor() {
+    this.loadRequests();
+    this.service.countManagedEnvironments().subscribe({ next: total => this.managedResourceCount.set(total) });
+  }
 
   protected loadRequests(): void {
     this.loading.set(true); this.storageError.set('');

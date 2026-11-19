@@ -185,9 +185,9 @@
 
 .reset-dialog .reset-error {
   padding: .55rem .65rem;
-  border-left: 3px solid #a23d35;
-  background: #fbefed;
-  color: #873c35;
+  border-left: 3px solid var(--danger-text);
+  background: var(--danger-soft);
+  color: var(--danger-text);
 }
 
 .reset-actions {
@@ -212,7 +212,7 @@
 .reset-actions .reset-confirm {
   border-color: var(--accent);
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .skip-link {
@@ -223,7 +223,7 @@
   padding: .65rem 1rem;
   border-radius: 6px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .skip-link:not(:focus) {

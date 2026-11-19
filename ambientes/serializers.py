@@ -53,6 +53,7 @@ class AmbienteFiltroSerializer(serializers.Serializer):
     building = serializers.CharField(required=False)
     minimumCapacity = serializers.IntegerField(required=False, min_value=1)
     q = serializers.CharField(required=False)
+    managed = serializers.BooleanField(required=False)
 
 
 class DisponibilidadeFiltroSerializer(serializers.Serializer):
