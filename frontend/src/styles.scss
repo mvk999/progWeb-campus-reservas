@@ -1,1 +1,207 @@
-/* You can add global styles to this file, and also import other style files */
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+:root {
+  color-scheme: light;
+  --page-background: #f6f8f6;
+  --surface: #fff;
+  --text: #20372e;
+  --text-muted: #52645a;
+  --border: #dce5de;
+  --accent: #236447;
+  --accent-muted: #4c735e;
+  --focus-ring: var(--accent);
+  /* Cores de apoio dos componentes; o tema escuro redefine todas abaixo. */
+  --on-accent: #fff;
+  --surface-muted: #f5f7f8;
+  --accent-soft: #e7f1e9;
+  --accent-border: #b7d0bf;
+  --line-soft: #e7ebee;
+  --danger-soft: #fbefed;
+  --danger-border: #d9aaa4;
+  --danger-text: #873c35;
+  --warning-soft: #fff3d8;
+  --warning-text: #816224;
+  --info-soft: #eaf1f5;
+  --info-text: #315d75;
+  /* Links do Bootstrap com a cor do projeto. */
+  --bs-link-color-rgb: 35, 100, 71;
+  --bs-link-hover-color-rgb: 23, 70, 49;
+  --radius: 10px;
+  --shadow-soft: 0 1px 2px #20372e0a;
+  --font-brand: 'Segoe UI', Arial, sans-serif;
+  --font-sans: 'Segoe UI', Arial, sans-serif;
+
+  font-family: var(--font-sans);
+  color: var(--text);
+  background: var(--page-background);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[data-bs-theme='dark'] {
+  color-scheme: dark;
+  --page-background: #151c18;
+  --surface: #202a24;
+  --text: #e6eee8;
+  --text-muted: #b0c0b5;
+  --border: #3d4c42;
+  --accent: #83bd98;
+  --accent-muted: #9bc9aa;
+  --focus-ring: #a9dbb8;
+  --on-accent: #0f2118;
+  --surface-muted: #1a231e;
+  --accent-soft: #233a2c;
+  --accent-border: #4d6e58;
+  --line-soft: #313e36;
+  --danger-soft: #3a2421;
+  --danger-border: #7a4640;
+  --danger-text: #f2aaa0;
+  --warning-soft: #3a311c;
+  --warning-text: #e8c97f;
+  --info-soft: #1f2d36;
+  --info-text: #a3cbe2;
+  --bs-link-color-rgb: 131, 189, 152;
+  --bs-link-hover-color-rgb: 169, 219, 184;
+  --shadow-soft: 0 1px 2px #0003;
+  --bs-body-bg: var(--page-background);
+  --bs-body-color: var(--text);
+  --bs-border-color: var(--border);
+  --bs-secondary-color: var(--text-muted);
+  --bs-tertiary-bg: var(--surface);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  line-height: 1.5;
+  font-family: var(--font-sans);
+  color: var(--text);
+  background: var(--page-background);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  accent-color: var(--accent);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+[data-bs-theme='dark'] :is(.app-header, .app-footer, .building-sidebar, .map-card,
+  .geographic-card, .timeline, .query-panel, .request-form, .request-summary,
+  .reservation-card, .calendar-panel, .login-card, .access-card, .profile-dialog,
+  .room-card, .availability-panel, .environment-panel) {
+  border-color: var(--border);
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+[data-bs-theme='dark'] :is(input, select, textarea, .field input, .field select,
+  .building-search, .search-field, .timeline__durations button) {
+  border-color: var(--border);
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+[data-bs-theme='dark'] :is(.page-content, .geographic-stage, .map-canvas,
+  .map-card__footer, .geographic-footer) {
+  background-color: var(--page-background);
+  color: var(--text);
+}
+
+/* Botões contornados do Bootstrap com as cores do tema do projeto. */
+.btn-outline-secondary {
+  --bs-btn-color: var(--text-muted);
+  --bs-btn-border-color: var(--border);
+  --bs-btn-hover-color: var(--text);
+  --bs-btn-hover-bg: var(--surface-muted);
+  --bs-btn-hover-border-color: var(--text-muted);
+  --bs-btn-active-color: var(--text);
+  --bs-btn-active-bg: var(--surface-muted);
+  --bs-btn-active-border-color: var(--text-muted);
+}
+
+.btn-outline-success {
+  --bs-btn-color: var(--accent);
+  --bs-btn-border-color: var(--accent);
+  --bs-btn-hover-color: var(--on-accent);
+  --bs-btn-hover-bg: var(--accent);
+  --bs-btn-hover-border-color: var(--accent);
+  --bs-btn-active-color: var(--on-accent);
+  --bs-btn-active-bg: var(--accent);
+  --bs-btn-active-border-color: var(--accent);
+}
+
+/* MapLibre cria estes elementos fora da árvore de componentes do Angular. */
+.campus-pin {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .4rem .6rem;
+  border: 2px solid #fff;
+  border-radius: 8px;
+  /* Cor fixa: o mapa tem fundo claro nos dois temas. */
+  background: #236447;
+  color: #fff;
+  box-shadow: 0 1px 5px #153d2440;
+  cursor: pointer;
+}
+
+.campus-pin__code {
+  font-size: .75rem;
+  font-weight: 700;
+}
+
+.campus-pin__name {
+  display: none;
+  max-width: 140px;
+  font-size: .75rem;
+  text-align: left;
+}
+
+.campus-pin[hidden] {
+  display: none;
+}
+
+.campus-pin__count {
+  min-width: 1.25rem;
+  padding-inline: .2rem;
+  border-radius: 4px;
+  background: #fff;
+  color: #234639;
+  font-weight: 700;
+  text-align: center;
+}
+
+.campus-pin[data-availability='full'] { background: #924b37; }
+.campus-pin[data-availability='unknown'] { background: #46564e; }
+
+.campus-pin:is(:hover, :focus-visible, .campus-pin--selected) {
+  z-index: 2;
+  box-shadow: 0 0 0 2px #224839;
+}
+
+.campus-pin:not(.campus-pin--hide-name):is(:hover, :focus-visible) .campus-pin__name {
+  display: block;
+}

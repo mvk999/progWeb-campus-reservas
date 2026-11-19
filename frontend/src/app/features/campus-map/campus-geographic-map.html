@@ -1,0 +1,45 @@
+<section class="geographic-card" [class.geographic-card--expanded]="expanded()" [attr.role]="expanded() ? 'dialog' : null" [attr.aria-modal]="expanded() ? 'true' : null" aria-label="Exploração geográfica da UFLA">
+  <header class="geographic-heading">
+    <h2>Edificações</h2>
+    @if (status() === 'ready') {
+      <div class="explore-options">
+        <button type="button" (click)="toggleLabels()" [attr.aria-pressed]="labelsVisible()">Nomes ao passar o mouse</button>
+        <button type="button" (click)="toggleExpanded()" [attr.aria-expanded]="expanded()">{{ expanded() ? 'Recolher mapa' : 'Ampliar mapa' }}</button>
+      </div>
+    }
+  </header>
+  <div class="geographic-stage" [hidden]="status() === 'fallback'">
+    <div #mapHost class="geographic-host" aria-label="Mapa do campus. Use setas para navegar, mais e menos para zoom e Shift com setas para inclinar ou girar." tabindex="0"></div>
+    @if (status() === 'loading') { <div class="geographic-loading" role="status">Carregando o campus…</div> }
+    <div class="geographic-controls" role="group" aria-label="Controles geográficos">
+      <button type="button" aria-label="Aproximar" (click)="zoomIn()">+</button>
+      <button type="button" aria-label="Afastar" (click)="zoomOut()">−</button>
+      <button type="button" aria-label="Girar 30 graus" (click)="rotate()">↻</button>
+      <button type="button" [attr.aria-label]="threeDimensional() ? 'Visão 2D' : 'Visão 3D'" (click)="toggleMode()">{{ threeDimensional() ? '2D' : '3D' }}</button>
+      <button type="button" aria-label="Restaurar vista do campus" (click)="reset()">⌂</button>
+    </div>
+    @if (hoverInfo(); as hover) { <div class="map-tooltip" [style.left.px]="hover.x" [style.top.px]="hover.y" role="tooltip">{{ hover.name }}<small>Clique para explorar</small></div> }
+    @if (tourActive()) { <aside class="campus-tour" aria-label="Exploração guiada"><div><span>EXPLORAÇÃO GUIADA · {{ tourIndex() + 1 }}/{{ tourStops().length }}</span><strong>{{ tourStops()[tourIndex()]?.name }}</strong></div><div class="campus-tour__actions"><button type="button" aria-label="Pavilhão anterior" (click)="previousTour()">←</button><button type="button" aria-label="Próximo pavilhão" (click)="nextTour()">→</button><button type="button" aria-label="Encerrar exploração guiada" (click)="stopTour()">×</button></div></aside> }
+  </div>
+
+  <p class="geographic-status" role="status">{{ message() }}</p>
+
+  @if (status() === 'fallback') {
+    @if (geographicPaths().length) {
+      <svg class="geographic-flat" viewBox="0 0 960 620" role="img" aria-label="Contornos oficiais NUP das edificações, vista 2D">
+        @for (path of geographicPaths(); track path.id) {
+          <path [attr.d]="path.path" [class.flat--selected]="selectedCode === path.code"
+            [class.flat--free]="(availabilityCounts[path.code] ?? 0) > 0"
+            [class.flat--full]="availabilityCounts[path.code] === 0" (click)="selectFlatBuilding(path.code)">
+            <title>{{ path.name }} · {{ availabilityCounts[path.code] == null ? 'sem dados' : availabilityCounts[path.code] + ' salas livres' }}</title>
+          </path>
+        }
+      </svg>
+      <p class="geographic-status">Selecione uma edificação no mapa ou na lista de prédios.</p>
+    } @else {
+      <app-campus-map-canvas [campusName]="campusName" [buildings]="buildings" [selectedCode]="selectedCode"
+        [availabilityCounts]="availabilityCounts" (buildingSelected)="buildingSelected.emit($event)" />
+    }
+  }
+  <footer class="geographic-footer"><a href="https://nup.ufla.br/banco-de-projeto" target="_blank" rel="noopener">Edificações: NUP/UFLA</a><span>Arraste para explorar · Ctrl + arraste para inclinar</span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap · © CARTO</a></footer>
+</section>

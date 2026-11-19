@@ -1,0 +1,262 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
+.app-shell {
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+}
+
+.shell-container {
+  width: min(100% - 2rem, 83.75rem);
+  margin-inline: auto;
+}
+
+.app-header,
+.app-footer {
+  background: var(--surface);
+}
+
+.app-header__top {
+  display: flex;
+  min-height: 4.25rem;
+  align-items: center;
+  gap: 1rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .35rem;
+  color: var(--text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.brand__word {
+  color: var(--accent);
+  font-family: var(--font-brand);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -.035em;
+}
+
+.brand__name {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .055em;
+}
+
+.brand__context,
+.app-header__location {
+  color: var(--text-muted);
+  font-size: .82rem;
+}
+
+.brand__context {
+  margin-left: .55rem;
+  padding-left: .85rem;
+  border-left: 1px solid var(--border);
+}
+
+.app-header__location {
+  margin: 0;
+}
+
+.profile-slot {
+  margin-left: auto;
+}
+
+.theme-toggle {
+  flex: none;
+  min-height: 2.5rem;
+}
+
+.primary-nav {
+  border-block: 1px solid var(--border);
+}
+
+.primary-nav__inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.5rem;
+}
+
+.primary-nav a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  padding: .25rem 0;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: .88rem;
+  text-decoration: none;
+}
+
+.primary-nav a:hover,
+.primary-nav a.is-active {
+  color: var(--accent);
+}
+
+.primary-nav a.is-active {
+  border-bottom-color: var(--accent);
+  font-weight: 650;
+}
+
+.primary-nav__external {
+  margin-left: auto;
+}
+
+.page-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-content__inner {
+  padding-block: clamp(1.25rem, 3vw, 2rem) 3rem;
+}
+
+.app-footer {
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: .8rem;
+}
+
+.app-footer__inner,
+.footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem 1rem;
+}
+
+.app-footer__inner {
+  min-height: 3.5rem;
+  padding-block: .65rem;
+}
+
+.footer-actions {
+  margin-left: auto;
+}
+
+.footer-actions a,
+.footer-actions button {
+  padding: .3rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: .15rem;
+  cursor: pointer;
+}
+
+.reset-backdrop {
+  position: fixed;
+  z-index: 1100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: #17232d66;
+}
+
+.reset-dialog {
+  width: min(100%, 30rem);
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.reset-dialog h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.reset-dialog p {
+  margin: .65rem 0;
+  color: var(--text-muted);
+  font-size: .88rem;
+}
+
+.reset-dialog .reset-error {
+  padding: .55rem .65rem;
+  border-left: 3px solid var(--danger-text);
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+
+.reset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: .5rem;
+  margin-top: 1rem;
+}
+
+.reset-actions button {
+  min-height: 2.75rem;
+  padding: .45rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: .86rem;
+  cursor: pointer;
+}
+
+.reset-actions .reset-confirm {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.skip-link {
+  position: fixed;
+  top: .5rem;
+  left: 1rem;
+  z-index: 2000;
+  padding: .65rem 1rem;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.skip-link:not(:focus) {
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  padding: 0;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .app-header__top {
+    flex-wrap: wrap;
+    gap: .5rem;
+    padding-block: .45rem;
+  }
+
+  .app-header__location,
+  .brand__context {
+    display: none;
+  }
+
+  .primary-nav__inner {
+    gap: 0 1rem;
+  }
+
+  .primary-nav a {
+    font-size: .82rem;
+  }
+
+  .primary-nav__external,
+  .footer-actions {
+    margin-left: 0;
+  }
+}

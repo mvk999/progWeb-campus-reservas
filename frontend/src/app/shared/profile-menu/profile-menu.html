@@ -1,0 +1,10 @@
+<div class="profile-menu">
+  @if (auth.user(); as user) {
+    <span class="profile-trigger">
+      {{ user.firstName || user.username }} · {{ auth.profileLabel() }}
+    </span>
+    <button class="profile-logout btn btn-outline-secondary btn-sm" type="button" (click)="logout()">Sair</button>
+  } @else {
+    <a class="profile-login btn btn-outline-success btn-sm" routerLink="/login">Entrar</a>
+  }
+</div>

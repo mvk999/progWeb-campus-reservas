@@ -36,6 +36,8 @@ class ReservaAdmin(admin.ModelAdmin):
                     "inicio",
                     "fim",
                     "status",
+                    "finalidade",
+                    "participantes",
                     "observacoes",
                 )
             },

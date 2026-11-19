@@ -1,0 +1,63 @@
+<div class="app-shell">
+  <a class="skip-link" href="#main">Ir para o conte&#250;do</a>
+  <header class="app-header">
+    <div class="app-header__top shell-container container-fluid d-flex align-items-center">
+      <a class="brand" routerLink="/mapa" aria-label="Campus Reservas — UFLA">
+        <span class="brand__word">campus</span>
+        <span class="brand__name">RESERVAS</span>
+        <span class="brand__context">UFLA · Salas</span>
+      </a>
+
+      <p class="app-header__location d-none d-md-block">Campus sede · Lavras, MG</p>
+      <button class="theme-toggle btn btn-outline-secondary btn-sm" type="button"
+        [attr.aria-label]="theme.isDark() ? 'Ativar tema claro' : 'Ativar tema escuro'"
+        [attr.aria-pressed]="theme.isDark()" (click)="theme.toggle()">
+        {{ theme.isDark() ? 'Claro' : 'Escuro' }}
+      </button>
+      <div class="profile-slot"><app-profile-menu /></div>
+    </div>
+
+    <nav class="primary-nav" aria-label="Navegação principal">
+      <div class="primary-nav__inner shell-container container-fluid d-flex align-items-center">
+        <a
+          routerLink="/mapa"
+          routerLinkActive="is-active"
+          ariaCurrentWhenActive="page"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          Mapa do campus
+        </a>
+        <a routerLink="/salas" routerLinkActive="is-active" ariaCurrentWhenActive="page">
+          Salas
+        </a>
+        @if (auth.user(); as user) {
+          <!-- Todo perfil pode solicitar reservas, então todos acompanham as próprias. -->
+          <a routerLink="/minhas-reservas" routerLinkActive="is-active" ariaCurrentWhenActive="page">Minhas reservas</a>
+          @if (user.profile === 'responsavel' || user.profile === 'administrador') {
+            <a routerLink="/gestao" routerLinkActive="is-active" ariaCurrentWhenActive="page">Gestão de reservas</a>
+          }
+          @if (user.profile === 'administrador') {
+            <a href="/admin/">Administração</a>
+          }
+        } @else {
+          <a routerLink="/login" routerLinkActive="is-active" ariaCurrentWhenActive="page">Entrar</a>
+        }
+      </div>
+    </nav>
+  </header>
+  <main class="page-content" id="main" tabindex="-1">
+    <div class="page-content__inner shell-container">
+      <router-outlet />
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="app-footer__inner shell-container">
+      <span>Campus Reservas · UFLA</span>
+      <nav class="footer-actions" aria-label="Navegação do rodapé">
+        @if (!auth.isAuthenticated()) { <a routerLink="/login">Entrar</a> }
+      </nav>
+    </div>
+  </footer>
+
+</div>

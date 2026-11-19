@@ -1,0 +1,35 @@
+{
+  "verifiedAssociations": {
+    "PV4": "L_46",
+    "DCC": "L_146",
+    "PV5": "L_47",
+    "BU": "L_150",
+    "PV3": "L_44",
+    "PV6": "L_45",
+    "PV2": "L_101"
+  },
+  "context": {
+    "copyright": "https://www.openstreetmap.org/copyright",
+    "publisher": "OpenStreetMap contributors",
+    "download": "https://www.openstreetmap.org/api/0.6/map?bbox=-44.985,-21.238,-44.965,-21.218",
+    "attribution": "© OpenStreetMap contributors",
+    "count": 401,
+    "license": "ODbL 1.0"
+  },
+  "retrieved": "2026-11-14",
+  "buildings": {
+    "reference": "https://nup.ufla.br/mapa",
+    "publisher": "Núcleo de Projetos Arquitetônicos / Universidade Federal de Lavras",
+    "catalog": "https://nup.ufla.br/banco-de-projeto",
+    "download": "https://www.google.com/maps/d/kml?mid=162l35pnQMUqU31FL0bk5LuV-CbYiPDE&forcekml=1",
+    "count": 350,
+    "heights": "Altura uniforme de 9 m é estimativa visual, não medição oficial. Geometrias do mapa publicado; precisão cadastral não certificada.",
+    "license": "Mapa publicado pelo NUP; licença aberta de redistribuição não explicitada. Confirmar autorização antes de publicação externa."
+  },
+  "limitations": [
+    "PV1 não associado por ausência de identificação inequívoca no catálogo consultado.",
+    "Ambientes e disponibilidade permanecem demonstrativos e não são informações oficiais da UFLA.",
+    "Não foi incorporado modelo digital de elevação; extrusões partem de plano cartográfico.",
+    "Excluídos perímetro, grade cartográfica, polígono sem nome e áreas identificadas como piscinas, currais, experimentos agrícolas ou poços; não são edifícios comprovados."
+  ]
+}

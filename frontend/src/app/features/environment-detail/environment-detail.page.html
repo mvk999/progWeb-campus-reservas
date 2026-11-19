@@ -1,0 +1,124 @@
+@if (loading()) {
+  <p role="status">Carregando dados do ambiente…</p>
+} @else if (loadError()) {
+  <section class="not-found" role="alert"><h1>Não foi possível carregar o ambiente</h1><p>{{ loadError() }}</p><a routerLink="/salas">Voltar às salas</a></section>
+} @else if (environment(); as room) {
+  <section class="environment-detail" aria-labelledby="page-title">
+    <nav class="breadcrumb" aria-label="Caminho de navegação">
+      <a routerLink="/mapa">Início</a><span aria-hidden="true">/</span>
+      <a routerLink="/salas">Salas</a><span aria-hidden="true">/</span>
+      <span>{{ room.name }}</span>
+    </nav>
+
+    <header class="detail-heading">
+      <div>
+        <p class="room-type">{{ room.category }} · {{ room.code }}</p>
+        <h1 id="page-title">{{ room.name }}</h1>
+        <p class="room-location">{{ room.buildingName }} · {{ room.location }}</p>
+        <a class="map-location-link" routerLink="/mapa" [queryParams]="{ predio: room.buildingCode }">Localizar no mapa</a>
+      </div>
+    </header>
+
+    <div class="detail-layout">
+      <div class="room-information">
+        <section class="info-section" aria-labelledby="about-title">
+          <h2 id="about-title">Sobre o ambiente</h2>
+          <p>Capacidade máxima de {{ room.capacity }} pessoas.</p>
+        </section>
+
+        <section class="info-section" aria-labelledby="features-title">
+          <h2 id="features-title">Características</h2>
+          <ul class="feature-list">@for (feature of room.features; track feature) {<li>{{ feature }}</li>}</ul>
+        </section>
+
+        <section class="info-section" aria-labelledby="rules-title">
+          <h2 id="rules-title">Regras de utilização</h2>
+          <p>Consulte as orientações de uso do ambiente antes de solicitar uma reserva.</p>
+          <p class="responsible-label">Responsável pelo ambiente</p>
+          <p>{{ room.responsible || 'Responsável não informado no cadastro.' }}</p>
+        </section>
+
+        <aside class="accessibility-note">
+          <strong>Acessibilidade</strong>
+          <p>Confirme as condições do ambiente com o responsável antes da utilização.</p>
+        </aside>
+      </div>
+
+      <aside class="availability-panel" aria-labelledby="availability-title">
+        <div class="availability-heading">
+          <h2 id="availability-title">Consultar horários</h2>
+          @if (availabilityError()) { <p role="alert">{{ availabilityError() }}</p> }
+          @else if (loadingAvailability()) { <p role="status">Consultando disponibilidade…</p> }
+          @else { <p>Disponibilidade consultada no sistema de reservas.</p> }
+        </div>
+        <div class="month-navigation">
+          <button type="button" aria-label="Mês anterior" (click)="changeMonth(-1)">‹</button>
+          <h3>{{ monthLabel() }}</h3>
+          <button type="button" aria-label="Próximo mês" (click)="changeMonth(1)">›</button>
+        </div>
+        <div class="calendar" role="group" aria-label="Selecione uma data">
+          @for (weekday of ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']; track weekday) {
+            <span class="weekday">{{ weekday }}</span>
+          }
+          @for (day of days(); track $index) {
+            @if (day; as calendarDay) {
+              <button type="button" class="calendar-day" [class.calendar-day--selected]="selectedDate() === calendarDay.date"
+                [disabled]="calendarDay.disabled" [attr.aria-pressed]="selectedDate() === calendarDay.date"
+                [attr.aria-label]="calendarDay.dayNumber + ' de ' + monthLabel()" [attr.data-date]="calendarDay.date" (click)="selectDate(calendarDay)">
+                {{ calendarDay.dayNumber }}
+              </button>
+            } @else {
+              <span class="calendar-day calendar-day--blank" aria-hidden="true"></span>
+            }
+          }
+        </div>
+
+        <p class="selected-date">Data selecionada: <strong>{{ selectedDateLabel() }}</strong></p>
+        <div class="period-fields" aria-label="Período selecionado">
+          <div><span>Início</span><strong>{{ selectedPeriod() }}</strong></div>
+          <span aria-hidden="true">–</span>
+          <div><span>Término</span><strong>{{ selectedEndTime() }}</strong></div>
+        </div>
+
+        <div class="period-options" role="group" aria-label="Períodos de duas horas">
+          @for (period of periods(); track period.startTime) {
+            <button type="button" class="period-option" [class.period-option--selected]="selectedPeriod() === period.startTime && selectedEndTime() === period.endTime"
+              [class.period-option--unavailable]="period.availability === 'unavailable'"
+              [class.period-option--pending]="period.availability === 'pending'"
+              [disabled]="period.availability === 'unavailable'"
+              [attr.aria-pressed]="selectedPeriod() === period.startTime && selectedEndTime() === period.endTime"
+              [attr.aria-label]="periodLabel(period) + ', ' + periodStatusLabel(period)"
+              (click)="selectPeriod(period)">
+              {{ periodLabel(period) }}
+            </button>
+          }
+        </div>
+
+        @if (routeContextError()) {
+          <p class="period-feedback" role="alert">{{ routeContextError() }}</p>
+        } @else if (currentPeriod()?.availability === 'available') {
+          <p class="period-feedback period-feedback--available" role="status">Período disponível.</p>
+        } @else if (currentPeriod()?.availability === 'pending') {
+          <p class="period-feedback" role="status">Há uma solicitação pendente nesse horário; você ainda pode solicitar uma reserva.</p>
+        } @else if (currentPeriod()?.availability === 'unavailable') {
+          <p class="period-feedback" role="status">Este período não está disponível.</p>
+        } @else {
+          <p class="period-feedback" role="status">Não há disponibilidade carregada para esta data.</p>
+        }
+
+        @if (canRequest()) {
+          <a class="request-button" [routerLink]="requestRoute" [queryParams]="requestQueryParams()">Solicitar reserva</a>
+        } @else {
+          <button type="button" class="request-button" disabled>Solicitar reserva</button>
+        }
+      </aside>
+    </div>
+  </section>
+} @else {
+  <section class="not-found" aria-labelledby="not-found-title">
+    <nav class="breadcrumb" aria-label="Caminho de navegação"><a routerLink="/mapa">Início</a><span aria-hidden="true">/</span><a routerLink="/salas">Salas</a></nav>
+    <h1 id="not-found-title">Ambiente não encontrado</h1>
+    <p>Não há detalhes para o código {{ code }}.</p>
+    <a routerLink="/salas">Voltar às salas</a>
+  </section>
+}

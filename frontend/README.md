@@ -1,24 +1,12 @@
 # Frontend — Campus Reservas
 
-Workspace inicial do frontend em Angular para a etapa de interface do projeto. Este scaffold define a base e o roteamento; ainda não contém telas de domínio, autenticação, chamadas à API ou regras de reserva. A tela inicial permanece como placeholder gerado pelo Angular CLI.
+Aplicação Angular standalone para consulta de ambientes e solicitação de reservas da UFLA. A interface usa Bootstrap 5 para a grade responsiva e utilitários, com SCSS próprio para os componentes do produto.
 
-## Estrutura
+## Requisitos
 
-```text
-src/
-├── app/
-│   ├── core/       # serviços e configuração usados pela aplicação toda
-│   ├── features/   # funcionalidades organizadas por domínio
-│   ├── shared/     # componentes e utilitários reutilizáveis
-│   ├── app.config.ts
-│   ├── app.routes.ts
-│   └── app.ts      # componente raiz
-├── index.html
-├── main.ts
-└── styles.scss
-```
-
-As pastas `core`, `features` e `shared` começam vazias. Criar arquivos dentro delas quando houver uma funcionalidade concreta; em `features`, cada domínio poderá ter sua própria pasta, como `ambientes`, `equipamentos` e `reservas`.
+- Node.js compatível com Angular 22
+- npm
+- Backend Django disponível em http://localhost:8000 para autenticação, dados e administração
 
 ## Executar localmente
 
@@ -27,13 +15,28 @@ npm ci
 npm start
 ```
 
-O servidor de desenvolvimento fica em `http://localhost:4200/`.
+O servidor de desenvolvimento fica em http://localhost:4200/. O tema claro/escuro fica disponível no cabeçalho e a escolha é salva neste navegador.
+As chamadas a `/api/`, o acesso a `/admin/` e os arquivos de `/static/` são encaminhados ao Django pelo proxy de desenvolvimento. Reinicie o `npm start` após mudar `proxy.conf.json`.
 
-## Verificações
+## Build e verificações
 
 ```bash
 npm run build
 npm test
 ```
 
-O workspace usa Angular standalone, roteamento e SCSS, gerados pelo Angular CLI. Bootstrap 5 está previsto para a construção da interface, mas ainda não foi instalado ou aplicado. A integração com o backend Django será definida quando os endpoints forem implementados.
+## Organização
+
+```text
+src/
+├── app/
+│   ├── core/       # serviços globais, incluindo tema
+│   ├── features/   # funcionalidades por domínio
+│   ├── shared/     # shell e componentes compartilhados
+│   ├── app.config.ts
+│   └── app.routes.ts
+├── index.html
+└── styles.scss
+```
+
+Bootstrap é carregado globalmente antes do tema e dos estilos do produto. O tema define as cores da página e informa Bootstrap pelo atributo data-bs-theme no elemento raiz.

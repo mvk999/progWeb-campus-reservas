@@ -1,0 +1,62 @@
+<section class="occupancy-calendar" aria-labelledby="page-title">
+  <nav class="breadcrumb" aria-label="Caminho de navegação">
+    <a routerLink="/mapa">Início</a><span aria-hidden="true">/</span><a routerLink="/gestao">Gestão</a><span aria-hidden="true">/</span><span>Calendário</span>
+  </nav>
+
+  <header class="page-heading">
+    <div>
+      <h1 id="page-title">Calendário de ocupação</h1>
+      <p>Reservas e bloqueios no período selecionado.</p>
+    </div>
+    <a class="manager-link" routerLink="/gestao">Painel do responsável <span aria-hidden="true">→</span></a>
+  </header>
+
+  <section class="calendar-panel" aria-labelledby="week-title">
+    @if (service.loading()) { <p role="status">Carregando ocupação da API…</p> }
+    @if (service.error()) { <p role="alert">{{ service.error() }} <button type="button" (click)="loadWeek()">Tentar novamente</button></p> }
+    <div class="calendar-toolbar">
+      <div>
+        <h2 id="week-title">{{ weekLabel() }}</h2>
+      </div>
+      <div class="week-controls" role="group" aria-label="Navegação semanal">
+        <button type="button" aria-label="Semana anterior" (click)="moveWeek(-1)">‹ <span>Semana anterior</span></button>
+        <button type="button" class="week-reset" [disabled]="weekStart() === initialWeek" (click)="resetWeek()">Semana atual</button>
+        <button type="button" aria-label="Próxima semana" (click)="moveWeek(1)"><span>Próxima semana</span> ›</button>
+      </div>
+    </div>
+
+    <div class="legend" aria-label="Legenda do calendário">
+      <span><i class="legend-dot legend-dot--approved" aria-hidden="true"></i>Aprovada</span>
+      <span><i class="legend-dot legend-dot--pending" aria-hidden="true"></i>Pendente</span>
+      <span><i class="legend-dot legend-dot--blocked" aria-hidden="true"></i>Bloqueado</span>
+    </div>
+
+    <div class="calendar-scroll" role="region" aria-label="Grade semanal de ocupação" tabindex="0">
+        <table class="calendar-grid">
+          <caption class="visually-hidden">Reservas e bloqueios por dia útil e período</caption>
+        <thead>
+          <tr><th scope="col" class="time-heading">Horário</th>@for (day of days(); track trackDay($index, day)) {<th scope="col"><span>{{ day.shortLabel }}</span><strong>{{ day.label }}</strong></th>}</tr>
+        </thead>
+        <tbody>
+          @for (time of timeSlots; track trackTime($index, time)) {
+            <tr>
+              <th scope="row" class="time-cell">{{ time }}–{{ nextTime(time) }}</th>
+              @for (day of days(); track trackDay($index, day)) {
+                <td>
+                  @if (itemAt(day.date, time); as item) {
+                    <a class="calendar-event" [class]="'calendar-event ' + statusClass(item.status)" [routerLink]="['/ambientes', item.environmentCode]">
+                      <strong>{{ item.status }}</strong><span>{{ item.environmentName }} · {{ item.buildingCode }}</span>
+                    </a>
+                  } @else {
+                    <span class="consult-link">Sem ocupação registrada</span>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+</section>

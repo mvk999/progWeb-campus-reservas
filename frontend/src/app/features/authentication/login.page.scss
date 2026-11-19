@@ -1,0 +1,123 @@
+:host {
+  display: block;
+}
+
+.login-page {
+  max-width: 34rem;
+  margin: clamp(1rem, 5vw, 4rem) auto;
+}
+
+.login-heading {
+  margin-bottom: 1.5rem;
+}
+
+.login-heading h1 {
+  margin: 0 0 .4rem;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  line-height: 1.2;
+}
+
+.login-heading p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.profile-list {
+  display: grid;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, .75rem);
+  background: var(--surface);
+}
+
+.login-card {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1rem, 4vw, 1.5rem);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.login-field {
+  display: grid;
+  gap: .35rem;
+  color: var(--text-muted);
+  font-size: .85rem;
+}
+
+.login-field input {
+  min-height: 2.8rem;
+  padding: .5rem .7rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.field-error { color: var(--danger-text); }
+.register-prompt { margin-top: 1.2rem; color: var(--text-muted); }
+
+.profile-list button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: .95rem clamp(.9rem, 3vw, 1.25rem);
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-list button + button {
+  border-top: 1px solid var(--border);
+}
+
+.profile-list button:first-child {
+  border-radius: var(--radius, .75rem) var(--radius, .75rem) 0 0;
+}
+
+.profile-list button:last-child {
+  border-radius: 0 0 var(--radius, .75rem) var(--radius, .75rem);
+}
+
+.profile-list button:hover {
+  background: var(--page-background);
+}
+
+.profile-list button:focus-visible {
+  outline-offset: -3px;
+}
+
+.profile-list strong,
+.profile-list small {
+  display: block;
+}
+
+.profile-list small {
+  margin-top: .25rem;
+  color: var(--text-muted);
+  font-size: .875rem;
+}
+
+.profile-arrow {
+  color: var(--accent);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.error-message {
+  padding: .65rem .8rem;
+  border-left: 3px solid var(--danger-text);
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+
+.map-link {
+  display: inline-block;
+  margin-top: 1.25rem;
+  color: var(--accent);
+  text-underline-offset: .2em;
+}

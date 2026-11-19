@@ -60,17 +60,22 @@ class PopularDemoCommandTests(TestCase):
                 username__startswith=DEMO_USER_PREFIX,
             ).exists()
         )
+        # Nomes sem prefixo, sem repetição; os sintéticos têm a descrição DEMO.
         self.assertEqual(
-            CategoriaAmbiente.objects.filter(
-                nome__startswith="DEMO C1.11"
-            ).count(),
-            3,
+            sorted(
+                CategoriaAmbiente.objects.filter(
+                    descricao__startswith="Dado sintético"
+                ).values_list("nome", flat=True)
+            ),
+            ["Auditório", "Laboratório de informática", "Sala de aula", "Sala de reunião"],
         )
         self.assertEqual(
-            CategoriaEquipamento.objects.filter(
-                nome__startswith="DEMO C1.11"
-            ).count(),
-            3,
+            sorted(
+                CategoriaEquipamento.objects.filter(
+                    descricao__startswith="Dado sintético"
+                ).values_list("nome", flat=True)
+            ),
+            ["Audiovisual", "Informática", "Áudio"],
         )
         self.assertEqual(Ambiente.objects.filter(codigo__startswith="DEMO-").count(), 3)
         self.assertEqual(
@@ -80,7 +85,7 @@ class PopularDemoCommandTests(TestCase):
         self.assertFalse(equipamento_inativo.ativo)
         self.assertEqual(
             equipamento_inativo.categoria.nome,
-            "DEMO C1.11 — Audiovisual",
+            "Audiovisual",
         )
 
         demo_reservations = Reserva.objects.filter(
@@ -99,6 +104,10 @@ class PopularDemoCommandTests(TestCase):
                 reservation.solicitante.groups.filter(name="Solicitante").exists()
             )
             self.assertTrue(reservation.ambiente.codigo.startswith("DEMO-AMB-"))
+            self.assertTrue(reservation.finalidade)
+            self.assertLessEqual(
+                reservation.participantes, reservation.ambiente.capacidade
+            )
             self.assertTrue(reservation.itens_equipamento.exists())
 
         demo_items = ReservaEquipamento.objects.filter(
@@ -120,6 +129,30 @@ class PopularDemoCommandTests(TestCase):
         unrelated_category.refresh_from_db()
         self.assertEqual(unrelated_user.email, "pessoa@example.invalid")
         self.assertEqual(unrelated_category.descricao, "Registro preexistente.")
+
+    def test_cria_as_salas_do_mapa_do_campus(self):
+        self.populate_demo()
+
+        salas = Ambiente.objects.filter(codigo__startswith="AMB-")
+        self.assertEqual(salas.count(), 21)
+        self.assertEqual(
+            set(salas.values_list("predio", flat=True)),
+            {"PV1", "PV2", "PV3", "PV4", "PV5", "PV6", "DCC"},
+        )
+        laboratorio = Ambiente.objects.get(codigo="AMB-002")
+        self.assertEqual(laboratorio.nome, "Laboratório 101")
+        self.assertEqual(laboratorio.predio, "DCC")
+        self.assertEqual(laboratorio.capacidade, 30)
+        self.assertEqual(laboratorio.categoria.nome, "Laboratório de informática")
+        self.assertEqual(
+            laboratorio.responsavel.username, DEMO_USER_PREFIX + "responsavel.02"
+        )
+        self.assertEqual(
+            Ambiente.objects.get(codigo="AMB-003").responsavel.username,
+            DEMO_USER_PREFIX + "responsavel.01",
+        )
+        for sala in salas:
+            sala.full_clean()
 
     def test_reexecucao_nao_duplica_nem_sobrescreve_registros_existentes(self):
         unrelated_user = User.objects.create_user(username="usuario-fora-da-demo")
@@ -158,7 +191,7 @@ class PopularDemoCommandTests(TestCase):
 
     def test_colisao_de_chave_natural_real_falha_sem_alterar_o_registro(self):
         existing = CategoriaAmbiente.objects.create(
-            nome="DEMO C1.11 — Sala de aula",
+            nome="Sala de aula",
             descricao="Categoria real preexistente.",
         )
 

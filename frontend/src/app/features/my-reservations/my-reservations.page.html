@@ -1,0 +1,78 @@
+<section class="my-reservations" aria-labelledby="page-title">
+  <nav class="breadcrumb" aria-label="Caminho de navegação">
+    <a routerLink="/mapa">UFLA</a><span aria-hidden="true">/</span><span>Minhas reservas</span>
+  </nav>
+
+  <header class="page-heading">
+    <div><h1 id="page-title">Minhas reservas</h1>
+      <p>Acompanhe seus pedidos enviados para os ambientes do campus.</p></div>
+    <a class="button button--primary" routerLink="/salas">Nova solicitação</a>
+  </header>
+
+  <section class="indicators" aria-label="Resumo das solicitações">
+    <article class="indicator"><span>Aguardando aprovação</span><strong>{{ pendingCount() }}</strong></article>
+    <article class="indicator"><span>Aprovadas</span><strong>{{ approvedCount() }}</strong></article>
+    <article class="indicator"><span>Solicitações registradas</span><strong>{{ totalRegistered() }}</strong></article>
+  </section>
+
+  <div class="reservation-controls">
+    <div class="tabs" role="group" aria-label="Visualização de solicitações">
+      <button type="button" [attr.aria-pressed]="tab() === 'upcoming'" [class.is-active]="tab() === 'upcoming'" (click)="selectTab('upcoming')">Próximas</button>
+      <button type="button" [attr.aria-pressed]="tab() === 'history'" [class.is-active]="tab() === 'history'" (click)="selectTab('history')">Histórico</button>
+      <button type="button" [attr.aria-pressed]="tab() === 'calendar'" [class.is-active]="tab() === 'calendar'" (click)="selectTab('calendar')">Calendário</button>
+    </div>
+    <label class="situation-filter"><span>Situação</span><select [value]="situationFilter()" (change)="setSituation($event)"><option value="all">Todas as situações</option><option value="PENDENTE">Pendente</option><option value="APROVADA">Aprovada</option><option value="REJEITADA">Rejeitada</option><option value="CANCELADA">Cancelada</option><option value="CONCLUIDA">Concluída</option></select></label>
+  </div>
+
+  @if (service.loading()) {
+    <p role="status">Carregando suas reservas…</p>
+  } @else if (storageError()) {
+    <section class="storage-error" role="alert" aria-live="assertive">
+      <h2>Não foi possível carregar suas reservas</h2>
+      <p>{{ storageError() }}</p>
+      <button type="button" class="button button--quiet" (click)="retryRead()">Tentar novamente</button>
+    </section>
+  } @else if (isEmpty()) {
+    <section class="empty-state" aria-live="polite">
+      <h2>Nenhuma solicitação encontrada</h2>
+      <p>Consulte os ambientes para escolher uma sala e enviar uma solicitação.</p>
+      <a class="button button--quiet" routerLink="/salas">Consultar ambientes</a>
+    </section>
+  } @else if (tab() === 'calendar') {
+    <section class="calendar-panel" aria-labelledby="calendar-title">
+      <div class="calendar-heading"><h2 id="calendar-title">{{ monthLabel() }}</h2>
+        <div><button type="button" aria-label="Mês anterior" (click)="moveMonth(-1)">‹</button><button type="button" aria-label="Próximo mês" (click)="moveMonth(1)">›</button></div>
+      </div>
+      <div class="calendar-grid" aria-label="Calendário das minhas reservas">
+        @for (weekday of ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']; track weekday) {<span class="weekday">{{ weekday }}</span>}
+        @for (day of calendarDays(); track $index) {
+          @if (day; as calendarDay) {
+            <div class="calendar-day" [attr.aria-label]="calendarDay.dayNumber + ' de ' + monthLabel() + (calendarDay.hasReservation ? ', com solicitação' : '')">
+              <time [attr.datetime]="calendarDay.date">{{ calendarDay.dayNumber }}</time>
+              @for (reservation of calendarDay.reservations; track trackReservation($index, reservation)) {
+                <a class="calendar-event" [routerLink]="roomRoute(reservation)">{{ reservation.startTime }} · {{ reservation.environmentName }}</a>
+              }
+            </div>
+          } @else {<span class="calendar-day calendar-day--blank" aria-hidden="true"></span>}
+        }
+      </div>
+    </section>
+  } @else {
+    <section class="reservation-list" [attr.aria-label]="tab() === 'upcoming' ? 'Solicitações próximas' : 'Histórico de solicitações'">
+      @for (reservation of visibleReservations(); track trackReservation($index, reservation)) {
+        <article class="reservation-card">
+          <div class="reservation-card__top"><div><p>{{ reservation.environmentCode }}</p><h2>{{ reservation.environmentName }}</h2></div></div>
+          <dl><div><dt>Data</dt><dd>{{ formatDate(reservation.date) }}</dd></div><div><dt>Horário</dt><dd>{{ reservation.startTime }}–{{ reservation.endTime }}</dd></div><div><dt>Participantes</dt><dd>{{ reservation.participants ?? '—' }}</dd></div><div><dt>Situação</dt><dd>{{ reservation.statusLabel }}</dd></div></dl>
+          @if (reservation.purpose) {<p class="reservation-purpose">{{ reservation.purpose }}</p>}
+          @if (reservation.observations) {<p class="reservation-observation">{{ reservation.observations }}</p>}
+          <footer><span>Enviada em {{ formatCreatedAt(reservation.createdAt) }}</span><a [routerLink]="roomRoute(reservation)">Ver ambiente</a>
+            @if (reservation.canCancel) { <button type="button" [disabled]="service.cancellingId() === reservation.id" (click)="cancel(reservation)">{{ service.cancellingId() === reservation.id ? 'Cancelando…' : 'Cancelar reserva' }}</button> }
+          </footer>
+        </article>
+      }
+    </section>
+  }
+
+  @if (service.actionError()) { <p class="error-message" role="alert">{{ service.actionError() }}</p> }
+
+</section>

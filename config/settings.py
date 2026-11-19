@@ -19,6 +19,14 @@ ALLOWED_HOSTS = [
     ).split(",")
     if host.strip()
 ]
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        "DJANGO_CSRF_TRUSTED_ORIGINS",
+        "http://localhost:4200,http://127.0.0.1:4200",
+    ).split(",")
+    if origin.strip()
+]
 
 INSTALLED_APPS = [
     "jazzmin",
@@ -28,6 +36,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
     "usuarios.apps.UsuariosConfig",
     "ambientes.apps.AmbientesConfig",
     "reservas.apps.ReservasConfig",
@@ -70,6 +79,16 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+        "OPTIONS": {
+            # O SQLite não trava linhas (select_for_update não tem efeito).
+            # IMMEDIATE faz cada transaction.atomic() pegar a trava de
+            # escrita do banco já no início, então duas operações que leem,
+            # validam e gravam (ex.: duas aprovações) rodam uma de cada vez.
+            "transaction_mode": "IMMEDIATE",
+            # Segundos que uma transação espera a outra liberar a trava antes
+            # de falhar com "database is locked".
+            "timeout": 20,
+        },
     }
 }
 
@@ -88,6 +107,26 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# API (Django REST Framework). Contrato em docs/api.md.
+REST_FRAMEWORK = {
+    # Sessão do Django, respondendo 401 a quem não está logado.
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "usuarios.authentication.SessionAuthentication",
+    ],
+    # Toda rota exige login, salvo as que liberarem o acesso explicitamente.
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+    ],
+    # A página navegável do DRF só fica disponível em desenvolvimento.
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+        *(["rest_framework.renderers.BrowsableAPIRenderer"] if DEBUG else []),
+    ],
+}
 
 JAZZMIN_SETTINGS = {
     "site_title": "Administração — Campus Reservas",

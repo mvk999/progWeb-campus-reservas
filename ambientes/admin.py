@@ -24,16 +24,18 @@ class AmbienteAdmin(admin.ModelAdmin):
         "nome",
         "categoria",
         "localizacao",
+        "predio",
         "capacidade",
         "ativo",
         "responsavel",
     )
     list_filter = (
         "categoria",
+        "predio",
         "ativo",
         ("responsavel", admin.RelatedOnlyFieldListFilter),
     )
-    search_fields = ("codigo", "nome", "localizacao")
+    search_fields = ("codigo", "nome", "localizacao", "predio")
     ordering = ("codigo",)
     list_select_related = ("categoria", "responsavel")
     list_per_page = 25

@@ -1,0 +1,73 @@
+<section class="rooms-page" aria-labelledby="page-title">
+  <nav class="breadcrumb" aria-label="Caminho de navegação">
+    <a routerLink="/mapa">UFLA · Campus sede</a><span aria-hidden="true">/</span>
+    <span>Reservas</span><span aria-hidden="true">/</span><span aria-current="page">Salas</span>
+  </nav>
+  <header class="page-heading">
+    <h1 id="page-title">Salas</h1>
+    <p>Ambientes e horários consultados no sistema de reservas.</p>
+  </header>
+
+  @if (roomsService.loading()) { <p role="status">Carregando ambientes do campus…</p> }
+  @if (roomsService.error()) { <p class="error-message" role="alert">{{ roomsService.error() }} @if (roomsService.loginRequired()) { <a routerLink="/login">Entrar</a> } @else { <button type="button" (click)="roomsService.loadRooms()">Tentar novamente</button> }</p> }
+
+  <form class="query-panel" aria-labelledby="query-title" (submit)="applyFilters($event)" novalidate>
+    <div class="panel-title">
+      <h2 id="query-title">Consultar salas</h2>
+      <div class="quick-filters" role="group" aria-label="Atalhos de tipo de ambiente">
+        <button type="button" class="button" (click)="quickFind('Sala de aula')">Salas de aula</button>
+        <button type="button" class="button" (click)="quickFind('Laboratório')">Laboratórios</button>
+        <button type="button" class="button" (click)="quickFind('Sala de reunião')">Salas de reunião</button>
+      </div>
+    </div>
+    <div class="filter-grid">
+      <label class="field"><span>Data</span><input type="date" [value]="queryDate()" (input)="updateDate($event)" [attr.aria-invalid]="dateInvalid() ? 'true' : null" [attr.aria-describedby]="dateInvalid() ? 'query-error' : null" /></label>
+      <label class="field"><span>Campus</span><select [value]="draftFilters().campus" (change)="updateDraftFilter('campus', $any($event.target).value)"><option value="UFLA">UFLA · Campus sede</option></select></label>
+      <label class="field"><span>Prédio</span><select [value]="draftFilters().building" (change)="updateDraftFilter('building', $any($event.target).value)"><option value="">Todos os prédios</option>@for (code of buildingOptions(); track code) {<option [value]="code">{{ code }} · {{ buildingName(code) }}</option>}</select></label>
+      <label class="field"><span>Tipo de ambiente</span><select [value]="draftFilters().category" (change)="updateDraftFilter('category', $any($event.target).value)"><option value="">Todos os tipos</option>@for (category of roomsService.categories(); track category) {<option [value]="category">{{ category }}</option>}</select></label>
+      <label class="field"><span>Quantidade de pessoas</span><select [value]="draftFilters().minimumCapacity ?? ''" (change)="updateDraftFilter('minimumCapacity', $any($event.target).value)"><option value="">Qualquer capacidade</option><option value="10">10 pessoas ou mais</option><option value="20">20 pessoas ou mais</option><option value="40">40 pessoas ou mais</option><option value="60">60 pessoas ou mais</option></select></label>
+    </div>
+    <button class="refine-button" type="button" [attr.aria-expanded]="advancedOpen()" (click)="toggleAdvanced()"><span aria-hidden="true">{{ advancedOpen() ? '−' : '+' }}</span> Filtros avançados</button>
+    @if (advancedOpen()) {
+      <div class="advanced-panel">
+        <div><span class="field-title">Período para filtrar</span><div class="time-fields"><label class="field"><span>Das</span><input type="time" [value]="searchStart()" (input)="updateStart($event)" [attr.aria-invalid]="timeInvalid() ? 'true' : null" [attr.aria-describedby]="timeInvalid() ? 'query-error' : null" /></label><label class="field"><span>Às</span><input type="time" [value]="searchEnd()" (input)="updateEnd($event)" [attr.aria-invalid]="timeInvalid() ? 'true' : null" [attr.aria-describedby]="timeInvalid() ? 'query-error' : null" /></label></div></div>
+        <label class="check-field"><input type="checkbox" [checked]="onlyAvailable()" (change)="onlyAvailable.set($any($event.target).checked)" /> Somente disponíveis neste período</label>
+      </div>
+    }
+    <div class="query-actions">
+      <button type="button" class="button button--quiet" (click)="clearFilters()">Limpar filtros</button>
+      <button type="submit" class="button button--primary">Atualizar consulta</button>
+    </div>
+    @if (filterError()) {<p class="error-message" id="query-error" role="alert">{{ filterError() }}</p>}
+    @if (filterFeedback()) {<p class="feedback-message" role="status">{{ filterFeedback() }}</p>}
+  </form>
+
+  <section class="availability" aria-label="Disponibilidade das salas">
+    <div class="availability-heading"><div><h2>Disponibilidade</h2><p>{{ selectedDateLabel() }} · {{ weekRangeLabel() }}</p></div><div class="day-controls"><button type="button" aria-label="Dia anterior" (click)="moveDay(-1)">‹</button><button type="button" aria-label="Próximo dia" (click)="moveDay(1)">›</button></div></div>
+    <div class="week-strip"><button type="button" aria-label="Semana anterior" (click)="moveWeek(-1)">‹</button>@for (day of weekDays(); track day.date) {<button type="button" class="week-day" [class.week-day--selected]="selectedDay() === day.date" [attr.aria-pressed]="selectedDay() === day.date" (click)="setDay(day.date)"><span>{{ day.shortName }}</span><strong>{{ day.dayNumber }}</strong></button>}<button type="button" aria-label="Próxima semana" (click)="moveWeek(1)">›</button></div>
+    <div class="tools-row"><label class="search"><span aria-hidden="true">⌕</span><input type="search" aria-label="Buscar por nome ou localização" placeholder="Buscar por nome ou localização" [value]="searchTerm()" (input)="updateSearch($event)" /></label><div class="view-toggle" role="group" aria-label="Visualização"><button type="button" [class.is-active]="viewMode() === 'cards'" [attr.aria-pressed]="viewMode() === 'cards'" (click)="toggleView('cards')">Cards</button><button type="button" [class.is-active]="viewMode() === 'agenda'" [attr.aria-pressed]="viewMode() === 'agenda'" (click)="toggleView('agenda')">Agenda</button><button type="button" [class.is-active]="viewMode() === 'lista'" [attr.aria-pressed]="viewMode() === 'lista'" (click)="toggleView('lista')">Lista</button></div></div>
+    <div class="results-heading"><span>{{ filteredRooms().length }} ambientes</span><label>Ordenar por <select [value]="sortOrder()" (change)="setSort($event)"><option value="nome">Nome</option><option value="capacidade">Capacidade</option></select></label></div>
+    @if (roomsService.availabilityLoading()) { <p role="status">Consultando disponibilidade para {{ selectedDateLabel() }}…</p> }
+    @if (filteredRooms().length === 0) {
+      <div class="empty-state"><h3>Nenhum recurso encontrado</h3><p>Altere os filtros ou pesquise por outro nome.</p><button type="button" class="button button--quiet" (click)="clearFilters()">Limpar filtros</button></div>
+     } @else if (viewMode() === 'cards') {
+      <div class="room-cards">@for (room of filteredRooms(); track room.code) {
+        <article class="room-card">
+          <div class="room-card__top"><span>{{ room.category || 'Ambiente' }}</span><span class="status-label" [class]="'status-label status-label--' + listStatus(room).toLocaleLowerCase('pt-BR')">{{ listStatus(room) }}</span></div>
+          <h3><a [routerLink]="['/ambientes', room.code]">{{ room.name }}</a></h3>
+          <p>{{ room.buildingCode }} &middot; {{ room.buildingName }}</p>
+          <strong class="room-card__capacity">{{ room.capacity }} pessoas</strong>
+          <ul>@for (feature of featuresForRoom(room); track feature) {<li>{{ feature }}</li>}</ul>
+          <div class="room-card__actions"><a [routerLink]="['/mapa']" [queryParams]="{ predio: room.buildingCode }">Explorar no mapa &#8599;</a><a class="button button--primary" [routerLink]="['/ambientes', room.code]">Ver hor&aacute;rios</a></div>
+        </article>
+      }</div>
+    } @else if (viewMode() === 'agenda') {
+      <div class="agenda-scroll" role="region" aria-label="Agenda de salas por hora" tabindex="0"><table class="agenda-table"><thead><tr><th class="room-column">Ambiente</th>@for (hour of hours; track hour) {<th>{{ hour.toString().padStart(2, '0') }}h</th>}</tr></thead><tbody>@for (room of filteredRooms(); track trackRoom($index, room)) {<tr><th class="room-cell"><a [routerLink]="['/ambientes', room.code]">{{ room.name }}</a><span>{{ room.buildingCode }} · {{ room.buildingName }}</span><small>{{ room.capacity }} pessoas · {{ room.category ?? 'Ambiente' }}</small></th>@for (hour of hours; track hour) {<td><span class="slot" [class]="'slot slot--' + status(room, hour).toLocaleLowerCase('pt-BR')" [attr.aria-label]="status(room, hour) + ', ' + hour + ':00 a ' + (hour + 1) + ':00'">{{ status(room, hour) }}</span></td>}</tr>}</tbody></table></div>
+      <p class="timezone-note">Horários apresentados no horário de Brasília. Pedidos pendentes ocupam o horário.</p>
+    } @else {
+      <div class="list-period">Disponibilidade da lista: {{ listPeriodLabel }} <button type="button" (click)="advancedOpen.set(true)">Alterar período</button></div>
+      <div class="list-scroll" role="region" aria-label="Lista de disponibilidade das salas" tabindex="0"><table class="rooms-table"><thead><tr><th>Ambiente</th><th>Capacidade</th><th>Características</th><th>Disponibilidade</th><th>Ação</th></tr></thead><tbody>@for (room of filteredRooms(); track trackRoom($index, room)) {<tr><td><a [routerLink]="['/ambientes', room.code]">{{ room.name }}</a><span>{{ room.buildingCode }} · {{ room.buildingName }}</span></td><td>{{ room.capacity }} pessoas</td><td>{{ featuresForRoom(room).join(', ') || '—' }}</td><td><span class="status-label" [class]="'status-label status-label--' + listStatus(room).toLocaleLowerCase('pt-BR')">{{ listStatus(room) }}</span></td><td><a [routerLink]="['/ambientes', room.code]">Consultar</a></td></tr>}</tbody></table></div>
+    }
+    <div class="legend" aria-label="Legenda de disponibilidade"><span><i class="legend-dot legend-dot--livre"></i>Livre</span><span><i class="legend-dot legend-dot--pendente"></i>Pendente</span><span><i class="legend-dot legend-dot--aprovado"></i>Aprovado</span><span><i class="legend-dot legend-dot--bloqueado"></i>Bloqueado</span></div>
+  </section>
+</section>

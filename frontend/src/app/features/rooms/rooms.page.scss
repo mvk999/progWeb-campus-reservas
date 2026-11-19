@@ -1,0 +1,107 @@
+:host { display: block; }
+.rooms-page { --line: var(--border); --ink: var(--text); --muted: var(--text-muted); color: var(--text); }
+.breadcrumb { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .9rem; color: var(--text-muted); font-size: .78rem; }
+.breadcrumb a { color: var(--accent); }
+.page-heading { margin-bottom: 1.25rem; }
+.page-heading h1 { margin: 0 0 .35rem; font-size: clamp(1.85rem, 3vw, 2.4rem); line-height: 1.15; }
+.page-heading p, .availability-heading p { margin: 0; color: var(--text-muted); font-size: .9rem; }
+.panel-title, .availability-heading, .tools-row, .results-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.query-panel {
+  margin-bottom: 1.65rem;
+  padding: clamp(.9rem, 2vw, 1.5rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.panel-title { flex-wrap: wrap; margin-bottom: 1rem; }
+.panel-title h2, .availability-heading h2 { margin: 0; font-size: 1.05rem; font-weight: 650; }
+.quick-filters, .query-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.filter-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: end; gap: .85rem; }
+.field { display: grid; min-width: 0; gap: .35rem; color: var(--text-muted); font-size: .8rem; }
+.field input, .field select, .results-heading select { width: 100%; min-width: 0; height: 2.75rem; padding: .4rem .55rem; border: 1px solid var(--line); border-radius: .4rem; background: var(--surface); color: var(--ink); font: inherit; font-size: .875rem; }
+.refine-button { min-height: 2.75rem; margin-top: .4rem; padding: .25rem 0; border: 0; background: none; color: var(--accent); font-size: .85rem; cursor: pointer; }
+.advanced-panel { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: 1rem; padding: .9rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--page-background); }
+.field-title { display: block; margin-bottom: .45rem; color: var(--text-muted); font-size: .8rem; }
+.time-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+.check-field { display: flex; align-items: center; gap: .45rem; color: var(--ink); font-size: .78rem; }
+.check-list { display: flex; flex-wrap: wrap; gap: .55rem .8rem; }
+.query-actions { justify-content: flex-end; margin-top: .6rem; padding-top: .85rem; border-top: 1px solid var(--line); }
+.button { display: inline-flex; min-height: 2.75rem; align-items: center; justify-content: center; padding: .45rem .8rem; border: 1px solid var(--line); border-radius: .4rem; background: var(--surface); color: var(--ink); font: inherit; font-size: .825rem; text-decoration: none; cursor: pointer; }
+.button--primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.error-message, .feedback-message { margin: .65rem 0 0; font-size: .8rem; }
+.error-message { color: var(--danger-text); }.feedback-message { color: var(--accent); }
+.availability { min-width: 0; }
+.availability-heading { margin-bottom: .8rem; }
+.availability-heading h2 { margin-bottom: .25rem; font-size: 1.3rem; }
+.day-controls { display: flex; gap: .35rem; }
+.day-controls button, .week-strip > button { min-height: 2.75rem; border: 1px solid var(--line); border-radius: .4rem; background: var(--surface); color: var(--ink); cursor: pointer; }
+.day-controls button { width: 2.75rem; }
+.week-strip { display: grid; grid-template-columns: 2.75rem repeat(7, minmax(0, 1fr)) 2.75rem; gap: .35rem; padding-bottom: .8rem; border-bottom: 1px solid var(--line); }
+.week-strip > button { min-width: 0; padding: .4rem 0; }
+.week-strip > button:not(.week-day) { font-size: 1.2rem; }
+.week-day { display: grid; gap: .15rem; justify-items: center; }
+.week-day span { font-size: .7rem; text-transform: capitalize; }.week-day strong { font-size: .875rem; font-weight: 650; }
+.week-strip > .week-day--selected, .view-toggle .is-active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.tools-row { flex-wrap: wrap; margin: .85rem 0 .55rem; }
+.search { display: flex; width: min(26rem,100%); min-height: 2.75rem; align-items: center; gap: .45rem; padding-inline: .65rem; border: 1px solid var(--line); border-radius: .4rem; background: var(--surface); color: var(--muted); }
+.search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; font-size: .8rem; }
+.search:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.view-toggle { display: flex; gap: .25rem; }
+.view-toggle button { padding: .52rem .7rem; border: 1px solid var(--line); border-radius: .4rem; background: var(--surface); color: var(--muted); font-size: .78rem; cursor: pointer; }
+.results-heading { margin-bottom: .45rem; color: var(--muted); font-size: .76rem; }
+.results-heading label { display: flex; align-items: center; gap: .35rem; }.results-heading select { width: auto; height: 2rem; }
+.agenda-scroll, .list-scroll { overflow: auto; border: 1px solid var(--line); border-radius: .5rem; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: .75rem; }
+th, td { padding: .48rem .38rem; border-bottom: 1px solid var(--line); text-align: left; }
+thead th { background: var(--page-background); color: var(--muted); font-weight: 500; }
+.agenda-table { min-width: 76rem; }
+.agenda-table thead th { position: sticky; top: 0; }
+.agenda-table :is(th, td) { text-align: center; }
+.agenda-table :is(.room-column, .room-cell) { position: sticky; left: 0; min-width: 13rem; text-align: left; }
+.agenda-table .room-column { z-index: 2; }
+.room-cell { z-index: 1; background: var(--surface); }
+table a { color: var(--accent); }
+table a + span, .room-cell small { display: block; color: var(--muted); font-size: .7rem; font-weight: 400; }
+.slot, .status-label { padding: .25rem .4rem; border-radius: .35rem; background: var(--accent-soft); color: var(--accent); }
+.slot { display: block; min-width: 3.4rem; font-size: .65rem; }
+.status-label { display: inline-block; }
+.slot--pendente, .status-label--pendente { background: var(--warning-soft); color: var(--warning-text); }
+.slot--aprovado, .status-label--aprovado { background: var(--info-soft); color: var(--info-text); }
+.slot--bloqueado, .status-label--bloqueado { background: var(--danger-soft); color: var(--danger-text); }
+.timezone-note { margin: .55rem 0; color: var(--muted); font-size: .7rem; }
+.list-period { display: flex; justify-content: flex-end; align-items: center; gap: .6rem; margin: .3rem 0 .6rem; color: var(--muted); font-size: .75rem; }.list-period button { border: 0; background: none; color: var(--accent); cursor: pointer; }
+.rooms-table { min-width: 48rem; }
+.empty-state { padding: 1rem; border: 1px solid var(--line); background: var(--surface); text-align: center; }
+.legend { display: flex; flex-wrap: wrap; gap: .75rem 1.2rem; margin-top: .8rem; color: var(--muted); font-size: .72rem; }.legend span { display: inline-flex; align-items: center; gap: .35rem; }.legend-dot { width: .6rem; height: .6rem; border-radius: 50%; background: var(--accent-border); }.legend-dot--pendente { background: #d4aa4e; }.legend-dot--aprovado { background: #6e9bb4; }.legend-dot--bloqueado { background: #bd796a; }
+.room-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr)); gap: 1rem; }
+.room-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.room-card__top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; color: var(--muted); font-size: .8rem; }
+.room-card h3 { margin: .85rem 0 .25rem; font-size: 1.05rem; line-height: 1.35; }
+.room-card a { color: var(--accent); }
+.room-card > p { margin: 0 0 .65rem; color: var(--muted); font-size: .8rem; }
+.room-card__capacity { font-size: .85rem; }
+.room-card ul { display: flex; flex-wrap: wrap; gap: .35rem; margin: .65rem 0 .9rem; padding: 0; list-style: none; }
+.room-card li { padding: .2rem .45rem; border-radius: .25rem; background: var(--page-background); color: var(--muted); font-size: .75rem; }
+.room-card__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .65rem; margin-top: auto; padding-top: .8rem; border-top: 1px solid var(--line); }
+.room-card a.button--primary { color: var(--on-accent); }
+@media (max-width: 1080px) {
+  .filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  .filter-grid { grid-template-columns: minmax(0, 1fr); }
+  .week-strip { grid-template-columns: 1.5rem repeat(7, minmax(0, 1fr)) 1.5rem; gap: .15rem; }
+  .week-day span { font-size: .65rem; }
+  .search { width: 100%; }
+  .agenda-table :is(.room-column, .room-cell) { min-width: 8.5rem; }
+}
